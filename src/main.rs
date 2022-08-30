@@ -1,39 +1,95 @@
+use async_executor::LocalExecutor;
+use futures_lite::future;
 use std::{
     any::{type_name, Any, TypeId},
     fmt::Debug,
 };
-use tracing::info;
+use tracing::{instrument, metadata::LevelFilter, trace as log};
+use tracing_subscriber::fmt::format::FmtSpan;
 use windows::{
-    core::InParam, w, Media::SpeechSynthesis::SpeechSynthesizer, Storage::Streams::Buffer,
+    core::{InParam, Interface},
+    w,
+    Media::SpeechSynthesis::SpeechSynthesizer,
+    Storage::Streams::{Buffer, DataReader, IBuffer},
 };
 
-#[tracing::instrument]
+#[instrument]
 fn main() -> Result<(), miette::Report> {
-    tracing::subscriber::set_global_default(tracing_subscriber::FmtSubscriber::new()).wrap()?;
+    tracing::subscriber::set_global_default(
+        tracing_subscriber::fmt()
+            .with_max_level(LevelFilter::TRACE)
+            .with_target(false)
+            .with_level(false)
+            .with_span_events(FmtSpan::FULL)
+            .with_file(true)
+            .with_line_number(true)
+            .without_time()
+            .finish(),
+    )
+    .wrap()?;
 
-    let voices = SpeechSynthesizer::AllVoices().wrap()?;
+    let executor = LocalExecutor::new();
 
-    for voice in voices {
-        info!("{}", voice.DisplayName().wrap()?);
-    }
+    future::block_on(executor.run(async { app().await }))
+}
 
+#[instrument]
+async fn app() -> Result<(), miette::Report> {
     let synth = SpeechSynthesizer::new().wrap()?;
+
+    let voice = synth.Voice().wrap()?;
+    let options = synth.Options().wrap()?;
+
+    log!("  Language: {:>19}", voice.Language().wrap()?.to_string());
+    log!(
+        "     Voice: {:>19}",
+        voice.DisplayName().wrap()?.to_string()
+    );
+    log!("     Pitch: {:>19.2}", options.AudioPitch().wrap()?);
+    log!("    Volume: {:>19.2}", options.AudioVolume().wrap()?);
+    log!("     Speed: {:>19.2}", options.SpeakingRate().wrap()?);
+    log!(
+        "      Rest: {:>16?}",
+        options.PunctuationSilence().wrap()?.0
+    );
+    log!("       End: {:>16?}", options.AppendedSilence().wrap()?.0);
+    log!(
+        "     Words: {:>19}",
+        options.IncludeWordBoundaryMetadata().wrap()?.to_string()
+    );
+    log!(
+        "     Stops: {:>19}",
+        options
+            .IncludeSentenceBoundaryMetadata()
+            .wrap()?
+            .to_string()
+    );
 
     let stream = synth
         .SynthesizeTextToStreamAsync(w!("hello, world!"))
         .wrap()?
-        .get()
+        .await
+        .wrap()?;
+
+    let buffer = Buffer::Create(64 * 1024 * 1024)
+        .wrap()?
+        .cast::<IBuffer>()
+        .wrap()?;
+
+    stream
+        .ReadAsync(
+            InParam::from(Some(&buffer)),
+            buffer.Capacity().unwrap(),
+            Default::default(),
+        )
+        .wrap()?
+        .await
         .wrap()?;
 
     let content_type = stream.ContentType().wrap()?;
 
-    let buffer = stream
-        .ReadAsync(InParam::null(), 0, Default::default())
-        .wrap()?
-        .get()
-        .wrap()?;
-
-    dbg!(buffer);
+    log!("      Type: {:>19}", content_type.to_string());
+    log!("    Length: {:>18}B", buffer.Length().wrap()?);
 
     Ok(())
 }
@@ -41,7 +97,7 @@ fn main() -> Result<(), miette::Report> {
 /// A type used to wrap arbitrary Debuggable error types as result Diagnostics.
 ///
 /// This shouldn't be used on types that already implement Diagnostic.
-#[derive(Debug, thiserror::Error, miette::Diagnostic, derive_more::From)]
+#[derive(Debug, thiserror::Error, miette::Diagnostic)]
 #[error("{0}{1}")]
 pub(crate) struct WrappedError(&'static str, String);
 
@@ -54,13 +110,6 @@ impl WrappedError {
 pub(crate) trait DebugResultExt {
     type Ok;
     fn wrap(self) -> Result<Self::Ok, WrappedError>;
-
-    fn unwrap(self) -> Self::Ok
-    where
-        Self: Sized,
-    {
-        self.wrap().unwrap()
-    }
 }
 
 impl<T, E: Debug + Any> DebugResultExt for Result<T, E> {

@@ -1,17 +1,27 @@
+use std::any::type_name;
+use std::any::Any;
+use std::any::TypeId;
+use std::fmt::Debug;
+
 use async_executor::LocalExecutor;
 use futures_lite::future;
-use std::{
-    any::{type_name, Any, TypeId},
-    fmt::Debug,
-};
-use tracing::{instrument, metadata::LevelFilter, trace as log};
+use tracing::instrument;
+use tracing::metadata::LevelFilter;
+use tracing::trace as log;
 use tracing_subscriber::fmt::format::FmtSpan;
-use windows::{
-    core::{InParam, Interface},
-    w,
-    Media::SpeechSynthesis::SpeechSynthesizer,
-    Storage::Streams::{Buffer, DataReader, IBuffer},
-};
+use windows::core::InParam;
+use windows::core::Interface;
+use windows::w;
+use windows::Media::SpeechSynthesis::SpeechSynthesizer;
+use windows::Storage::Streams::Buffer;
+use windows::Storage::Streams::DataReader;
+use windows::Storage::Streams::IBuffer;
+
+mod tts;
+use tts::*;
+
+mod fic;
+use fic::*;
 
 #[instrument]
 fn main() -> Result<(), miette::Report> {
@@ -137,7 +147,7 @@ impl<T, E: Debug + Any> DebugResultExt for Result<T, E> {
                     &prefix[..prefix.rfind("::").map(|x| x + 2).unwrap_or(prefix.len())]
                 };
                 Err(WrappedError::new(prefix, err))
-            }
+            },
         }
     }
 }

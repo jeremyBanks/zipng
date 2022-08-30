@@ -40,25 +40,31 @@ async fn app() -> Result<(), miette::Report> {
     let voice = synth.Voice().wrap()?;
     let options = synth.Options().wrap()?;
 
-    log!("  Language: {:>19}", voice.Language().wrap()?.to_string());
     log!(
-        "     Voice: {:>19}",
+        "      Language: {:>19}",
+        voice.Language().wrap()?.to_string()
+    );
+    log!(
+        "         Voice: {:>19}",
         voice.DisplayName().wrap()?.to_string()
     );
-    log!("     Pitch: {:>19.2}", options.AudioPitch().wrap()?);
-    log!("    Volume: {:>19.2}", options.AudioVolume().wrap()?);
-    log!("     Speed: {:>19.2}", options.SpeakingRate().wrap()?);
+    log!("         Pitch: {:>19.2}", options.AudioPitch().wrap()?);
+    log!("        Volume: {:>19.2}", options.AudioVolume().wrap()?);
+    log!("         Speed: {:>19.2}", options.SpeakingRate().wrap()?);
     log!(
-        "      Rest: {:>16?}",
+        "          Rest: {:>16?}",
         options.PunctuationSilence().wrap()?.0
     );
-    log!("       End: {:>16?}", options.AppendedSilence().wrap()?.0);
     log!(
-        "     Words: {:>19}",
+        "           End: {:>16?}",
+        options.AppendedSilence().wrap()?.0
+    );
+    log!(
+        "         Words: {:>19}",
         options.IncludeWordBoundaryMetadata().wrap()?.to_string()
     );
     log!(
-        "     Stops: {:>19}",
+        "         Stops: {:>19}",
         options
             .IncludeSentenceBoundaryMetadata()
             .wrap()?
@@ -88,15 +94,21 @@ async fn app() -> Result<(), miette::Report> {
 
     let content_type = stream.ContentType().wrap()?;
 
-    log!("      Type: {:>19}", content_type.to_string());
-    log!("    Length: {:>18}B", buffer.Length().wrap()?);
+    log!("        Length: {:>18}B", buffer.Length().wrap()?);
+    log!("          Type: {:>19}", content_type.to_string());
+
+    let mut bytes = vec![0u8; buffer.Length().wrap()? as usize];
+    DataReader::FromBuffer(InParam::from(Some(&buffer)))
+        .wrap()?
+        .ReadBytes(&mut bytes)
+        .wrap()?;
+
+    std::fs::create_dir_all("./target/audio").wrap()?;
+    std::fs::write("./target/audio/hello.wav", bytes).wrap()?;
 
     Ok(())
 }
 
-/// A type used to wrap arbitrary Debuggable error types as result Diagnostics.
-///
-/// This shouldn't be used on types that already implement Diagnostic.
 #[derive(Debug, thiserror::Error, miette::Diagnostic)]
 #[error("{0}{1}")]
 pub(crate) struct WrappedError(&'static str, String);

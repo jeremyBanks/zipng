@@ -1,3 +1,5 @@
+#![cfg_attr(debug_assertions, allow(unused))]
+
 use std::any::type_name;
 use std::any::Any;
 use std::any::TypeId;
@@ -17,11 +19,13 @@ use windows::Storage::Streams::Buffer;
 use windows::Storage::Streams::DataReader;
 use windows::Storage::Streams::IBuffer;
 
-mod tts;
-use tts::*;
+use self::fic::*;
+use self::sept::*;
+use self::tts::*;
 
 mod fic;
-use fic::*;
+mod sept;
+mod tts;
 
 #[instrument]
 fn main() -> Result<(), miette::Report> {
@@ -45,6 +49,8 @@ fn main() -> Result<(), miette::Report> {
 
 #[instrument]
 async fn app() -> Result<(), miette::Report> {
+    test();
+
     let synth = SpeechSynthesizer::new().wrap()?;
 
     let voice = synth.Voice().wrap()?;

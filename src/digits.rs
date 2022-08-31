@@ -24,22 +24,30 @@ struct Digitizer<const DIGITS: u8, N: self::N> {
     _n: PhantomData<N>,
 }
 
-/// base 10, decimal
 static DIGITS_B10: &'static [u8; 10] = b"0123456789";
-/// base 16, uppercase hexadecimal
+
 static DIGITS_B16: &'static [u8; 16] = b"0123456789ABCDEF";
-/// base 32, crawford's uppercase alphabet
+
 static DIGITS_B32: &'static [u8; 32] = b"0123456789ABCDEFGHJKMNPQRSTVWXYZ";
-/// base 64, web-safe alphabet but non-standard ordering (still in unicode block
-/// #1 / ascii)
+
 static DIGITS_B64: &'static [u8; 64] =
-    b"0123456789ABCDEFGHJKMNPQRSTVWXYZLIOU-_abcdefghijklmnopqrstuvwxyz";
-/// base 128, adding ASCII `+` and `=` and accented characters in the Latin-1
-/// Supplement unicode block (#2)
-static DIGITS_B128: Vec<char> = "0123456789ABCDEFGHJKMNPQRSTVWXYZLIOU-_abcdefghijklmnopqrstuvwxyzàáâãäåæèéêëìíîïòóôõöøùúûüçðñýÿþÀÁÂÃÄÅÆÈÉÊËÌÍÎÏÒÓÔÕÖØÙÚÛÜÇÐÑÝŸÞµ×".chars().collect();
-/// base 256, adding all of characters in the Latin Extended-A unicode block
-/// (#3) except for the depcreated "ŉ"
-static DIGITS_B256: Vec<char> = "0123456789ABCDEFGHJKMNPQRSTVWXYZLIOU-_abcdefghijklmnopqrstuvwxyzàáâãäåæèéêëìíîïòóôõöøùúûüçðñýÿþÀÁÂÃÄÅÆÈÉÊËÌÍÎÏÒÓÔÕÖØÙÚÛÜÇÐÑÝŸÞµ×ĀāĂăĄąĆćĈĉĊċČčĎďĐđĒēĔĕĖėĘęĚěĜĝĞğĠġĢģĤĥĦħĨĩĪīĬĭĮįİıĲĳĴĵĶķĸĹĺĻļĽľĿŀŁłŃńŅņŇňſŊŋŌōŎŏŐőŒœŔŕŖŗŘřŚśŜŝŞşŠšŢţŤťŦŧŨũŪūŬŭŮůŰűŲųŴŵŶŷŸŹźŻżŽž÷".chars().collect();
+    b"0123456789ABCDEFGHJKMNPQRSTVWXYZLIOUabcdefghijklmnopqrstuvwxyz-_";
+
+static DIGITS_B256: Vec<char> = "
+0123456789
+ABCDEFGHJKMNPQRSTVWXYZLIOU
+abcdefghijklmnopqrstuvwxyz
+-_
+àáâãäåāăąƀƃćĉċčçƈďđèéêëēĕėęěƒĝğġģĥħìíîïĩīĭįĵķƙĺļľŀłńņňñŋōŏőòóôõöơŕŗřśŝşšţťŧƭũūŭůűùúûüųưŵŷýÿƴźżžƶÀÁÂÃÄÅĀĂĄɃƂĆĈĊČÇƇĎĐÈÉÊËĒĔĖĘĚƑĜĞĠĢĤĦÌÍÎÏĨĪĬĮĴĶƘĹĻĽĿŁŃŅŇÑŊŌŎŐÒÓÔÕÖƠŔŖŘŚŜŞŠŢŤŦƬŨŪŬŮŰÙÚÛÜŲƯŴŶÝŸƳŹŻŽƵ".chars().collect();
+
+/// base 65536, this is a dumb idea.
+/// Extends our alphabet with characters chosen using https://qntm.org/safe. Assuming the letters we chose above
+/// are "safe" by his definition, and won't be mangled by normalization? If they
+/// are... well, we gotta trash those. This is used to fit UUIDs into 8
+/// "digits", as `UU________`. Bro you're totally being silly now. Anyway, it
+/// looks like he isn't building on top of ascii at all, so we have to
+/// at minimum swap out the first two blocks, if not everything.
+static DIGITS_B65536: Vec<char> = vec![];
 
 impl<const DIGITS: u8, N: self::N> Digitizer<DIGITS, N> {
     fn max_input() -> Input {

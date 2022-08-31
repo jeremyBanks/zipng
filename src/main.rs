@@ -19,12 +19,12 @@ use windows::Storage::Streams::Buffer;
 use windows::Storage::Streams::DataReader;
 use windows::Storage::Streams::IBuffer;
 
+use self::digits::*;
 use self::fic::*;
-use self::sept::*;
 use self::tts::*;
 
+mod digits;
 mod fic;
-mod sept;
 mod tts;
 
 #[instrument]

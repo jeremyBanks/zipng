@@ -25,6 +25,7 @@ use self::tts::*;
 
 mod digits;
 mod fic;
+mod royalroad;
 mod tts;
 
 #[instrument]

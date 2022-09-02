@@ -24,31 +24,41 @@ struct Digitizer<const DIGITS: u8, N: self::N> {
     _n: PhantomData<N>,
 }
 
-static DIGITS_B10: &'static [u8; 10] = b"0123456789";
+static ALPHABET_B64: [char; 64] = [
+    '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'J',
+    'K', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'X', 'Y', 'Z', 'L', 'I', 'O', 'U', 'a', 'b',
+    'c', 'd', 'e', 'f', 'g', 'h', 'j', 'k', 'm', 'n', 'p', 'q', 'r', 's', 't', 'v', 'w', 'x', 'y',
+    'z', 'l', 'i', 'o', 'u', '=', '-',
+];
 
-static DIGITS_B16: &'static [u8; 16] = b"0123456789ABCDEF";
+static ALPHABET_B32: &[char; 32] = ALPHABET_B64[..32].try_into().unwrap();
 
-static DIGITS_B32: &'static [u8; 32] = b"0123456789ABCDEFGHJKMNPQRSTVWXYZ";
+static PREFIXES_HI: [char; 15] = [
+    '\u{300}', '\u{301}', '\u{302}', '\u{303}', '\u{304}', '\u{306}', '\u{307}', '\u{308}',
+    '\u{30A}', '\u{30C}', '\u{33F}', '\u{313}', '\u{311}', '\u{30E}', '\u{346}',
+];
+static PREFIXES_LO: [char; 15] = [
+    '\u{316}', '\u{317}', '\u{32D}', '\u{330}', '\u{331}', '\u{32E}', '\u{323}', '\u{324}',
+    '\u{325}', '\u{32C}', '\u{333}', '\u{326}', '\u{31E}', '\u{348}', '\u{33A}',
+];
 
-static DIGITS_B64: &'static [u8; 64] =
-    b"0123456789ABCDEFGHJKMNPQRSTVWXYZLIOUabcdefghijklmnopqrstuvwxyz-_";
+// 16 bits per digit (letting us pack 128 bits in 8 visible characters)?`
+// So UUIDs can fit in our 10 character scheme using the `UU` prefix
+// which is fixed at 16 bits per digit (since UUID-style IDs don't have
+// a distribution that would benefit from dynamic encodings)
+// What's 128 encoded into two characters using our dynamic base scheme?
+//
+// These seem unreadable. What else can we do?
+// Maybe we do support stacking accents, and define a zero accent that is only
+// used when stacking? depends if all of the combining characters support
+// actually combining like that.
+static COMBINE_OUTSIDE_1_CIRCLE: char = '\u{20DD}';
+static COMBINE_OUTSIDE_2_SQUARE: char = '\u{20DE}';
+static COMBINE_OUTSIDE_3_DIAMOND: char = '\u{20DF}';
 
-static DIGITS_B256: Vec<char> = "
-0123456789
-ABCDEFGHJKMNPQRSTVWXYZLIOU
-abcdefghijklmnopqrstuvwxyz
--_
-àáâãäåāăąƀƃćĉċčçƈďđèéêëēĕėęěƒĝğġģĥħìíîïĩīĭįĵķƙĺļľŀłńņňñŋōŏőòóôõöơŕŗřśŝşšţťŧƭũūŭůűùúûüųưŵŷýÿƴźżžƶÀÁÂÃÄÅĀĂĄɃƂĆĈĊČÇƇĎĐÈÉÊËĒĔĖĘĚƑĜĞĠĢĤĦÌÍÎÏĨĪĬĮĴĶƘĹĻĽĿŁŃŅŇÑŊŌŎŐÒÓÔÕÖƠŔŖŘŚŜŞŠŢŤŦƬŨŪŬŮŰÙÚÛÜŲƯŴŶÝŸƳŹŻŽƵ".chars().collect();
-
-/// base 65536, this is a dumb idea.
-/// Extends our alphabet with characters chosen using https://qntm.org/safe. Assuming the letters we chose above
-/// are "safe" by his definition, and won't be mangled by normalization? If they
-/// are... well, we gotta trash those. This is used to fit UUIDs into 8
-/// "digits", as `UU________`. Bro you're totally being silly now. Anyway, it
-/// looks like he isn't building on top of ascii at all, so we have to
-/// at minimum swap out the first two blocks, if not everything.
-static DIGITS_B65536: Vec<char> = vec![];
-
+// This doesn't need to be generic.
+// Or at least, the trait doesn't. Convert on output if you insist.
+// Just operate on u64s. Nothing needs to be
 impl<const DIGITS: u8, N: self::N> Digitizer<DIGITS, N> {
     fn max_input() -> Input {
         Input::from(u32::max_value())

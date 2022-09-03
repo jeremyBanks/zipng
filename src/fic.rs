@@ -14,7 +14,6 @@ type u160 = [u8; 20];
 #[allow(non_camel_case_types)]
 type u256 = [u8; 32];
 
-
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 pub enum Identifier {
     /// `BN` ISBN (without a check digit)

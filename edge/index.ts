@@ -2,78 +2,115 @@ import {
   Application,
   Context,
   Router,
+  STATUS_TEXT,
 } from "https://deno.land/x/oak@v11.1.0/mod.ts";
 
 const ficRouter = new Router()
-  .get("/B([:+_=-]*):id([0-9A-Z]{9})", (context) => {
-    const id = `B${context.params.id.toUpperCase()}`;
-    context.response.redirect(`https://amazon.com/dp/${id}`);
+  .get("/N([:+_=-]*):id([0-9]{9})", ({ params, response }) => {
+    // XXX: this is missing the check digit
+    const id = parseInt(params.id, 10).toString(10).padStart(9, "0");
+    response.redirect(`https://openlibrary.org/isbn/${id}`);
   })
-  .get("/ROYAL([:+_=-]*):id([0-9]{5})", (context) => {
-    const id = parseInt(context.params.id, 10);
-    context.response.redirect(`https://royalroad.com/fiction/${id}`);
+  .get("/B([:+_=-]*):id([0-9A-Z]{9})", ({ params, response }) => {
+    const id = `B${params.id.toUpperCase()}`;
+    response.redirect(`https://read.amazon.com/?asin=${id}`);
   })
-  .get("/FF([:+_=-]*):id([0-9]{8})", (context) => {
-    const id = parseInt(context.params.id, 10);
-    context.response.redirect(`https://fanfiction.net/s/${id}`);
+  .get("/ROYAL([:+_=-]*):id([0-9]{5})", ({ params, response }) => {
+    const id = parseInt(params.id, 10);
+    response.redirect(`https://royalroad.com/fiction/${id}`);
   })
-  .get("/AO([:+_=-]*):id([0-9]{8})", (context) => {
-    const id = parseInt(context.params.id, 10);
-    context.response.redirect(`https://archiveofourown.org/works/${id}`);
+  .get("/FF([:+_=-]*):id([0-9]{8})", ({ params, response }) => {
+    const id = parseInt(params.id, 10);
+    response.redirect(`https://fanfiction.net/s/${id}`);
   })
-  .get("/OL([:+_=-]*):id([0-9]{8})", (context) => {
-    const id = `OL${parseInt(context.params.id, 10)}W`;
-    context.response.redirect(`https://openlibrary.org/works/${id}`);
+  .get("/FP([:+_=-]*):id([0-9]{8})", ({ params, response }) => {
+    const id = parseInt(params.id, 10);
+    response.redirect(`https://fictionpress.com/s/${id}`);
   })
-  .get("/WAT([:+_=-]*):id([0-9]{7})", (context) => {
-    const id = parseInt(context.params.id, 10);
-    context.response.redirect(`https://wattpad.com/story/${id}`);
+  .get("/AO([:+_=-]*):id([0-9]{8})", ({ params, response }) => {
+    const id = parseInt(params.id, 10);
+    response.redirect(`https://archiveofourown.org/works/${id}`);
+  })
+  .get("/OL([:+_=-]*):id([0-9]{8})", ({ params, response }) => {
+    const id = `OL${parseInt(params.id, 10)}W`;
+    response.redirect(`https://openlibrary.org/works/${id}`);
+  })
+  .get("/WAT([:+_=-]*):id([0-9]{7})", ({ params, response }) => {
+    const id = parseInt(params.id, 10);
+    response.redirect(`https://wattpad.com/story/${id}`);
+  })
+  .get("/WN([:+_=-]*):id([0-9]{9})", ({ params, response }) => {
+    const id = parseInt(params.id, 10);
+    response.redirect(`https://webnovel.com/book/${id}`);
   });
+
+const examplesRouter = new Router()
+  .get("/", ({ response }) => response.redirect("/FF________"))
+  .get("/AO(_{0,8})", ({ response }) => response.redirect("/AO05627803"))
+  .get("/B(_{0,9})", ({ response }) => response.redirect("/B09T7ZN7NC"))
+  .get("/FF(_{0,8})", ({ response }) => response.redirect("/FF10360716"))
+  .get("/FP(_{0,8})", ({ response }) => response.redirect("/FP03248665"))
+  .get("/OL(_{0,8})", ({ response }) => response.redirect("/OL3418158"))
+  .get("/ROYAL(_{0,5})", ({ response }) => response.redirect("/ROYAL25137"))
+  .get("/N(_{0,9})", ({ response }) => response.redirect("/N076532635"));
 
 const isbnRouter = new Router()
-  .get("/(01|gtin|isbn|ian|ean|upc)/:id([0-9]{8,14})", (context) => {
-    const id = context.params.id;
-    context.response.redirect(`https://openlibrary.org/isbn/${id}`);
-  });
+  .get(
+    "/(01|gtin|isbn|ian|ean|upc)/:id([0-9]{8,14})",
+    ({ params, response }) => {
+      const id = params.id;
+      // XXX: this should redirect to /N... instead
+      response.redirect(`https://openlibrary.org/isbn/${id}`);
+    },
+  );
 
 const debugRouter = new Router()
-  .get("/:status([2345][0-9][0-9])", (context) => {
-    context.response.status = parseInt(context.params.status, 10);
+  .get("/:status([0-9]{3})", ({ params, response }) => {
+    const status = parseInt(params.status, 10);
+    if (
+      status >= 200 && status != 204 && status != 205 && status != 206 &&
+      status != 208 && status != 304 && status <= 599
+    ) {
+      response.status = status;
+    }
   });
 
 const defaultBodies = async (
-  context: Context,
+  { request, response }: Context,
   next: () => Promise<unknown>,
 ) => {
-  console.debug(`${context.request.method} ${context.request.url} ...`);
+  console.debug(`${request.method} ${request.url} ...`);
   await next();
-  const status = context.response.status;
-  const useDefaultBody = !context.response.body &&
-    !context.response.type &&
-    ["GET", "POST"].includes(context.request.method) && (
-      status > 100 && status != 204 && status != 206 && status != 304
+  const status = response.status;
+  const text = STATUS_TEXT[status] ?? "Error";
+  const useDefaultBody = !response.body &&
+    !response.type &&
+    ["GET", "POST"].includes(request.method) && (
+      status >= 200 && status != 204 && status != 205 && status != 206 &&
+      status != 208 && status != 304 && status <= 599
     );
   if (useDefaultBody) {
-    context.response.status = status;
+    response.status = status;
     const s = (status - 200) / 399;
     const bg = ((Math.min(255, Math.max(0, Math.floor(200 * s - 5))) << 16) +
       (Math.min(255, Math.max(0, Math.floor(40 * s))) << 8) +
       (Math.min(255, Math.max(0, Math.floor(32 * (1 - s)))))).toString(16)
       .padStart(6, "0");
-    context.response.type = "text/html;charset=utf-8";
-    context.response.body =
-      `<!doctype html><style>head,title{display:flex}html{` +
-      `background:#${bg};color:#FFF;font:bold clamp(16px,50vh,25vw)sans-serif;padding:clamp(8px,20vh,10vw);` +
-      `user-select:none;-webkit-text-fill-color:rgba(255,255,255,0.125);-webkit-text-stroke:max(2px,min(1vw))` +
-      `}</style><title>${status}`;
+    response.type = "text/html;charset=utf-8";
+    response.body = `<!doctype html><style>head,title{display:flex}html{` +
+      `background:#${bg};color:#FFF;font:bold clamp(16px,25vh,10vw)sans-serif;` +
+      `padding:clamp(8px,10vh,5vw);user-select:none;-webkit-text-fill-color:` +
+      `rgba(255,255,255,0.125);-webkit-text-stroke:max(2px,min(0.30vw))` +
+      `}</style><title>${status}: ${text}`;
   }
-  console.debug(`${context.request.method} ${context.request.url} ${status}`);
+  console.debug(`${request.method} ${request.url} ${status}`);
 };
 
 const app = new Application()
   .use(defaultBodies)
   .use(ficRouter.routes())
   .use(isbnRouter.routes())
+  .use(examplesRouter.routes())
   .use(debugRouter.routes());
 
 console.info(`Listening...`);

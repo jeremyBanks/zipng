@@ -47,6 +47,23 @@ static AUGMENTS: &[(u32, &[char])] = &[
     ]),
 ];
 
+pub struct Base(Alphabet, Augment);
+
+pub enum Alphabet {
+    B10,
+    B16,
+    B32,
+    B36,
+    B64,
+}
+
+pub enum Augment {
+    None,
+    A4,
+    A8,
+    A8X()
+}
+
 static TOWERS: &[u32] = &[16, 16, 16];
 
 fn main() {

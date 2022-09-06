@@ -7,5 +7,5 @@
   "tasks": {
     "start": "deno fmt && deno run --lock-write --lock=./deno/lock.json --allow-all --watch ./deno/dev.ts"
   },
-  "importMap": "./deno/imports.json"
+  "importMap": "./deno/import_map.json"
 }

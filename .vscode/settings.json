@@ -1,6 +1,6 @@
 {
-  "deno.enablePaths": [
-    "./edge"
-  ],
-  "deno.enable": true
+  "deno.enablePaths": ["./fresh"],
+  "deno.enable": true,
+  "deno.lint": true,
+  "editor.defaultFormatter": "denoland.vscode-deno"
 }

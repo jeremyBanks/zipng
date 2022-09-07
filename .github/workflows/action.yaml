@@ -17,19 +17,8 @@
           "uses": "actions/checkout@v3"
         },
         {
-          "name": "rust tooling",
-          "uses": "dtolnay/rust-toolchain@nightly",
-          "with": {
-            "components": "clippy, rustfmt"
-          }
-        },
-        {
           "name": "deno tooling",
           "uses": "denoland/setup-deno@v1"
-        },
-        {
-          "name": "rust build",
-          "run": "cargo build --locked"
         },
         {
           "name": "deno build",
@@ -41,18 +30,8 @@
           "continue-on-error": true
         },
         {
-          "name": "rust formatting",
-          "run": "cargo fmt --check",
-          "continue-on-error": true
-        },
-        {
           "name": "deno lint",
-          "run": "deno lint --check",
-          "continue-on-error": true
-        },
-        {
-          "name": "rust lint",
-          "run": "cargo clippy",
+          "run": "deno lint",
           "continue-on-error": true
         },
         {
@@ -64,6 +43,27 @@
             "entrypoint": "main.ts",
             "import-map": "import_map.json",
           }
+        },
+        {
+          "name": "rust tooling",
+          "uses": "dtolnay/rust-toolchain@nightly",
+          "with": {
+            "components": "clippy, rustfmt"
+          }
+        },
+        {
+          "name": "rust build",
+          "run": "cargo build --locked"
+        },
+        {
+          "name": "rust formatting",
+          "run": "cargo fmt --check",
+          "continue-on-error": true
+        },
+        {
+          "name": "rust lint",
+          "run": "cargo clippy",
+          "continue-on-error": true
         }
       ]
     }

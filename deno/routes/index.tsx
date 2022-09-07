@@ -9,7 +9,7 @@ export default function Home() {
       <p class={tw`my-6`}>
         I'm feeling fresh.
       </p>
-      <Counter start={3} />
+      <Counter />
     </div>
   );
 }

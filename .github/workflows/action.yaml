@@ -46,7 +46,7 @@
         }
       ]
     },
-    "job": {
+    "rust": {
       "runs-on": "ubuntu-latest",
       "steps": [
         {

@@ -6,7 +6,7 @@
     "workflow_dispatch"
   ],
   "jobs": {
-    "job": {
+    "deno": {
       "runs-on": "ubuntu-latest",
       "permissions": {
         "id-token": "write",
@@ -43,13 +43,14 @@
             "entrypoint": "main.ts",
             "import-map": "import_map.json",
           }
-        },
+        }
+      ]
+    },
+    "job": {
+      "runs-on": "ubuntu-latest",
+      "steps": [
         {
-          "name": "rust tooling",
-          "uses": "dtolnay/rust-toolchain@nightly",
-          "with": {
-            "components": "clippy, rustfmt"
-          }
+          "uses": "actions/checkout@v3"
         },
         {
           "name": "rust build",

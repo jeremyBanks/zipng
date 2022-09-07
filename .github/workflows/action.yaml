@@ -1,0 +1,71 @@
+{
+  "name": "action",
+  "on": [
+    "push",
+    "pull_request",
+    "workflow_dispatch"
+  ],
+  "jobs": {
+    "job": {
+      "runs-on": "ubuntu-latest",
+      "permissions": {
+        "id-token": "write",
+        "contents": "read"
+      },
+      "steps": [
+        {
+          "uses": "actions/checkout@v3"
+        },
+        {
+          "name": "rust tooling",
+          "uses": "dtolnay/rust-toolchain@nightly",
+          "with": {
+            "components": "clippy, rustfmt"
+          }
+        },
+        {
+          "name": "deno tooling",
+          "uses": "denoland/setup-deno@v1"
+        },
+        {
+          "name": "rust build",
+          "run": "cargo build --locked"
+        },
+        {
+          "name": "deno build",
+          "run": "deno check --lock deno/lock.json deno/main.ts"
+        },
+        {
+          "name": "deno formatting",
+          "run": "deno fmt --check",
+          "continue-on-error": true
+        },
+        {
+          "name": "rust formatting",
+          "run": "cargo fmt --check",
+          "continue-on-error": true
+        },
+        {
+          "name": "deno lint",
+          "run": "deno lint --check",
+          "continue-on-error": true
+        },
+        {
+          "name": "rust lint",
+          "run": "cargo clippy",
+          "continue-on-error": true
+        },
+        {
+          "name": "deno deploy",
+          "uses": "denoland/deployctl@v1",
+          "with": {
+            "project": "fic",
+            "root": "deno",
+            "entrypoint": "main.ts",
+            "import-map": "import_map.json",
+          }
+        }
+      ]
+    }
+  }
+}

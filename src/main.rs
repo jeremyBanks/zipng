@@ -1,71 +1,68 @@
-#![allow(unused)]
+#![cfg_attr(debug_assertions, allow(unused))]
 
-use std::collections::BTreeMap;
+use scraper::Html;
+use tracing::instrument;
+use tracing::metadata::LevelFilter;
+use tracing::info as log;
+use tracing_subscriber::fmt::format::FmtSpan;
 
-// Stop with the unusual orderings.
-// Everything should be lexicographic. They just might not superset each
-// other.
+use wrapped_error::DebugResultExt;
+use serde::Deserialize;
+use scraper::Selector;
 
-static BASES: &[(u32, &[char])] = &[
-    (10, &['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']),
-    (16, &[
-        '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F',
-    ]),
-    (32, &[
-        '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H',
-        'J', 'K', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'X', 'Y', 'Z',
-    ]),
-    (36, &[
-        '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H',
-        'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
-    ]),
-    (64, &[
-        '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H',
-        'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
-        'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r',
-        's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '-', '_',
-    ]),
-];
+use std::format as f;
+use bstr::{BStr, ByteSlice, ByteVec};
 
-static AUGMENTS: &[(u32, &[char])] = &[
-    (0, &[]),
-    (4, &[
-        '̀', // ̀_ 0x0300 grave
-        '́', // ́_ 0x0301 acute
-        '̂', // ̂_ 0x0302 circumflex
-        '̊', // ̊_ 0x030A ring
-    ]),
-    (8, &[
-        '̀', // ̀_ 0x0300 grave
-        '́', // ́_ 0x0301 acute
-        '̂', // ̂_ 0x0302 circumflex
-        '̊', // ̊_ 0x030A ring
-        '̌', // ̌_ 0x030C caron
-        '̽', // ̽_ 0x033D x
-        '͆', // ͆_ 0x0346 bridge
-        '͛', // ͛_ 0x035B zigzag
-    ]),
-];
+mod wrapped_error;
 
-pub struct Base(Alphabet, Augment);
+#[tokio::main(flavor = "current_thread")]
+async fn main() -> Result<(), miette::Report> {
+    tracing::subscriber::set_global_default(
+        tracing_subscriber::fmt()
+            .with_max_level(LevelFilter::INFO)
+            .with_target(false)
+            .with_level(false)
+            .with_span_events(FmtSpan::FULL)
+            .with_file(true)
+            .with_line_number(true)
+            .without_time()
+            .finish(),
+    )
+    .wrap()?;
 
-pub enum Alphabet {
-    B10,
-    B16,
-    B32,
-    B36,
-    B64,
+    let ryl_story_id: u32 = 22518;
+    let archive_datetime: u64 = 2022_03_24_02_32_33;
+
+    let fic_url = f!["https://www.royalroad.com/fiction/{ryl_story_id}"];
+    let archived_fic_url = f!["https://web.archive.org/web/{archive_datetime}/{fic_url}"];
+
+    let html = reqwest::get(fic_url).await.wrap()?.text().await.wrap()?;
+
+    let document = Html::parse_document(&html);
+
+    // let next = Selector::parse("link[rel=next]").wrap()?;
+
+    let chapters = Selector::parse("table#chapters tbody tr").wrap()?;
+    for chapter in document.select(&chapters) {
+        for text in chapter.text() {
+            let s = BStr::new(text.as_bytes().trim());
+            if !s.is_empty() {
+                log!("{s}");
+            }
+        }
+    }
+
+    Ok(())
 }
 
-pub enum Augment {
-    None,
-    A4,
-    A8,
-    A8X()
-}
-
-static TOWERS: &[u32] = &[16, 16, 16];
-
-fn main() {
-    println!("Hello, world!");
+#[derive(Deserialize)]
+struct ChapterMeta {
+    id: u32,
+    volume_id: Option<u32>,
+    title: String,
+    slug: String,
+    date: String,
+    order: u32,
+    visible: u8,
+    url: String,
 }

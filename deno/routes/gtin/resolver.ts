@@ -1,4 +1,3 @@
-/** @jsx h */
 import { Handler, PageProps } from "$fresh/server.ts";
 
 export const config = {

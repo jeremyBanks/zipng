@@ -2,6 +2,7 @@
 // This file SHOULD be checked into source version control.
 // This file is automatically updated during development when running `dev.ts`.
 
+import config from "./deno.json" assert { type: "json" };
 import * as $0 from "./routes/RYL[id].tsx";
 import * as $1 from "./routes/_404.ts";
 import * as $2 from "./routes/_500.ts";
@@ -16,6 +17,7 @@ const manifest = {
   },
   islands: {},
   baseUrl: import.meta.url,
+  config,
 };
 
 export default manifest;

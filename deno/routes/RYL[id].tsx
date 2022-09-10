@@ -1,4 +1,3 @@
-/** @jsx h */
 import { Handlers } from "$fresh/server.ts";
 
 export const config = {

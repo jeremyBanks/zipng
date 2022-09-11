@@ -96,7 +96,7 @@ impl<T> Record for T where
 
 async fn load<Output: Record>(
     path: Option<&Path>,
-    fetch: impl FnOnce() -> Box<dyn Future<Output = Result<Output, ErrorReport>> + Unpin>,
+    fetch: impl FnOnce() -> tokio::task::JoinHandle<Result<Output, ErrorReport>>,
 ) -> Result<Output, ErrorReport> {
     trace!("Loading {path:?}");
 
@@ -118,7 +118,7 @@ async fn load<Output: Record>(
         }
     }
 
-    let fetched = Box::pin(fetch()).await?;
+    let fetched = Box::pin(fetch()).await.wrap()??; // lol oops
 
     todo!()
 }
@@ -130,7 +130,7 @@ macro_rules! load {
             let path = Path::new(&path);
             let output$(: $output)? = load(
                 Some(path),
-                || Box::new(async $($move)? { Ok({ $($body)* }) }),
+                $($move)? || tokio::spawn(async $($move)? { Ok({ $($body)* }) }),
             ).await?;
             Ok::<_, ErrorReport>(output)
         }
@@ -140,7 +140,7 @@ macro_rules! load {
         {
             let output$(: $output)? = load(
                 None,
-                || Box::new(async $($move)? { Ok({ $($body)* }) }),
+                $($move)? || tokio::spawn(async $($move)? { Ok({ $($body)* }) }),
             ).await?;
             Ok::<_, ErrorReport>(output)
         }
@@ -150,7 +150,7 @@ macro_rules! load {
         {
             let output = load(
                 None,
-                || Box::new(async { Ok({ $($body)* }) }),
+                || tokio::spawn(async { Ok({ $($body)* }) }),
             ).await?;
             Ok::<_, ErrorReport>(output)
         }

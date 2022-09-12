@@ -21,6 +21,8 @@ use scraper::Selector;
 use serde::de::DeserializeOwned;
 use serde::Deserialize;
 use serde::Serialize;
+use tokio::io::AsyncReadExt;
+use tokio::io::AsyncWriteExt;
 use tracing::debug;
 use tracing::info;
 use tracing::instrument;
@@ -118,7 +120,7 @@ async fn load<Output: Record>(
         }
     }
 
-    let fetched = Box::pin(fetch()).await.wrap()??; // lol oops
+    let fetched = fetch().await.wrap()??; // uh oh
 
     todo!()
 }

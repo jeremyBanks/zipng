@@ -7,6 +7,7 @@ import * as $0 from "./routes/RYL[id].tsx";
 import * as $1 from "./routes/_404.ts";
 import * as $2 from "./routes/_500.ts";
 import * as $3 from "./routes/gtin/resolver.ts";
+import * as $4 from "./routes/index.tsx";
 
 const manifest = {
   routes: {
@@ -14,6 +15,7 @@ const manifest = {
     "./routes/_404.ts": $1,
     "./routes/_500.ts": $2,
     "./routes/gtin/resolver.ts": $3,
+    "./routes/index.tsx": $4,
   },
   islands: {},
   baseUrl: import.meta.url,

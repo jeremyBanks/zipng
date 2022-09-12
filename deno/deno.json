@@ -7,9 +7,9 @@
     }
   },
   "tasks": {
-    "start": "deno fmt && deno run --lock-write --lock=./deno/lock.json --allow-all --watch=./deno/routes ./deno/dev.ts"
+    "start": "deno fmt && deno run --lock-write --lock=./lock.json --allow-all --watch=./routes ./dev.ts"
   },
-  "importMap": "./deno/import_map.json",
+  "importMap": "./import_map.json",
   "compilerOptions": {
     "jsx": "react-jsx",
     "jsxImportSource": "preact"

@@ -11,4 +11,7 @@ import twindPlugin from "$fresh/plugins/twind.ts";
 import fontsPlugin from "./plugins/fonts.ts";
 import twindConfig from "./twind.config.ts";
 
-await start(manifest, { plugins: [twindPlugin(twindConfig), fontsPlugin] });
+await start(manifest, {
+  port: Deno.env.get("DENO_DEPLOYMENT_ID") ? 8000 : 80,
+  plugins: [twindPlugin(twindConfig), fontsPlugin],
+});

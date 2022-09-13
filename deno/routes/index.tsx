@@ -2,7 +2,7 @@ import { PageProps } from "https://deno.land/x/fresh/server.ts";
 
 export default function IndexPage(props: PageProps) {
   return (
-    <main className="container mx-auto p-8 text-amber-100">
+    <main className="container mx-auto py-sm px-xs text-amber-100">
       <h1 className="text-2xl font-bold mb-8 mt-16">
         Welcome
       </h1>

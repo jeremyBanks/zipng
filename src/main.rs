@@ -1,5 +1,8 @@
 #![cfg_attr(debug_assertions, allow(unused))]
 
+use std::borrow::Cow;
+use std::borrow::Cow::Borrowed;
+use std::borrow::Cow::Owned;
 use std::collections::BTreeSet;
 use std::fmt::Debug;
 use std::format as f;
@@ -11,16 +14,20 @@ use std::hash::Hash;
 use std::hash::Hasher;
 use std::path::Path;
 use std::pin::Pin;
+use std::sync::Arc;
 
 use bstr::BStr;
 use bstr::ByteSlice;
 use bstr::ByteVec;
 use miette::Report as ErrorReport;
+use once_cell::sync::Lazy;
+use once_cell::sync::OnceCell;
 use scraper::Html;
 use scraper::Selector;
 use serde::de::DeserializeOwned;
 use serde::Deserialize;
 use serde::Serialize;
+use static_assertions::assert_obj_safe;
 use tokio::io::AsyncReadExt;
 use tokio::io::AsyncWriteExt;
 use tracing::debug;
@@ -54,7 +61,7 @@ async fn main() -> Result<(), ErrorReport> {
     )
     .wrap()?;
 
-    let ryl_story_id: u32 = 22518;
+    let ryl_story_id: u64 = 22518;
     let archive_datetime: u64 = 2022_03_24_02_32_33;
 
     let fic_url = f!["https://www.royalroad.com/fiction/{ryl_story_id}"];
@@ -173,8 +180,8 @@ mod web {
 
     #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
     pub struct Page {
-        url: String,
-        url_final: String,
+        url: Arc<str>,
+        url_final: Arc<str>,
         content_type: Option<String>,
         body: Vec<u8>,
     }
@@ -196,8 +203,8 @@ mod web {
             Page {
                 body,
                 content_type,
-                url,
-                url_final,
+                url: url.into(),
+                url_final: url_final.into(),
             }
         })
     }
@@ -213,7 +220,7 @@ mod ia {
 
     #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
     pub struct Page {
-        url: String,
+        url: Arc<str>,
         datetime: u64,
         body: Vec<u8>,
     }
@@ -227,40 +234,233 @@ mod ia {
     }
 }
 
-mod royalroad {
-
+mod fic {
     use super::*;
 
+    /// `Fic` represents the full contents and metadata of a fic.
+    assert_obj_safe!(Fic<Chapter = dyn FicChapter, Chapters = Vec<Box<dyn FicChapter>>>);
+    pub trait Fic {
+        /// A unique identifier for the site this fic was originally published
+        /// on.
+        fn site_id(&self) -> &'static str;
+
+        /// The ID of the fic. This is unique per-site.
+        fn id(&self) -> u64;
+
+        /// The title of the fic.
+        fn title(&self) -> Cow<Arc<str>> {
+            Owned(format!("Untitled {}-{}", self.site_id(), self.id()).into())
+        }
+
+        type Chapter: FicChapter;
+        type Chapters: IntoIterator<Item = Self::Chapter>;
+        fn chapters(&self) -> &Self::Chapters;
+
+        /// Timestamp of publication/creation as seconds from unix epoch, if
+        /// known.
+        fn published(&self) -> Option<u64> {
+            None
+        }
+    }
+
+    pub trait FicChapter {
+        /// A unique identifier for the site this fic was originally published
+        /// on.
+        fn site_id(&self) -> &'static str;
+
+        /// The ID of the chapter. This is unique per-site.
+        fn id(&self) -> u64;
+
+        /// The title of the chapter.
+        fn title(&self) -> Cow<Arc<str>> {
+            Owned(format!("Untitled {}", self.id()).into())
+        }
+
+        /// The source HTML of the chapter, as it was originally published.
+        ///
+        /// This may not be suitable for direct inclusion in other documents.
+        fn html_original(&self) -> Cow<Arc<str>>;
+
+        /// Timestamp of publication/creation as seconds from unix epoch, if
+        /// known.
+        fn published(&self) -> Option<u64> {
+            None
+        }
+    }
+
+    /// `Spine` represents the shallow cover/metadata/index/TOC of a fic
+    /// (i.e. it's a [`Fic`] without the chapter contents).
+    assert_obj_safe!(Spine<Chapter = dyn SpineChapter, Chapters = Vec<Box<dyn SpineChapter>>>);
+    pub trait Spine {
+        /// A unique identifier for the site this fic was originally published
+        /// on.
+        fn site_id(&self) -> &'static str;
+
+        /// The ID of the fic. This is unique per-site.
+        fn id(&self) -> u64;
+
+        /// The title of the fic.
+        fn title(&self) -> Cow<Arc<str>> {
+            Owned(format!("Untitled {}-{}", self.site_id(), self.id()).into())
+        }
+
+        type Chapter: SpineChapter;
+        type Chapters: IntoIterator<Item = Self::Chapter>;
+        fn chapters(&self) -> &Self::Chapters;
+
+        /// Timestamp of publication/creation as seconds from unix epoch, if
+        /// known.
+        fn published(&self) -> Option<u64> {
+            None
+        }
+    }
+
+    pub trait SpineChapter {
+        /// A unique identifier for the site this fic was originally published
+        /// on.
+        fn site_id(&self) -> &'static str {
+            "RYL"
+        }
+
+        /// The ID of the chapter. This is unique per-site.
+        fn id(&self) -> u64;
+
+        /// The title of the chapter.
+        fn title(&self) -> Cow<Arc<str>> {
+            Owned(format!("Untitled {}", self.id()).into())
+        }
+
+        /// Timestamp of publication/creation as seconds from unix epoch, if
+        /// known.
+        fn published(&self) -> Option<u64> {
+            None
+        }
+    }
+}
+
+mod royalroad {
+    use super::*;
+
+    static SITE_ID: &str = "RYL";
     static LOCAL_PREFIX: &str = "data/royalroad";
     static URL_PREFIX: &str = "https://www.royalroad.com";
 
     #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
     pub struct Fic {
-        pub fic: Cover,
-        pub chapters: Vec<Chapter>,
+        id: u64,
+        title: Arc<str>,
+        chapters: BTreeSet<FicChapter>,
+    }
+
+    impl fic::Fic for Fic {
+        fn site_id(&self) -> &'static str {
+            SITE_ID
+        }
+
+        fn id(&self) -> u64 {
+            self.id
+        }
+
+        fn title(&self) -> Cow<Arc<str>> {
+            Borrowed(&self.title)
+        }
+
+        type Chapter = FicChapter;
+        type Chapters = BTreeSet<FicChapter>;
+        fn chapters(&self) -> &Self::Chapters {
+            &self.chapters
+        }
     }
 
     #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
-    pub struct Cover {
-        pub id: u32,
-        pub title: String,
-        pub chapter_ids: BTreeSet<u32>,
+    pub struct FicChapter {
+        id: u64,
+        timestamp: u64,
+        title: Arc<str>,
+        html_original: Arc<str>,
+    }
+
+    impl fic::FicChapter for FicChapter {
+        fn site_id(&self) -> &'static str {
+            SITE_ID
+        }
+
+        fn id(&self) -> u64 {
+            self.id
+        }
+
+        fn title(&self) -> Cow<Arc<str>> {
+            Borrowed(&self.title)
+        }
+
+        fn html_original(&self) -> Cow<Arc<str>> {
+            Borrowed(&self.html_original)
+        }
+
+        fn published(&self) -> Option<u64> {
+            Some(self.timestamp)
+        }
     }
 
     #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
-    pub struct Chapter {
-        pub id: u32,
-        pub title: String,
-        pub html: String,
+    pub struct Spine {
+        id: u64,
+        title: Arc<str>,
+        chapters: BTreeSet<SpineChapter>,
     }
 
-    pub async fn fic(id: u32) -> Result<Fic, ErrorReport> {
-        let cover = load!("{LOCAL_PREFIX}/fics/{id}.json", async move || -> Cover {
+    impl fic::Spine for Spine {
+        fn site_id(&self) -> &'static str {
+            "RYL"
+        }
+
+        fn id(&self) -> u64 {
+            self.id
+        }
+
+        fn title(&self) -> Cow<Arc<str>> {
+            Borrowed(&self.title)
+        }
+
+        type Chapter = SpineChapter;
+        type Chapters = BTreeSet<SpineChapter>;
+        fn chapters(&self) -> &Self::Chapters {
+            &self.chapters
+        }
+    }
+
+    #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
+    pub struct SpineChapter {
+        id: u64,
+        timestamp: u64,
+        title: Arc<str>,
+    }
+
+    impl fic::SpineChapter for SpineChapter {
+        fn site_id(&self) -> &'static str {
+            "RYL"
+        }
+
+        fn id(&self) -> u64 {
+            self.id
+        }
+
+        fn title(&self) -> Cow<Arc<str>> {
+            Borrowed(&self.title)
+        }
+
+        fn published(&self) -> Option<u64> {
+            Some(self.timestamp)
+        }
+    }
+
+    pub async fn fic(id: u64) -> Result<Fic, ErrorReport> {
+        let cover = load!("{LOCAL_PREFIX}/fics/{id}.json", async move || -> Spine {
             let url = f!["{URL_PREFIX}/fiction/{id}"];
-            Cover {
+            Spine {
                 id: 0,
-                title: "TODO".to_string(),
-                chapter_ids: BTreeSet::new(),
+                title: "TODO".into(),
+                chapters: BTreeSet::new(),
             }
         })?;
 

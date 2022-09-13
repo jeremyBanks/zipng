@@ -1,8 +1,11 @@
 {
   "fmt": {
     "files": {
+      "include": [
+        ".."
+      ],
       "exclude": [
-        "./target"
+        "../target"
       ]
     }
   },

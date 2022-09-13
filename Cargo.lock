@@ -283,6 +283,7 @@ dependencies = [
  "scraper",
  "serde",
  "serde_json",
+ "static_assertions",
  "thiserror",
  "tokio",
  "tracing",

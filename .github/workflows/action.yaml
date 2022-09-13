@@ -22,16 +22,16 @@
         },
         {
           "name": "deno build",
-          "run": "deno check --lock deno/lock.json deno/main.ts"
+          "run": "cd deno && deno check --lock lock.json main.ts"
         },
         {
           "name": "deno formatting",
-          "run": "deno fmt --check",
+          "run": "cd deno && deno fmt --check",
           "continue-on-error": true
         },
         {
           "name": "deno lint",
-          "run": "deno lint",
+          "run": "cd deno && deno lint",
           "continue-on-error": true
         },
         {

@@ -34,11 +34,18 @@ pub async fn load<Output: Load>(
         }
     }
 
+    info!("Fetching {path:?}...");
     let fetched = fetch().await.wrap()??;
 
     if let Some(path) = path {
-        let bytes = serde_json::to_vec(&fetched).wrap()?;
+        if let Some(parent) = path.parent() {
+            fs::create_dir_all(parent).await?;
+        }
 
+        let mut bytes = serde_json::to_vec_pretty(&fetched).wrap()?;
+        bytes.push(b'\n');
+
+        info!("Saving fetched value to {path:?}");
         fs::write(path, &bytes).await.wrap()?;
     }
 

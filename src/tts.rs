@@ -8,7 +8,7 @@ pub trait Tts {
         Rc::new(self)
     }
 
-    fn text_to_speech(&self, text: Rc<str>) -> Result<Speech, miette::Report>;
+    fn text_to_speech(&self, text: Rc<str>) -> Result<Speech, eyre::Report>;
 }
 
 pub fn tts() -> impl Tts {
@@ -36,7 +36,7 @@ mod windows {
     pub struct WindowsTts;
 
     impl crate::Tts for WindowsTts {
-        fn text_to_speech(&self, text: Rc<str>) -> Result<Speech, miette::Report> {
+        fn text_to_speech(&self, text: Rc<str>) -> Result<Speech, eyre::Report> {
             Ok(Speech {
                 text,
                 audio: todo!(),

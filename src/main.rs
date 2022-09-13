@@ -19,7 +19,7 @@ use bstr::BStr;
 use bstr::ByteSlice;
 use bstr::ByteVec;
 use color_eyre::install;
-use miette::Report as ErrorReport;
+use eyre::Report as ErrorReport;
 use once_cell::sync::Lazy;
 use once_cell::sync::OnceCell;
 use scraper::Html;
@@ -41,7 +41,7 @@ use tracing::warn;
 use tracing_error::ErrorLayer;
 use tracing_error::SpanTrace;
 use tracing_subscriber::fmt::format::FmtSpan;
-use tracing_subscriber::prelude::__tracing_subscriber_SubscriberExt;
+use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::EnvFilter;
 use twox_hash::Xxh3Hash64;
 
@@ -70,55 +70,46 @@ async fn main() -> Result<(), ErrorReport> {
         }
     }
 
+    color_eyre::install().wrap()?;
+
     tracing::subscriber::set_global_default(
         tracing_subscriber::fmt()
             .with_env_filter(EnvFilter::from_default_env())
             .with_target(false)
             .with_level(false)
-            .with_span_events(FmtSpan::FULL)
+            .with_span_events(FmtSpan::NEW | FmtSpan::CLOSE)
             .with_file(true)
             .with_line_number(true)
-            .without_time()
             .finish()
             .with(ErrorLayer::default()),
     )
     .wrap()?;
 
-    color_eyre::install().wrap()?;
+    let ryl_story_id: u64 = 22518;
+    let archive_datetime: u64 = 2022_03_24_02_32_33;
 
-    let s = load!("target/test", async || {
-        time::sleep(time::Duration::from_secs(1)).await;
-        "hello world".to_string()
-    })?;
+    // Okay, now serialize this! Use the fic, dude.
 
-    // let ryl_story_id: u64 = 22518;
-    // let archive_datetime: u64 = 2022_03_24_02_32_33;
+    let fic_url = f!["https://www.royalroad.com/fiction/{ryl_story_id}"];
+    let archived_fic_url = f!["https://web.archive.org/web/{archive_datetime}id_/{fic_url}"];
 
-    // let fic_url = f!["https://www.royalroad.com/fiction/{ryl_story_id}"];
-    // let archived_fic_url = f!["https://web.archive.org/web/{archive_datetime}/{fic_url}"];
+    let html = web::get(archived_fic_url).await?.body;
 
-    // let html = reqwest::get(archived_fic_url)
-    //     .await
-    //     .wrap()?
-    //     .text()
-    //     .await
-    //     .wrap()?;
+    let document = Html::parse_document(html.as_ref());
 
-    // let document = Html::parse_document(&html);
+    // let next = Selector::parse("link[rel=next]").wrap()?;
 
-    // // let next = Selector::parse("link[rel=next]").wrap()?;
-
-    // let chapters = Selector::parse("table#chapters tbody tr").wrap()?;
-    // for chapter in document.select(&chapters) {
-    //     let html = chapter.html();
-    //     trace!("{html}");
-    //     for text in chapter.text() {
-    //         let s = BStr::new(text.as_bytes().trim());
-    //         if !s.is_empty() {
-    //             trace!("{s}");
-    //         }
-    //     }
-    // }
+    let chapters = Selector::parse("table#chapters tbody tr").wrap()?;
+    for chapter in document.select(&chapters) {
+        let html = chapter.html();
+        // trace!("{html}");
+        for text in chapter.text() {
+            let s = BStr::new(text.as_bytes().trim());
+            if !s.is_empty() {
+                trace!("{s}");
+            }
+        }
+    }
 
     Ok(())
 }
@@ -137,10 +128,10 @@ mod web {
 
     #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
     pub struct Page {
-        url: Arc<str>,
-        url_final: Arc<str>,
-        content_type: Option<String>,
-        body: Vec<u8>,
+        pub url: Arc<str>,
+        pub url_final: Arc<str>,
+        pub content_type: Option<String>,
+        pub body: String,
     }
 
     pub async fn get(url: impl AsRef<str>) -> Result<Page, ErrorReport> {
@@ -157,6 +148,7 @@ mod web {
                 };
             let url_final = response.url().to_string();
             let body = response.bytes().await.wrap()?.to_vec();
+            let body = String::from_utf8_lossy(&body).to_string();
             Page {
                 body,
                 content_type,
@@ -196,7 +188,7 @@ mod fic {
 
     /// `Fic` represents the full contents and metadata of a fic.
     assert_obj_safe!(Fic<Chapter = dyn FicChapter, Chapters = Vec<Box<dyn FicChapter>>>);
-    pub trait Fic {
+    pub trait Fic: Debug + Send + Sync + erased_serde::Serialize {
         /// A unique identifier for the site this fic was originally published
         /// on.
         fn site_id(&self) -> &'static str;
@@ -220,7 +212,7 @@ mod fic {
         }
     }
 
-    pub trait FicChapter {
+    pub trait FicChapter: Debug + Send + Sync + erased_serde::Serialize {
         /// A unique identifier for the site this fic was originally published
         /// on.
         fn site_id(&self) -> &'static str;
@@ -248,7 +240,7 @@ mod fic {
     /// `Spine` represents the shallow cover/metadata/index/TOC of a fic
     /// (i.e. it's a [`Fic`] without the chapter contents).
     assert_obj_safe!(Spine<Chapter = dyn SpineChapter, Chapters = Vec<Box<dyn SpineChapter>>>);
-    pub trait Spine {
+    pub trait Spine: Debug + Send + Sync + erased_serde::Serialize {
         /// A unique identifier for the site this fic was originally published
         /// on.
         fn site_id(&self) -> &'static str;
@@ -272,7 +264,7 @@ mod fic {
         }
     }
 
-    pub trait SpineChapter {
+    pub trait SpineChapter: Debug + Send + Sync + erased_serde::Serialize {
         /// A unique identifier for the site this fic was originally published
         /// on.
         fn site_id(&self) -> &'static str {

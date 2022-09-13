@@ -29,7 +29,7 @@ mod royalroad;
 mod tts;
 
 #[instrument]
-fn main() -> Result<(), miette::Report> {
+fn main() -> Result<(), eyre::Report> {
     tracing::subscriber::set_global_default(
         tracing_subscriber::fmt()
             .with_max_level(LevelFilter::TRACE)
@@ -49,7 +49,7 @@ fn main() -> Result<(), miette::Report> {
 }
 
 #[instrument]
-async fn app() -> Result<(), miette::Report> {
+async fn app() -> Result<(), eyre::Report> {
     test();
 
     let synth = SpeechSynthesizer::new().wrap()?;

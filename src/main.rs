@@ -4,10 +4,9 @@ use std::borrow::Cow;
 use std::borrow::Cow::Borrowed;
 use std::borrow::Cow::Owned;
 use std::collections::BTreeSet;
+use std::env;
 use std::fmt::Debug;
 use std::format as f;
-use std::fs;
-use std::future::Future;
 use std::hash::BuildHasher;
 use std::hash::BuildHasherDefault;
 use std::hash::Hash;
@@ -28,8 +27,10 @@ use serde::de::DeserializeOwned;
 use serde::Deserialize;
 use serde::Serialize;
 use static_assertions::assert_obj_safe;
+use tokio::fs;
 use tokio::io::AsyncReadExt;
 use tokio::io::AsyncWriteExt;
+use tokio::time;
 use tracing::debug;
 use tracing::info;
 use tracing::instrument;
@@ -39,8 +40,12 @@ use tracing::warn;
 use tracing_subscriber::fmt::format::FmtSpan;
 use tracing_subscriber::EnvFilter;
 use twox_hash::Xxh3Hash64;
-use wrapped_error::DebugResultExt;
 
+use crate::load::load;
+use crate::load::Load;
+use crate::wrapped_error::DebugResultExt;
+
+mod load;
 mod wrapped_error;
 
 #[tokio::main(flavor = "current_thread")]
@@ -48,7 +53,7 @@ async fn main() -> Result<(), ErrorReport> {
     tracing::subscriber::set_global_default(
         tracing_subscriber::fmt()
             .with_env_filter(
-                std::env::var("RUST_LOG")
+                env::var("RUST_LOG")
                     .unwrap_or_else(|_| f!("warn,{}=trace", env!("CARGO_CRATE_NAME"))),
             )
             .with_target(false)
@@ -61,109 +66,41 @@ async fn main() -> Result<(), ErrorReport> {
     )
     .wrap()?;
 
-    let ryl_story_id: u64 = 22518;
-    let archive_datetime: u64 = 2022_03_24_02_32_33;
+    let s = load!("target/test.json", async || {
+        time::sleep(time::Duration::from_secs(1)).await;
+        "hello world".to_string()
+    })?;
 
-    let fic_url = f!["https://www.royalroad.com/fiction/{ryl_story_id}"];
-    let archived_fic_url = f!["https://web.archive.org/web/{archive_datetime}/{fic_url}"];
+    // let ryl_story_id: u64 = 22518;
+    // let archive_datetime: u64 = 2022_03_24_02_32_33;
 
-    let html = reqwest::get(archived_fic_url)
-        .await
-        .wrap()?
-        .text()
-        .await
-        .wrap()?;
+    // let fic_url = f!["https://www.royalroad.com/fiction/{ryl_story_id}"];
+    // let archived_fic_url = f!["https://web.archive.org/web/{archive_datetime}/{fic_url}"];
 
-    let document = Html::parse_document(&html);
+    // let html = reqwest::get(archived_fic_url)
+    //     .await
+    //     .wrap()?
+    //     .text()
+    //     .await
+    //     .wrap()?;
 
-    // let next = Selector::parse("link[rel=next]").wrap()?;
+    // let document = Html::parse_document(&html);
 
-    let chapters = Selector::parse("table#chapters tbody tr").wrap()?;
-    for chapter in document.select(&chapters) {
-        let html = chapter.html();
-        trace!("{html}");
-        for text in chapter.text() {
-            let s = BStr::new(text.as_bytes().trim());
-            if !s.is_empty() {
-                trace!("{s}");
-            }
-        }
-    }
+    // // let next = Selector::parse("link[rel=next]").wrap()?;
+
+    // let chapters = Selector::parse("table#chapters tbody tr").wrap()?;
+    // for chapter in document.select(&chapters) {
+    //     let html = chapter.html();
+    //     trace!("{html}");
+    //     for text in chapter.text() {
+    //         let s = BStr::new(text.as_bytes().trim());
+    //         if !s.is_empty() {
+    //             trace!("{s}");
+    //         }
+    //     }
+    // }
 
     Ok(())
-}
-
-trait Record:
-    DeserializeOwned + Serialize + Clone + Debug + Send + Sync + Eq + Ord + Hash + 'static
-{
-}
-
-impl<T> Record for T where
-    T: DeserializeOwned + Serialize + Clone + Debug + Send + Sync + Eq + Ord + Hash + 'static
-{
-}
-
-async fn load<Output: Record>(
-    path: Option<&Path>,
-    fetch: impl FnOnce() -> tokio::task::JoinHandle<Result<Output, ErrorReport>>,
-) -> Result<Output, ErrorReport> {
-    trace!("Loading {path:?}");
-
-    if let Some(path) = path {
-        // TODO: replace this with a tokio/async operation
-        match fs::read(path) {
-            Ok(bytes) => match serde_json::from_slice(&bytes) {
-                Ok(output) => {
-                    debug!("Loaded {path:?}");
-                    return Ok(output);
-                },
-                Err(err) => {
-                    warn!("Found existing file at {path:?} but parsing failed: {err}");
-                },
-            },
-            Err(err) => {
-                info!("Failed to read existing file at {path:?}: {err}");
-            },
-        }
-    }
-
-    let fetched = fetch().await.wrap()??; // uh oh
-
-    todo!()
-}
-
-macro_rules! load {
-    ($path:expr, async $($move:ident)? || $( -> $output:path)? { $($body:tt)* }) => {
-        {
-            let path = format!($path) + ".json";
-            let path = Path::new(&path);
-            let output$(: $output)? = load(
-                Some(path),
-                $($move)? || tokio::spawn(async $($move)? { Ok({ $($body)* }) }),
-            ).await?;
-            Ok::<_, ErrorReport>(output)
-        }
-    };
-
-    (async $($move:ident)? || $( -> $output:path)? { $($body:tt)* }) => {
-        {
-            let output$(: $output)? = load(
-                None,
-                $($move)? || tokio::spawn(async $($move)? { Ok({ $($body)* }) }),
-            ).await?;
-            Ok::<_, ErrorReport>(output)
-        }
-    };
-
-    { $($body:tt)* } => {
-        {
-            let output = load(
-                None,
-                || tokio::spawn(async { Ok({ $($body)* }) }),
-            ).await?;
-            Ok::<_, ErrorReport>(output)
-        }
-    };
 }
 
 fn digest(bytes: &[u8]) -> String {
@@ -342,7 +279,7 @@ mod royalroad {
     use super::*;
 
     static SITE_ID: &str = "RYL";
-    static LOCAL_PREFIX: &str = "data/royalroad";
+    static LOCAL_PREFIX: &str = "./data/royalroad";
     static URL_PREFIX: &str = "https://www.royalroad.com";
 
     #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]

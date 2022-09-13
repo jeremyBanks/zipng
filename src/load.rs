@@ -10,6 +10,7 @@ impl<T> Load for T where
 {
 }
 
+#[instrument(skip_all)]
 pub async fn load<Output: Load>(
     path: Option<&Path>,
     fetch: impl FnOnce() -> tokio::task::JoinHandle<Result<Output, ErrorReport>>,
@@ -33,9 +34,15 @@ pub async fn load<Output: Load>(
         }
     }
 
-    let fetched = fetch().await.wrap()??; // uh oh
+    let fetched = fetch().await.wrap()??;
 
-    todo!()
+    if let Some(path) = path {
+        let bytes = serde_json::to_vec(&fetched).wrap()?;
+
+        fs::write(path, &bytes).await.wrap()?;
+    }
+
+    Ok(fetched)
 }
 
 #[macro_export(crate)]

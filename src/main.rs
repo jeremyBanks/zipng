@@ -18,6 +18,7 @@ use std::sync::Arc;
 use bstr::BStr;
 use bstr::ByteSlice;
 use bstr::ByteVec;
+use color_eyre::install;
 use miette::Report as ErrorReport;
 use once_cell::sync::Lazy;
 use once_cell::sync::OnceCell;
@@ -37,7 +38,10 @@ use tracing::instrument;
 use tracing::metadata::LevelFilter;
 use tracing::trace;
 use tracing::warn;
+use tracing_error::ErrorLayer;
+use tracing_error::SpanTrace;
 use tracing_subscriber::fmt::format::FmtSpan;
+use tracing_subscriber::prelude::__tracing_subscriber_SubscriberExt;
 use tracing_subscriber::EnvFilter;
 use twox_hash::Xxh3Hash64;
 
@@ -50,23 +54,39 @@ mod wrapped_error;
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> Result<(), ErrorReport> {
+    if cfg!(debug_assertions) {
+        if env::var("RUST_LOG").is_err() {
+            env::set_var("RUST_LOG", f!("warn,{}=trace", env!("CARGO_CRATE_NAME")));
+        }
+        if env::var("RUST_BACKTRACE").is_err() {
+            env::set_var("RUST_BACKTRACE", "0");
+        }
+        if env::var("RUST_SPANTRACE").is_err() {
+            env::set_var("RUST_SPANTRACE", "1");
+        }
+    } else {
+        if env::var("RUST_LOG").is_err() {
+            env::set_var("RUST_LOG", f!("error,{}=warn", env!("CARGO_CRATE_NAME")));
+        }
+    }
+
     tracing::subscriber::set_global_default(
         tracing_subscriber::fmt()
-            .with_env_filter(
-                env::var("RUST_LOG")
-                    .unwrap_or_else(|_| f!("warn,{}=trace", env!("CARGO_CRATE_NAME"))),
-            )
+            .with_env_filter(EnvFilter::from_default_env())
             .with_target(false)
             .with_level(false)
             .with_span_events(FmtSpan::FULL)
             .with_file(true)
             .with_line_number(true)
             .without_time()
-            .finish(),
+            .finish()
+            .with(ErrorLayer::default()),
     )
     .wrap()?;
 
-    let s = load!("target/test.json", async || {
+    color_eyre::install().wrap()?;
+
+    let s = load!("target/test", async || {
         time::sleep(time::Duration::from_secs(1)).await;
         "hello world".to_string()
     })?;

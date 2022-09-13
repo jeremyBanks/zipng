@@ -15,9 +15,8 @@ pub async fn load<Output: Load>(
     path: Option<&Path>,
     fetch: impl FnOnce() -> tokio::task::JoinHandle<Result<Output, ErrorReport>>,
 ) -> Result<Output, ErrorReport> {
-    trace!("Loading {path:?}");
-
     if let Some(path) = path {
+        trace!("Loading {path:?}");
         match fs::read(path).await {
             Ok(bytes) => match serde_json::from_slice(&bytes) {
                 Ok(output) => {

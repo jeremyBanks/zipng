@@ -86,30 +86,11 @@ async fn main() -> Result<(), ErrorReport> {
     .wrap()?;
 
     let ryl_story_id: u64 = 22518;
-    let archive_datetime: u64 = 2022_03_24_02_32_33;
+    // let archive_datetime: u64 = 2022_03_24_02_32_33;
+    // let fic_url = f!["https://www.royalroad.com/fiction/{ryl_story_id}"];
+    // let archived_fic_url = f!["https://web.archive.org/web/{archive_datetime}id_/{fic_url}"];
 
-    // Okay, now serialize this! Use the fic, dude.
-
-    let fic_url = f!["https://www.royalroad.com/fiction/{ryl_story_id}"];
-    let archived_fic_url = f!["https://web.archive.org/web/{archive_datetime}id_/{fic_url}"];
-
-    let html = web::get(archived_fic_url).await?.body;
-
-    let document = Html::parse_document(html.as_ref());
-
-    // let next = Selector::parse("link[rel=next]").wrap()?;
-
-    let chapters = Selector::parse("table#chapters tbody tr").wrap()?;
-    for chapter in document.select(&chapters) {
-        let html = chapter.html();
-        // trace!("{html}");
-        for text in chapter.text() {
-            let s = BStr::new(text.as_bytes().trim());
-            if !s.is_empty() {
-                trace!("{s}");
-            }
-        }
-    }
+    let fic = royalroad::spine(ryl_story_id).await.wrap()?;
 
     Ok(())
 }
@@ -294,6 +275,79 @@ mod royalroad {
     static LOCAL_PREFIX: &str = "./data/royalroad";
     static URL_PREFIX: &str = "https://www.royalroad.com";
 
+    pub async fn spine(id: u64) -> Result<Spine, ErrorReport> {
+        load!("{LOCAL_PREFIX}/fics/{id}", async move || {
+            let url = f!["{URL_PREFIX}/fiction/{id}"];
+
+            let html = web::get(url).await?.body;
+
+            let document = Html::parse_document(html.as_ref());
+
+            let mut chapters = BTreeSet::new();
+
+            let title = document
+                .select(&Selector::parse("title").unwrap())
+                .next()
+                .unwrap()
+                .text()
+                .next()
+                .unwrap()
+                .split("|")
+                .next()
+                .unwrap()
+                .trim()
+                .to_owned()
+                .into();
+
+            for chapter in document.select(&Selector::parse("table#chapters tbody tr").wrap()?) {
+                let html = chapter.html();
+
+                let chapter_link = chapter
+                    .select(&Selector::parse("a").wrap()?)
+                    .next()
+                    .unwrap();
+                let chapter_time = chapter
+                    .select(&Selector::parse("time").wrap()?)
+                    .next()
+                    .unwrap();
+
+                let title = chapter_link
+                    .text()
+                    .next()
+                    .unwrap()
+                    .trim()
+                    .to_string()
+                    .into();
+                let href = chapter_link.value().attr("href").unwrap();
+
+                let id: u64 = href
+                    .split("/chapter/")
+                    .last()
+                    .unwrap()
+                    .split("/")
+                    .next()
+                    .unwrap()
+                    .parse()?;
+
+                let timestamp: u64 = chapter_time.value().attr("unixtime").unwrap().parse()?;
+
+                chapters.insert(SpineChapter {
+                    id,
+                    timestamp,
+                    title,
+                });
+            }
+
+            let timestamp = chapters.iter().map(|c| c.timestamp).min().unwrap();
+
+            Spine {
+                id,
+                title,
+                chapters,
+            }
+        })
+    }
+
     #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
     pub struct Fic {
         id: u64,
@@ -401,18 +455,5 @@ mod royalroad {
         fn published(&self) -> Option<u64> {
             Some(self.timestamp)
         }
-    }
-
-    pub async fn fic(id: u64) -> Result<Fic, ErrorReport> {
-        let cover = load!("{LOCAL_PREFIX}/fics/{id}.json", async move || -> Spine {
-            let url = f!["{URL_PREFIX}/fiction/{id}"];
-            Spine {
-                id: 0,
-                title: "TODO".into(),
-                chapters: BTreeSet::new(),
-            }
-        })?;
-
-        todo!()
     }
 }

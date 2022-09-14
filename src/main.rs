@@ -14,6 +14,7 @@ use std::hash::Hasher;
 use std::path::Path;
 use std::pin::Pin;
 use std::sync::Arc;
+use std::time::Duration;
 
 use bstr::BStr;
 use bstr::ByteSlice;
@@ -31,7 +32,11 @@ use static_assertions::assert_obj_safe;
 use tokio::fs;
 use tokio::io::AsyncReadExt;
 use tokio::io::AsyncWriteExt;
+use tokio::sync::Mutex;
 use tokio::time;
+use tokio::time::interval;
+use tokio::time::Interval;
+use tokio::time::MissedTickBehavior;
 use tracing::debug;
 use tracing::info;
 use tracing::instrument;
@@ -50,6 +55,7 @@ use crate::load::Load;
 use crate::wrapped_error::DebugResultExt;
 
 mod load;
+mod throttle;
 mod wrapped_error;
 
 #[tokio::main(flavor = "current_thread")]
@@ -75,11 +81,7 @@ async fn main() -> Result<(), ErrorReport> {
     tracing::subscriber::set_global_default(
         tracing_subscriber::fmt()
             .with_env_filter(EnvFilter::from_default_env())
-            .with_target(false)
-            .with_level(false)
-            .with_span_events(FmtSpan::NEW | FmtSpan::CLOSE)
-            .with_file(true)
-            .with_line_number(true)
+            .pretty()
             .finish()
             .with(ErrorLayer::default()),
     )
@@ -90,7 +92,9 @@ async fn main() -> Result<(), ErrorReport> {
     // let fic_url = f!["https://www.royalroad.com/fiction/{ryl_story_id}"];
     // let archived_fic_url = f!["https://web.archive.org/web/{archive_datetime}id_/{fic_url}"];
 
-    let fic = royalroad::spine(ryl_story_id).await.wrap()?;
+    royalroad::fic(22518).await.wrap()?;
+    royalroad::fic(22518).await.wrap()?;
+    royalroad::fic(22518).await.wrap()?;
 
     Ok(())
 }
@@ -101,11 +105,15 @@ fn digest(bytes: &[u8]) -> String {
     let digest = hasher.finish();
     f!("x{digest:016X}")
 }
+use crate::throttle::throttle;
+use crate::throttle::Throttle;
 
 mod web {
     use super::*;
 
     static LOCAL_PREFIX: &str = "target/web";
+
+    static THROTTLE: Lazy<Throttle> = Lazy::new(|| throttle("web", 256));
 
     #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
     pub struct Page {
@@ -115,10 +123,14 @@ mod web {
         pub body: String,
     }
 
+    #[instrument(skip_all)]
     pub async fn get(url: impl AsRef<str>) -> Result<Page, ErrorReport> {
         let url = url.as_ref().to_string();
         let digest = digest(url.as_bytes());
         load!("{LOCAL_PREFIX}/{digest}", async move || {
+            THROTTLE.tick().await;
+
+            info!("Fetching {url}");
             let request = reqwest::get(url.to_string());
             let response = request.await.wrap()?;
             let content_type =
@@ -272,12 +284,15 @@ mod royalroad {
     use super::*;
 
     static SITE_ID: &str = "RYL";
-    static LOCAL_PREFIX: &str = "./data/royalroad";
-    static URL_PREFIX: &str = "https://www.royalroad.com";
 
+    static THROTTLE: Lazy<Throttle> = Lazy::new(|| throttle("royalroad", 8 * 1024));
+
+    #[instrument]
     pub async fn spine(id: u64) -> Result<Spine, ErrorReport> {
-        load!("{LOCAL_PREFIX}/fics/{id}", async move || {
-            let url = f!["{URL_PREFIX}/fiction/{id}"];
+        load!("data/spines/{SITE_ID}{id}", async move || {
+            THROTTLE.tick().await;
+
+            let url = f!["https://www.royalroad.com/fiction/{id}"];
 
             let html = web::get(url).await?.body;
 
@@ -344,6 +359,53 @@ mod royalroad {
                 id,
                 title,
                 chapters,
+            }
+        })
+    }
+
+    #[instrument]
+    pub async fn fic(id: u64) -> Result<Fic, ErrorReport> {
+        let spine = spine(id).await?;
+
+        let mut chapters = BTreeSet::new();
+
+        for chapter in spine.chapters {
+            let chapter = fic_chapter(chapter).await?;
+            chapters.insert(chapter);
+        }
+
+        Ok(Fic {
+            id,
+            title: spine.title,
+            chapters,
+        })
+    }
+
+    #[instrument(skip_all)]
+    pub async fn fic_chapter(spine_chapter: SpineChapter) -> Result<FicChapter, ErrorReport> {
+        let chapter_id = spine_chapter.id;
+
+        load!("target/chapters/{SITE_ID}{chapter_id}", async move || {
+            THROTTLE.tick().await;
+
+            let url = f!["https://www.royalroad.com/fiction/chapter/{chapter_id}"];
+
+            let html = web::get(url).await?.body;
+
+            let document = Html::parse_document(html.as_ref());
+
+            let html_original = document
+                .select(&Selector::parse("div.chapter-inner").wrap()?)
+                .next()
+                .unwrap()
+                .html()
+                .into();
+
+            FicChapter {
+                id: spine_chapter.id,
+                title: spine_chapter.title,
+                timestamp: spine_chapter.timestamp,
+                html_original,
             }
         })
     }

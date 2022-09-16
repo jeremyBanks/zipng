@@ -1,4 +1,4 @@
-import { PageProps } from "https://deno.land/x/fresh/server.ts";
+import { PageProps } from "$fresh/server.ts";
 
 export default function IndexPage(props: PageProps) {
   return (

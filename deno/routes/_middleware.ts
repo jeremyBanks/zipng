@@ -24,8 +24,8 @@ export const handler: MiddlewareHandler = async (request, context) => {
         "Strict-Transport-Security": security === "preload"
           // if we're preloading, use the recommended two year max-age
           ? "max-age=63072000; includeSubDomains; preload"
-          : // if not, we set it to a short four hours (just this session)
-            "max-age=14400",
+          // if not, we set it to a short four hours (just this session)
+          : "max-age=14400",
       },
     });
   } else if (security === "preload") {

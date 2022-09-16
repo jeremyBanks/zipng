@@ -1,4 +1,5 @@
 #![cfg_attr(debug_assertions, allow(unused))]
+#![warn(unused_crate_dependencies)]
 
 use std::borrow::Cow;
 use std::borrow::Cow::Borrowed;
@@ -23,6 +24,7 @@ use color_eyre::install;
 use eyre::Report as ErrorReport;
 use once_cell::sync::Lazy;
 use once_cell::sync::OnceCell;
+use pulldown_cmark;
 use scraper::Html;
 use scraper::Selector;
 use serde::de::DeserializeOwned;
@@ -64,12 +66,6 @@ async fn main() -> Result<(), ErrorReport> {
         if env::var("RUST_LOG").is_err() {
             env::set_var("RUST_LOG", f!("warn,{}=trace", env!("CARGO_CRATE_NAME")));
         }
-        if env::var("RUST_BACKTRACE").is_err() {
-            env::set_var("RUST_BACKTRACE", "0");
-        }
-        if env::var("RUST_SPANTRACE").is_err() {
-            env::set_var("RUST_SPANTRACE", "1");
-        }
     } else {
         if env::var("RUST_LOG").is_err() {
             env::set_var("RUST_LOG", f!("error,{}=warn", env!("CARGO_CRATE_NAME")));
@@ -87,14 +83,14 @@ async fn main() -> Result<(), ErrorReport> {
     )
     .wrap()?;
 
-    let ryl_story_id: u64 = 22518;
-    // let archive_datetime: u64 = 2022_03_24_02_32_33;
-    // let fic_url = f!["https://www.royalroad.com/fiction/{ryl_story_id}"];
-    // let archived_fic_url = f!["https://web.archive.org/web/{archive_datetime}id_/{fic_url}"];
+    let ryl_fic_ids = [22518, 25137, 21220];
 
-    royalroad::fic(22518).await.wrap()?;
-    royalroad::fic(22518).await.wrap()?;
-    royalroad::fic(22518).await.wrap()?;
+    for ryl_fic_id in ryl_fic_ids {
+        royalroad::spine(ryl_fic_id).await.wrap()?;
+    }
+    for ryl_fic_id in ryl_fic_ids {
+        // royalroad::fic(ryl_fic_id).await.wrap()?;
+    }
 
     Ok(())
 }
@@ -105,13 +101,12 @@ fn digest(bytes: &[u8]) -> String {
     let digest = hasher.finish();
     f!("x{digest:016X}")
 }
+
 use crate::throttle::throttle;
 use crate::throttle::Throttle;
 
 mod web {
     use super::*;
-
-    static LOCAL_PREFIX: &str = "target/web";
 
     static THROTTLE: Lazy<Throttle> = Lazy::new(|| throttle("web", 256));
 
@@ -127,12 +122,12 @@ mod web {
     pub async fn get(url: impl AsRef<str>) -> Result<Page, ErrorReport> {
         let url = url.as_ref().to_string();
         let digest = digest(url.as_bytes());
-        load!("{LOCAL_PREFIX}/{digest}", async move || {
+        load!("target/web/{digest}", async move || {
             THROTTLE.tick().await;
 
             info!("Fetching {url}");
             let request = reqwest::get(url.to_string());
-            let response = request.await.wrap()?;
+            let response = request.await.wrap()?.error_for_status()?;
             let content_type =
                 if let Some(header) = response.headers().get(http::header::CONTENT_TYPE) {
                     Some(header.to_str().wrap()?.to_string())
@@ -155,146 +150,50 @@ mod web {
 mod ia {
     use super::*;
 
-    static LOCAL_PREFIX: &str = "target/ia";
-    static URL_PREFIX: &str = "https://web.archive.org";
-    static OLDEST_SUFFIX: &str = "0id_";
-    static LATEST_SUFFIX: &str = "3id_";
+    static THROTTLE: Lazy<Throttle> = Lazy::new(|| throttle("archive.org", 16 * 1024));
 
-    #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
-    pub struct Page {
-        url: Arc<str>,
-        datetime: u64,
-        body: Vec<u8>,
+    pub async fn get(url: &str) -> Result<web::Page, ErrorReport> {
+        THROTTLE.tick().await;
+        web::get(f!("https://web.archive.org/web/3id_/{url}")).await
     }
 
-    pub async fn get(url: &str) -> Result<Page, ErrorReport> {
-        todo!()
-    }
-
-    pub async fn get_before(url: &str, datetime: u64) -> Result<Page, ErrorReport> {
-        todo!()
-    }
-}
-
-mod fic {
-    use super::*;
-
-    /// `Fic` represents the full contents and metadata of a fic.
-    assert_obj_safe!(Fic<Chapter = dyn FicChapter, Chapters = Vec<Box<dyn FicChapter>>>);
-    pub trait Fic: Debug + Send + Sync + erased_serde::Serialize {
-        /// A unique identifier for the site this fic was originally published
-        /// on.
-        fn site_id(&self) -> &'static str;
-
-        /// The ID of the fic. This is unique per-site.
-        fn id(&self) -> u64;
-
-        /// The title of the fic.
-        fn title(&self) -> Cow<Arc<str>> {
-            Owned(format!("Untitled {}-{}", self.site_id(), self.id()).into())
-        }
-
-        type Chapter: FicChapter;
-        type Chapters: IntoIterator<Item = Self::Chapter>;
-        fn chapters(&self) -> &Self::Chapters;
-
-        /// Timestamp of publication/creation as seconds from unix epoch, if
-        /// known.
-        fn published(&self) -> Option<u64> {
-            None
-        }
-    }
-
-    pub trait FicChapter: Debug + Send + Sync + erased_serde::Serialize {
-        /// A unique identifier for the site this fic was originally published
-        /// on.
-        fn site_id(&self) -> &'static str;
-
-        /// The ID of the chapter. This is unique per-site.
-        fn id(&self) -> u64;
-
-        /// The title of the chapter.
-        fn title(&self) -> Cow<Arc<str>> {
-            Owned(format!("Untitled {}", self.id()).into())
-        }
-
-        /// The source HTML of the chapter, as it was originally published.
-        ///
-        /// This may not be suitable for direct inclusion in other documents.
-        fn html_original(&self) -> Cow<Arc<str>>;
-
-        /// Timestamp of publication/creation as seconds from unix epoch, if
-        /// known.
-        fn published(&self) -> Option<u64> {
-            None
-        }
-    }
-
-    /// `Spine` represents the shallow cover/metadata/index/TOC of a fic
-    /// (i.e. it's a [`Fic`] without the chapter contents).
-    assert_obj_safe!(Spine<Chapter = dyn SpineChapter, Chapters = Vec<Box<dyn SpineChapter>>>);
-    pub trait Spine: Debug + Send + Sync + erased_serde::Serialize {
-        /// A unique identifier for the site this fic was originally published
-        /// on.
-        fn site_id(&self) -> &'static str;
-
-        /// The ID of the fic. This is unique per-site.
-        fn id(&self) -> u64;
-
-        /// The title of the fic.
-        fn title(&self) -> Cow<Arc<str>> {
-            Owned(format!("Untitled {}-{}", self.site_id(), self.id()).into())
-        }
-
-        type Chapter: SpineChapter;
-        type Chapters: IntoIterator<Item = Self::Chapter>;
-        fn chapters(&self) -> &Self::Chapters;
-
-        /// Timestamp of publication/creation as seconds from unix epoch, if
-        /// known.
-        fn published(&self) -> Option<u64> {
-            None
-        }
-    }
-
-    pub trait SpineChapter: Debug + Send + Sync + erased_serde::Serialize {
-        /// A unique identifier for the site this fic was originally published
-        /// on.
-        fn site_id(&self) -> &'static str {
-            "RYL"
-        }
-
-        /// The ID of the chapter. This is unique per-site.
-        fn id(&self) -> u64;
-
-        /// The title of the chapter.
-        fn title(&self) -> Cow<Arc<str>> {
-            Owned(format!("Untitled {}", self.id()).into())
-        }
-
-        /// Timestamp of publication/creation as seconds from unix epoch, if
-        /// known.
-        fn published(&self) -> Option<u64> {
-            None
-        }
+    pub async fn get_before(url: &str, datetime: u64) -> Result<web::Page, ErrorReport> {
+        THROTTLE.tick().await;
+        web::get(f!("https://web.archive.org/web/{datetime}id_/{url}")).await
     }
 }
 
 mod royalroad {
+    use std::collections::HashSet;
+
     use super::*;
 
     static SITE_ID: &str = "RYL";
+    static THROTTLE: Lazy<Throttle> = Lazy::new(|| throttle(SITE_ID, 8 * 1024));
 
-    static THROTTLE: Lazy<Throttle> = Lazy::new(|| throttle("royalroad", 8 * 1024));
-
-    #[instrument]
+    #[instrument(level = "debug")]
     pub async fn spine(id: u64) -> Result<Spine, ErrorReport> {
-        load!("data/spines/{SITE_ID}{id}", async move || {
+        load!("data/spines/{SITE_ID}{id:07}", async move || {
             THROTTLE.tick().await;
 
             let url = f!["https://www.royalroad.com/fiction/{id}"];
 
-            let html = web::get(url).await?.body;
+            let page = web::get(url).await?;
+
+            let slug = page
+                .url_final
+                .split("/fiction/")
+                .skip(1)
+                .next()
+                .unwrap()
+                .split("/")
+                .skip(1)
+                .next()
+                .unwrap()
+                .to_string()
+                .into();
+
+            let html = page.body;
 
             let document = Html::parse_document(html.as_ref());
 
@@ -335,21 +234,16 @@ mod royalroad {
                     .into();
                 let href = chapter_link.value().attr("href").unwrap();
 
-                let id: u64 = href
-                    .split("/chapter/")
-                    .last()
-                    .unwrap()
-                    .split("/")
-                    .next()
-                    .unwrap()
-                    .parse()?;
-
+                let mut id_slug = href.split("/chapter/").last().unwrap().split("/");
+                let id = id_slug.next().unwrap().parse().wrap()?;
+                let slug = id_slug.next().unwrap().to_string().into();
                 let timestamp: u64 = chapter_time.value().attr("unixtime").unwrap().parse()?;
 
                 chapters.insert(SpineChapter {
                     id,
                     timestamp,
                     title,
+                    slug,
                 });
             }
 
@@ -358,6 +252,7 @@ mod royalroad {
             Spine {
                 id,
                 title,
+                slug,
                 chapters,
             }
         })
@@ -369,26 +264,35 @@ mod royalroad {
 
         let mut chapters = BTreeSet::new();
 
-        for chapter in spine.chapters {
-            let chapter = fic_chapter(chapter).await?;
+        for chapter in &spine.chapters {
+            let chapter = fic_chapter(&spine, &chapter).await?;
             chapters.insert(chapter);
         }
 
         Ok(Fic {
             id,
             title: spine.title,
+            slug: spine.slug,
             chapters,
         })
     }
 
     #[instrument(skip_all)]
-    pub async fn fic_chapter(spine_chapter: SpineChapter) -> Result<FicChapter, ErrorReport> {
-        let chapter_id = spine_chapter.id;
+    pub async fn fic_chapter(
+        spine: &Spine,
+        chapter: &SpineChapter,
+    ) -> Result<FicChapter, ErrorReport> {
+        let spine = spine.clone();
+        let chapter = chapter.clone();
+        let fic_id = spine.id;
+        let fic_slug = spine.slug.clone();
+        let chapter_id = chapter.id;
+        let chapter_slug = chapter.slug.clone();
 
         load!("target/chapters/{SITE_ID}{chapter_id}", async move || {
             THROTTLE.tick().await;
 
-            let url = f!["https://www.royalroad.com/fiction/chapter/{chapter_id}"];
+            let url = f!["https://www.royalroad.com/fiction/{fic_id}/{fic_slug}/chapter/{chapter_id}/{chapter_slug}"];
 
             let html = web::get(url).await?.body;
 
@@ -398,14 +302,24 @@ mod royalroad {
                 .select(&Selector::parse("div.chapter-inner").wrap()?)
                 .next()
                 .unwrap()
-                .html()
+                .html();
+
+            let html = ammonia::Builder::new()
+                .rm_tags(HashSet::<&str>::from_iter(["img", "span"]))
+                .url_schemes(HashSet::<&str>::from_iter([
+                    "http", "https", "mailto", "magnet",
+                ]))
+                .url_relative(ammonia::UrlRelative::Deny)
+                .clean(&html_original)
+                .to_string()
                 .into();
 
             FicChapter {
-                id: spine_chapter.id,
-                title: spine_chapter.title,
-                timestamp: spine_chapter.timestamp,
-                html_original,
+                id: chapter.id,
+                title: chapter.title.clone(),
+                timestamp: chapter.timestamp,
+                slug: chapter.slug.clone(),
+                html,
             }
         })
     }
@@ -414,27 +328,8 @@ mod royalroad {
     pub struct Fic {
         id: u64,
         title: Arc<str>,
+        slug: Arc<str>,
         chapters: BTreeSet<FicChapter>,
-    }
-
-    impl fic::Fic for Fic {
-        fn site_id(&self) -> &'static str {
-            SITE_ID
-        }
-
-        fn id(&self) -> u64 {
-            self.id
-        }
-
-        fn title(&self) -> Cow<Arc<str>> {
-            Borrowed(&self.title)
-        }
-
-        type Chapter = FicChapter;
-        type Chapters = BTreeSet<FicChapter>;
-        fn chapters(&self) -> &Self::Chapters {
-            &self.chapters
-        }
     }
 
     #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -442,56 +337,16 @@ mod royalroad {
         id: u64,
         timestamp: u64,
         title: Arc<str>,
-        html_original: Arc<str>,
-    }
-
-    impl fic::FicChapter for FicChapter {
-        fn site_id(&self) -> &'static str {
-            SITE_ID
-        }
-
-        fn id(&self) -> u64 {
-            self.id
-        }
-
-        fn title(&self) -> Cow<Arc<str>> {
-            Borrowed(&self.title)
-        }
-
-        fn html_original(&self) -> Cow<Arc<str>> {
-            Borrowed(&self.html_original)
-        }
-
-        fn published(&self) -> Option<u64> {
-            Some(self.timestamp)
-        }
+        slug: Arc<str>,
+        html: Arc<str>,
     }
 
     #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
     pub struct Spine {
         id: u64,
         title: Arc<str>,
+        slug: Arc<str>,
         chapters: BTreeSet<SpineChapter>,
-    }
-
-    impl fic::Spine for Spine {
-        fn site_id(&self) -> &'static str {
-            "RYL"
-        }
-
-        fn id(&self) -> u64 {
-            self.id
-        }
-
-        fn title(&self) -> Cow<Arc<str>> {
-            Borrowed(&self.title)
-        }
-
-        type Chapter = SpineChapter;
-        type Chapters = BTreeSet<SpineChapter>;
-        fn chapters(&self) -> &Self::Chapters {
-            &self.chapters
-        }
     }
 
     #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -499,23 +354,6 @@ mod royalroad {
         id: u64,
         timestamp: u64,
         title: Arc<str>,
-    }
-
-    impl fic::SpineChapter for SpineChapter {
-        fn site_id(&self) -> &'static str {
-            "RYL"
-        }
-
-        fn id(&self) -> u64 {
-            self.id
-        }
-
-        fn title(&self) -> Cow<Arc<str>> {
-            Borrowed(&self.title)
-        }
-
-        fn published(&self) -> Option<u64> {
-            Some(self.timestamp)
-        }
+        slug: Arc<str>,
     }
 }

@@ -1,0 +1,655 @@
+{
+  "id": 21220,
+  "title": "Mother of Learning",
+  "slug": "mother-of-learning",
+  "chapters": [
+    {
+      "id": 301778,
+      "timestamp": 1540762483,
+      "title": "1. Good Morning Brother",
+      "slug": "1-good-morning-brother"
+    },
+    {
+      "id": 301781,
+      "timestamp": 1540763144,
+      "title": "2. Life’s Little Problems",
+      "slug": "2-lifes-little-problems"
+    },
+    {
+      "id": 301784,
+      "timestamp": 1540763590,
+      "title": "3. The Bitter Truth",
+      "slug": "3-the-bitter-truth"
+    },
+    {
+      "id": 301788,
+      "timestamp": 1540763984,
+      "title": "4. Stars Fell",
+      "slug": "4-stars-fell"
+    },
+    {
+      "id": 301795,
+      "timestamp": 1540764443,
+      "title": "5. Start Over",
+      "slug": "5-start-over"
+    },
+    {
+      "id": 301799,
+      "timestamp": 1540765171,
+      "title": "6. Concentrate and Try Again",
+      "slug": "6-concentrate-and-try-again"
+    },
+    {
+      "id": 301801,
+      "timestamp": 1540765838,
+      "title": "7. Of Gaps And Pretending",
+      "slug": "7-of-gaps-and-pretending"
+    },
+    {
+      "id": 301802,
+      "timestamp": 1540766184,
+      "title": "8. Perspective",
+      "slug": "8-perspective"
+    },
+    {
+      "id": 301984,
+      "timestamp": 1540827335,
+      "title": "9. Cheaters",
+      "slug": "9-cheaters"
+    },
+    {
+      "id": 302241,
+      "timestamp": 1540914715,
+      "title": "10. Overlooked Details",
+      "slug": "10-overlooked-details"
+    },
+    {
+      "id": 302540,
+      "timestamp": 1540999806,
+      "title": "11. Limiters",
+      "slug": "11-limiters"
+    },
+    {
+      "id": 302854,
+      "timestamp": 1541092333,
+      "title": "12. Soul Web",
+      "slug": "12-soul-web"
+    },
+    {
+      "id": 303116,
+      "timestamp": 1541168617,
+      "title": "13. Any Second Now",
+      "slug": "13-any-second-now"
+    },
+    {
+      "id": 303485,
+      "timestamp": 1541259203,
+      "title": "14. The Sister Effect",
+      "slug": "14-the-sister-effect"
+    },
+    {
+      "id": 303785,
+      "timestamp": 1541341940,
+      "title": "15. Busy Friday",
+      "slug": "15-busy-friday"
+    },
+    {
+      "id": 304097,
+      "timestamp": 1541431144,
+      "title": "16. We Need To Talk",
+      "slug": "16-we-need-to-talk"
+    },
+    {
+      "id": 304398,
+      "timestamp": 1541519531,
+      "title": "17. Sympathy for the Spider",
+      "slug": "17-sympathy-for-the-spider"
+    },
+    {
+      "id": 304716,
+      "timestamp": 1541605731,
+      "title": "18. The Pact is Sealed",
+      "slug": "18-the-pact-is-sealed"
+    },
+    {
+      "id": 305052,
+      "timestamp": 1541699933,
+      "title": "19. Tangled Webs",
+      "slug": "19-tangled-webs"
+    },
+    {
+      "id": 305359,
+      "timestamp": 1541785118,
+      "title": "20. A Matter of Faith",
+      "slug": "20-a-matter-of-faith"
+    },
+    {
+      "id": 305662,
+      "timestamp": 1541874423,
+      "title": "21. Wheel of Fortune",
+      "slug": "21-wheel-of-fortune"
+    },
+    {
+      "id": 305877,
+      "timestamp": 1541945270,
+      "title": "22. Complications",
+      "slug": "22-complications"
+    },
+    {
+      "id": 306244,
+      "timestamp": 1542040577,
+      "title": "23. Lighting the Fuse",
+      "slug": "23-lighting-the-fuse"
+    },
+    {
+      "id": 306575,
+      "timestamp": 1542136882,
+      "title": "24. Smoke and Mirrors",
+      "slug": "24-smoke-and-mirrors"
+    },
+    {
+      "id": 306758,
+      "timestamp": 1542211929,
+      "title": "25. The Unexpected",
+      "slug": "25-the-unexpected"
+    },
+    {
+      "id": 307245,
+      "timestamp": 1542349004,
+      "title": "26. Soulkill",
+      "slug": "26-soulkill"
+    },
+    {
+      "id": 307248,
+      "timestamp": 1542349791,
+      "title": "27. Cast Adrift",
+      "slug": "27-cast-adrift"
+    },
+    {
+      "id": 307587,
+      "timestamp": 1542468509,
+      "title": "28. Cauldron",
+      "slug": "28-cauldron"
+    },
+    {
+      "id": 307852,
+      "timestamp": 1542553866,
+      "title": "29. The Hunters and the Hunted",
+      "slug": "29-the-hunters-and-the-hunted"
+    },
+    {
+      "id": 308104,
+      "timestamp": 1542640130,
+      "title": "30. A Game of Shops",
+      "slug": "30-a-game-of-shops"
+    },
+    {
+      "id": 308373,
+      "timestamp": 1542729531,
+      "title": "31. Marked",
+      "slug": "31-marked"
+    },
+    {
+      "id": 308643,
+      "timestamp": 1542823439,
+      "title": "32. Alternatives",
+      "slug": "32-alternatives"
+    },
+    {
+      "id": 308876,
+      "timestamp": 1542900113,
+      "title": "33. Gateways",
+      "slug": "33-gateways"
+    },
+    {
+      "id": 309130,
+      "timestamp": 1542988939,
+      "title": "34. Unreasonable Things",
+      "slug": "34-unreasonable-things"
+    },
+    {
+      "id": 309417,
+      "timestamp": 1543075931,
+      "title": "35. Mistakes Have Been Made",
+      "slug": "35-mistakes-have-been-made"
+    },
+    {
+      "id": 309946,
+      "timestamp": 1543246284,
+      "title": "36. A Battle of Minds",
+      "slug": "36-a-battle-of-minds"
+    },
+    {
+      "id": 310296,
+      "timestamp": 1543344517,
+      "title": "37. Slow Burn",
+      "slug": "37-slow-burn"
+    },
+    {
+      "id": 310557,
+      "timestamp": 1543421315,
+      "title": "38. Return to Cyoria",
+      "slug": "38-return-to-cyoria"
+    },
+    {
+      "id": 311034,
+      "timestamp": 1543579940,
+      "title": "39. Suspicious Coincidences",
+      "slug": "39-suspicious-coincidences"
+    },
+    {
+      "id": 311406,
+      "timestamp": 1543680396,
+      "title": "40. Shifting Tracks",
+      "slug": "40-shifting-tracks"
+    },
+    {
+      "id": 311668,
+      "timestamp": 1543761041,
+      "title": "41. Myriad Clashing Motives",
+      "slug": "41-myriad-clashing-motives"
+    },
+    {
+      "id": 311973,
+      "timestamp": 1543852868,
+      "title": "42. Sum of its Parts",
+      "slug": "42-sum-of-its-parts"
+    },
+    {
+      "id": 312321,
+      "timestamp": 1543950247,
+      "title": "43. Overwhelmed",
+      "slug": "43-overwhelmed"
+    },
+    {
+      "id": 312539,
+      "timestamp": 1544029086,
+      "title": "44. A Show of Trust",
+      "slug": "44-a-show-of-trust"
+    },
+    {
+      "id": 312749,
+      "timestamp": 1544104275,
+      "title": "45. Fine Structures",
+      "slug": "45-fine-structures"
+    },
+    {
+      "id": 313133,
+      "timestamp": 1544200555,
+      "title": "46. The Other Side",
+      "slug": "46-the-other-side"
+    },
+    {
+      "id": 313489,
+      "timestamp": 1544300874,
+      "title": "47. Politics",
+      "slug": "47-politics"
+    },
+    {
+      "id": 313816,
+      "timestamp": 1544377104,
+      "title": "48. Well of Souls",
+      "slug": "48-well-of-souls"
+    },
+    {
+      "id": 314133,
+      "timestamp": 1544460796,
+      "title": "49. Substitution",
+      "slug": "49-substitution"
+    },
+    {
+      "id": 314391,
+      "timestamp": 1544545472,
+      "title": "50. Containment",
+      "slug": "50-containment"
+    },
+    {
+      "id": 314625,
+      "timestamp": 1544626753,
+      "title": "51. Out of Control",
+      "slug": "51-out-of-control"
+    },
+    {
+      "id": 314869,
+      "timestamp": 1544716651,
+      "title": "52. Things Fall Apart",
+      "slug": "52-things-fall-apart"
+    },
+    {
+      "id": 315172,
+      "timestamp": 1544798849,
+      "title": "53. Phantoms",
+      "slug": "53-phantoms"
+    },
+    {
+      "id": 315504,
+      "timestamp": 1544900334,
+      "title": "54. The Gate Is Barred",
+      "slug": "54-the-gate-is-barred"
+    },
+    {
+      "id": 315711,
+      "timestamp": 1544972309,
+      "title": "55. Threshold",
+      "slug": "55-threshold"
+    },
+    {
+      "id": 315980,
+      "timestamp": 1545058807,
+      "title": "56. Obscure",
+      "slug": "56-obscure"
+    },
+    {
+      "id": 316328,
+      "timestamp": 1545159550,
+      "title": "57. Unwanted",
+      "slug": "57-unwanted"
+    },
+    {
+      "id": 316549,
+      "timestamp": 1545227424,
+      "title": "58. Questions and Answers",
+      "slug": "58-questions-and-answers"
+    },
+    {
+      "id": 316947,
+      "timestamp": 1545320483,
+      "title": "59. One Step Forward",
+      "slug": "59-one-step-forward"
+    },
+    {
+      "id": 317193,
+      "timestamp": 1545402026,
+      "title": "60. Into the Abyss",
+      "slug": "60-into-the-abyss"
+    },
+    {
+      "id": 317506,
+      "timestamp": 1545489659,
+      "title": "61. Anthills",
+      "slug": "61-anthills"
+    },
+    {
+      "id": 317781,
+      "timestamp": 1545576139,
+      "title": "62. Improperly Used",
+      "slug": "62-improperly-used"
+    },
+    {
+      "id": 318066,
+      "timestamp": 1545657101,
+      "title": "63. The March of Days",
+      "slug": "63-the-march-of-days"
+    },
+    {
+      "id": 318332,
+      "timestamp": 1545737646,
+      "title": "64. Distance",
+      "slug": "64-distance"
+    },
+    {
+      "id": 318639,
+      "timestamp": 1545841009,
+      "title": "65. Dangerous Ground",
+      "slug": "65-dangerous-ground"
+    },
+    {
+      "id": 318950,
+      "timestamp": 1545932828,
+      "title": "66. Marred Perfection",
+      "slug": "66-marred-perfection"
+    },
+    {
+      "id": 319347,
+      "timestamp": 1546040026,
+      "title": "67. Convergence",
+      "slug": "67-convergence"
+    },
+    {
+      "id": 319545,
+      "timestamp": 1546106805,
+      "title": "68. Green Hell",
+      "slug": "68-green-hell"
+    },
+    {
+      "id": 319853,
+      "timestamp": 1546191940,
+      "title": "69. Ruin",
+      "slug": "69-ruin"
+    },
+    {
+      "id": 320107,
+      "timestamp": 1546274415,
+      "title": "70. Carried Away",
+      "slug": "70-carried-away"
+    },
+    {
+      "id": 320370,
+      "timestamp": 1546354510,
+      "title": "71. Shadows of the Past",
+      "slug": "71-shadows-of-the-past"
+    },
+    {
+      "id": 320672,
+      "timestamp": 1546447558,
+      "title": "72. Crossroads",
+      "slug": "72-crossroads"
+    },
+    {
+      "id": 320954,
+      "timestamp": 1546533747,
+      "title": "73. Plodding Ahead",
+      "slug": "73-plodding-ahead"
+    },
+    {
+      "id": 321285,
+      "timestamp": 1546633448,
+      "title": "74. The Return",
+      "slug": "74-the-return"
+    },
+    {
+      "id": 321479,
+      "timestamp": 1546695561,
+      "title": "75. Soul Stealer",
+      "slug": "75-soul-stealer"
+    },
+    {
+      "id": 321816,
+      "timestamp": 1546790157,
+      "title": "76. Critical Blunder",
+      "slug": "76-critical-blunder"
+    },
+    {
+      "id": 322204,
+      "timestamp": 1546896253,
+      "title": "77. Testing",
+      "slug": "77-testing"
+    },
+    {
+      "id": 322443,
+      "timestamp": 1546964759,
+      "title": "78. Grinding Stone",
+      "slug": "78-grinding-stone"
+    },
+    {
+      "id": 322733,
+      "timestamp": 1547050913,
+      "title": "79. Crime and Evading Punishment",
+      "slug": "79-crime-and-evading-punishment"
+    },
+    {
+      "id": 323014,
+      "timestamp": 1547135928,
+      "title": "80. Enemies",
+      "slug": "80-enemies"
+    },
+    {
+      "id": 323436,
+      "timestamp": 1547226420,
+      "title": "81. A Civil Conversation",
+      "slug": "81-a-civil-conversation"
+    },
+    {
+      "id": 323769,
+      "timestamp": 1547307486,
+      "title": "82. Ancient Circles",
+      "slug": "82-ancient-circles"
+    },
+    {
+      "id": 324024,
+      "timestamp": 1547388475,
+      "title": "83. Scorpion",
+      "slug": "83-scorpion"
+    },
+    {
+      "id": 324123,
+      "timestamp": 1547415834,
+      "title": "84. Powerless",
+      "slug": "84-powerless"
+    },
+    {
+      "id": 324397,
+      "timestamp": 1547486408,
+      "title": "85. Critical Mass",
+      "slug": "85-critical-mass"
+    },
+    {
+      "id": 324653,
+      "timestamp": 1547570714,
+      "title": "86. A New World",
+      "slug": "86-a-new-world"
+    },
+    {
+      "id": 325051,
+      "timestamp": 1547661576,
+      "title": "87. Agents of the Crown",
+      "slug": "87-agents-of-the-crown"
+    },
+    {
+      "id": 325392,
+      "timestamp": 1547753291,
+      "title": "88. Mysterious Ways",
+      "slug": "88-mysterious-ways"
+    },
+    {
+      "id": 325706,
+      "timestamp": 1547828524,
+      "title": "89. Victory",
+      "slug": "89-victory"
+    },
+    {
+      "id": 326028,
+      "timestamp": 1547918604,
+      "title": "90. Change of Plans",
+      "slug": "90-change-of-plans"
+    },
+    {
+      "id": 326370,
+      "timestamp": 1547992112,
+      "title": "91. A Path Paid in Blood",
+      "slug": "91-a-path-paid-in-blood"
+    },
+    {
+      "id": 326727,
+      "timestamp": 1548090135,
+      "title": "92. The Scramble",
+      "slug": "92-the-scramble"
+    },
+    {
+      "id": 327015,
+      "timestamp": 1548173271,
+      "title": "93. Shelter in the Storm",
+      "slug": "93-shelter-in-the-storm"
+    },
+    {
+      "id": 327316,
+      "timestamp": 1548262086,
+      "title": "94. Ghosts",
+      "slug": "94-ghosts"
+    },
+    {
+      "id": 328843,
+      "timestamp": 1548637812,
+      "title": "95. Betrayer",
+      "slug": "95-betrayer"
+    },
+    {
+      "id": 335040,
+      "timestamp": 1550456412,
+      "title": "96. Contract",
+      "slug": "96-contract"
+    },
+    {
+      "id": 344062,
+      "timestamp": 1552873412,
+      "title": "97. Illusory",
+      "slug": "97-illusory"
+    },
+    {
+      "id": 353454,
+      "timestamp": 1555462362,
+      "title": "98. Beneath the Surface",
+      "slug": "98-beneath-the-surface"
+    },
+    {
+      "id": 361412,
+      "timestamp": 1557711014,
+      "title": "99. Powderkeg",
+      "slug": "99-powderkeg"
+    },
+    {
+      "id": 371224,
+      "timestamp": 1560290861,
+      "title": "100. Sacrifice",
+      "slug": "100-sacrifice"
+    },
+    {
+      "id": 386938,
+      "timestamp": 1564449944,
+      "title": "101. The Switch",
+      "slug": "101-the-switch"
+    },
+    {
+      "id": 400666,
+      "timestamp": 1567995327,
+      "title": "102. Giants",
+      "slug": "102-giants"
+    },
+    {
+      "id": 452729,
+      "timestamp": 1580678661,
+      "title": "103. Window of Opportunity",
+      "slug": "103-window-of-opportunity"
+    },
+    {
+      "id": 452730,
+      "timestamp": 1580678791,
+      "title": "104. I Win (I)",
+      "slug": "104-i-win-i"
+    },
+    {
+      "id": 452733,
+      "timestamp": 1580678947,
+      "title": "105. I Win (II)",
+      "slug": "105-i-win-ii"
+    },
+    {
+      "id": 452736,
+      "timestamp": 1580679717,
+      "title": "106. I Win (III)",
+      "slug": "106-i-win-iii"
+    },
+    {
+      "id": 455876,
+      "timestamp": 1581374471,
+      "title": "Epilogue",
+      "slug": "epilogue"
+    },
+    {
+      "id": 455877,
+      "timestamp": 1581374539,
+      "title": "Afterword",
+      "slug": "afterword"
+    }
+  ]
+}

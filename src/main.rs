@@ -35,7 +35,6 @@ use tokio::fs;
 use tokio::io::AsyncReadExt;
 use tokio::io::AsyncWriteExt;
 use tokio::sync::Mutex;
-use tokio::time;
 use tokio::time::interval;
 use tokio::time::Interval;
 use tokio::time::MissedTickBehavior;
@@ -83,13 +82,14 @@ async fn main() -> Result<(), ErrorReport> {
     )
     .wrap()?;
 
-    let ryl_fic_ids = [22518, 25137, 21220];
+    let ryl_fic_ids = [49033, 22518, 25137, 21220];
 
     for ryl_fic_id in ryl_fic_ids {
         royalroad::spine(ryl_fic_id).await.wrap()?;
     }
+
     for ryl_fic_id in ryl_fic_ids {
-        // royalroad::fic(ryl_fic_id).await.wrap()?;
+        royalroad::fic(ryl_fic_id).await.wrap()?;
     }
 
     Ok(())
@@ -148,16 +148,20 @@ mod web {
 }
 
 mod ia {
+    use time::error::InvalidFormatDescription;
+    use time::format_description;
+    use time::OffsetDateTime;
+    use time::PrimitiveDateTime;
+
     use super::*;
 
     static THROTTLE: Lazy<Throttle> = Lazy::new(|| throttle("archive.org", 16 * 1024));
 
-    pub async fn get(url: &str) -> Result<web::Page, ErrorReport> {
-        THROTTLE.tick().await;
-        web::get(f!("https://web.archive.org/web/3id_/{url}")).await
-    }
+    static FORMAT: Lazy<Result<Vec<format_description::FormatItem>, InvalidFormatDescription>> =
+        Lazy::new(|| format_description::parse("[year][month][day][hour][minute][second]"));
 
-    pub async fn get_before(url: &str, datetime: u64) -> Result<web::Page, ErrorReport> {
+    pub async fn get(url: &str, timestamp: i64) -> Result<web::Page, ErrorReport> {
+        let datetime = OffsetDateTime::from_unix_timestamp(timestamp)?.format(FORMAT.as_ref()?)?;
         THROTTLE.tick().await;
         web::get(f!("https://web.archive.org/web/{datetime}id_/{url}")).await
     }
@@ -166,22 +170,42 @@ mod ia {
 mod royalroad {
     use std::collections::HashSet;
 
+    use time::error::InvalidFormatDescription;
+    use time::format_description;
+    use time::format_description::well_known::Rfc2822;
+    use time::PrimitiveDateTime;
+
     use super::*;
 
     static SITE_ID: &str = "RYL";
     static THROTTLE: Lazy<Throttle> = Lazy::new(|| throttle(SITE_ID, 8 * 1024));
 
     #[instrument(level = "debug")]
-    pub async fn spine(id: u64) -> Result<Spine, ErrorReport> {
-        load!("data/spines/{SITE_ID}{id:07}", async move || {
+    pub async fn spine_at(
+        id: u64,
+        slug: Option<String>,
+        archive_timestamp: Option<i64>,
+    ) -> Result<Spine, ErrorReport> {
+        let t = archive_timestamp
+            .map(|t| f!["-{t}"])
+            .unwrap_or_else(String::new);
+        load!("data/spines/{SITE_ID}{id:07}{t}", async move || {
             THROTTLE.tick().await;
 
-            let url = f!["https://www.royalroad.com/fiction/{id}"];
+            let slug = slug.unwrap_or_else(String::new);
+            let url = f!["https://www.royalroad.com/fiction/{id}/{slug}"];
 
-            let page = web::get(url).await?;
+            let page = if let Some(archive_timestamp) = archive_timestamp {
+                ia::get(&url, archive_timestamp).await?
+            } else {
+                web::get(url).await?
+            };
 
             let slug = page
                 .url_final
+                .split("://")
+                .last()
+                .unwrap()
                 .split("/fiction/")
                 .skip(1)
                 .next()
@@ -213,6 +237,14 @@ mod royalroad {
                 .to_owned()
                 .into();
 
+            static FORMAT: Lazy<
+                Result<Vec<format_description::FormatItem>, InvalidFormatDescription>,
+            > = Lazy::new(|| {
+                format_description::parse(
+                    "[weekday], [day] [month repr:long] [year] [hour]:[minute]",
+                )
+            });
+
             for chapter in document.select(&Selector::parse("table#chapters tbody tr").wrap()?) {
                 let html = chapter.html();
 
@@ -225,6 +257,21 @@ mod royalroad {
                     .next()
                     .unwrap();
 
+                let timestamp: i64 = chapter_time
+                    .value()
+                    .attr("unixtime")
+                    .map(|s| s.parse().unwrap())
+                    .unwrap_or_else(|| {
+                        let s = chapter_time
+                            .value()
+                            .attr("title")
+                            .expect("no title found in chapter link, either!");
+                        PrimitiveDateTime::parse(s, FORMAT.as_ref().unwrap())
+                            .unwrap()
+                            .assume_utc()
+                            .unix_timestamp()
+                    });
+
                 let title = chapter_link
                     .text()
                     .next()
@@ -234,10 +281,16 @@ mod royalroad {
                     .into();
                 let href = chapter_link.value().attr("href").unwrap();
 
-                let mut id_slug = href.split("/chapter/").last().unwrap().split("/");
+                let mut id_slug = href
+                    .split("://")
+                    .last()
+                    .unwrap()
+                    .split("/chapter/")
+                    .last()
+                    .unwrap()
+                    .split("/");
                 let id = id_slug.next().unwrap().parse().wrap()?;
                 let slug = id_slug.next().unwrap().to_string().into();
-                let timestamp: u64 = chapter_time.value().attr("unixtime").unwrap().parse()?;
 
                 chapters.insert(SpineChapter {
                     id,
@@ -246,8 +299,6 @@ mod royalroad {
                     slug,
                 });
             }
-
-            let timestamp = chapters.iter().map(|c| c.timestamp).min().unwrap();
 
             Spine {
                 id,
@@ -258,13 +309,29 @@ mod royalroad {
         })
     }
 
+    pub async fn spine(id: u64) -> Result<Spine, ErrorReport> {
+        spine_at(id, None, None).await
+    }
+
     #[instrument]
     pub async fn fic(id: u64) -> Result<Fic, ErrorReport> {
         let spine = spine(id).await?;
 
+        let archived = spine_at(
+            id,
+            spine.slug.to_string().into(),
+            spine.chapters.iter().map(|c| c.timestamp).min(),
+        )
+        .await?;
+
         let mut chapters = BTreeSet::new();
 
         for chapter in &spine.chapters {
+            let chapter = fic_chapter(&spine, &chapter).await?;
+            chapters.insert(chapter);
+        }
+
+        for chapter in &archived.chapters {
             let chapter = fic_chapter(&spine, &chapter).await?;
             chapters.insert(chapter);
         }
@@ -301,7 +368,7 @@ mod royalroad {
             let html_original = document
                 .select(&Selector::parse("div.chapter-inner").wrap()?)
                 .next()
-                .unwrap()
+                .expect("missing expected div.chapter-inner in document")
                 .html();
 
             let html = ammonia::Builder::new()
@@ -335,7 +402,7 @@ mod royalroad {
     #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
     pub struct FicChapter {
         id: u64,
-        timestamp: u64,
+        timestamp: i64,
         title: Arc<str>,
         slug: Arc<str>,
         html: Arc<str>,
@@ -352,7 +419,7 @@ mod royalroad {
     #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
     pub struct SpineChapter {
         id: u64,
-        timestamp: u64,
+        timestamp: i64,
         title: Arc<str>,
         slug: Arc<str>,
     }

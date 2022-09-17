@@ -237,11 +237,19 @@ mod royalroad {
                 .to_owned()
                 .into();
 
-            static FORMAT: Lazy<
+            static FORMAT_1: Lazy<
                 Result<Vec<format_description::FormatItem>, InvalidFormatDescription>,
             > = Lazy::new(|| {
                 format_description::parse(
                     "[weekday], [day] [month repr:long] [year] [hour]:[minute]",
+                )
+            });
+            static FORMAT_2: Lazy<
+                Result<Vec<format_description::FormatItem>, InvalidFormatDescription>,
+            > = Lazy::new(|| {
+                format_description::parse(
+                    "[weekday], [month repr:long] [day padding:none], [year] [hour repr:12 \
+                     padding:none]:[minute] [period]",
                 )
             });
 
@@ -266,8 +274,9 @@ mod royalroad {
                             .value()
                             .attr("title")
                             .expect("no title found in chapter link, either!");
-                        PrimitiveDateTime::parse(s, FORMAT.as_ref().unwrap())
-                            .unwrap()
+                        PrimitiveDateTime::parse(s, FORMAT_1.as_ref().unwrap())
+                            .or(PrimitiveDateTime::parse(s, FORMAT_2.as_ref().unwrap()))
+                            .expect(&f!["{s:?}"])
                             .assume_utc()
                             .unix_timestamp()
                     });
@@ -317,12 +326,9 @@ mod royalroad {
     pub async fn fic(id: u64) -> Result<Fic, ErrorReport> {
         let spine = spine(id).await?;
 
-        let archived = spine_at(
-            id,
-            spine.slug.to_string().into(),
-            spine.chapters.iter().map(|c| c.timestamp).min(),
-        )
-        .await?;
+        let archive_timestamp = spine.chapters.iter().map(|c| c.timestamp).min();
+
+        let archived = spine_at(id, spine.slug.to_string().into(), archive_timestamp).await?;
 
         let mut chapters = BTreeSet::new();
 
@@ -332,7 +338,7 @@ mod royalroad {
         }
 
         for chapter in &archived.chapters {
-            let chapter = fic_chapter(&spine, &chapter).await?;
+            let chapter = fic_chapter_at(&spine, &chapter, archive_timestamp).await?;
             chapters.insert(chapter);
         }
 
@@ -344,10 +350,18 @@ mod royalroad {
         })
     }
 
-    #[instrument(skip_all)]
     pub async fn fic_chapter(
         spine: &Spine,
         chapter: &SpineChapter,
+    ) -> Result<FicChapter, ErrorReport> {
+        fic_chapter_at(spine, chapter, None).await
+    }
+
+    #[instrument(skip_all)]
+    pub async fn fic_chapter_at(
+        spine: &Spine,
+        chapter: &SpineChapter,
+        archive_timestamp: Option<i64>,
     ) -> Result<FicChapter, ErrorReport> {
         let spine = spine.clone();
         let chapter = chapter.clone();
@@ -356,39 +370,50 @@ mod royalroad {
         let chapter_id = chapter.id;
         let chapter_slug = chapter.slug.clone();
 
-        load!("target/chapters/{SITE_ID}{chapter_id}", async move || {
-            THROTTLE.tick().await;
+        let t = archive_timestamp
+            .map(|t| f!["-{t}"])
+            .unwrap_or_else(String::new);
+        load!(
+            "target/chapters/{SITE_ID}{chapter_id}{t}",
+            async move || {
+                THROTTLE.tick().await;
 
-            let url = f!["https://www.royalroad.com/fiction/{fic_id}/{fic_slug}/chapter/{chapter_id}/{chapter_slug}"];
+                let url = f!["https://www.royalroad.com/fiction/{fic_id}/{fic_slug}/chapter/{chapter_id}/{chapter_slug}"];
 
-            let html = web::get(url).await?.body;
+                let html = if let Some(timestamp) = archive_timestamp {
+                    ia::get(&url, timestamp).await?
+                } else {
+                    web::get(url).await?
+                }
+                .body;
 
-            let document = Html::parse_document(html.as_ref());
+                let document = Html::parse_document(html.as_ref());
 
-            let html_original = document
-                .select(&Selector::parse("div.chapter-inner").wrap()?)
-                .next()
-                .expect("missing expected div.chapter-inner in document")
-                .html();
+                let html_original = document
+                    .select(&Selector::parse("div.chapter-inner").wrap()?)
+                    .next()
+                    .expect("missing expected div.chapter-inner in document")
+                    .html();
 
-            let html = ammonia::Builder::new()
-                .rm_tags(HashSet::<&str>::from_iter(["img", "span"]))
-                .url_schemes(HashSet::<&str>::from_iter([
-                    "http", "https", "mailto", "magnet",
-                ]))
-                .url_relative(ammonia::UrlRelative::Deny)
-                .clean(&html_original)
-                .to_string()
-                .into();
+                let html = ammonia::Builder::new()
+                    .rm_tags(HashSet::<&str>::from_iter(["img", "span"]))
+                    .url_schemes(HashSet::<&str>::from_iter([
+                        "http", "https", "mailto", "magnet",
+                    ]))
+                    .url_relative(ammonia::UrlRelative::Deny)
+                    .clean(&html_original)
+                    .to_string()
+                    .into();
 
-            FicChapter {
-                id: chapter.id,
-                title: chapter.title.clone(),
-                timestamp: chapter.timestamp,
-                slug: chapter.slug.clone(),
-                html,
+                FicChapter {
+                    id: chapter.id,
+                    title: chapter.title.clone(),
+                    timestamp: chapter.timestamp,
+                    slug: chapter.slug.clone(),
+                    html,
+                }
             }
-        })
+        )
     }
 
     #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]

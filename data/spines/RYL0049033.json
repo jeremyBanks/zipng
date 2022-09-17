@@ -1,0 +1,25 @@
+{
+  "id": 49033,
+  "title": "Mother of Learning: The AU Chapters",
+  "slug": "mother-of-learning-the-au-chapters",
+  "chapters": [
+    {
+      "id": 798258,
+      "timestamp": 1638384662,
+      "title": "The Fourth Looper",
+      "slug": "the-fourth-looper"
+    },
+    {
+      "id": 810755,
+      "timestamp": 1640121153,
+      "title": "Abyss of Time",
+      "slug": "abyss-of-time"
+    },
+    {
+      "id": 908749,
+      "timestamp": 1652799337,
+      "title": "Predator",
+      "slug": "predator"
+    }
+  ]
+}

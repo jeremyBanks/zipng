@@ -38,18 +38,7 @@ export const handler: MiddlewareHandler = async (request, context) => {
 
   response.headers.append(
     "Content-Security-Policy",
-    `default-src ${
-      [
-        "self",
-        "https://fic.is",
-        "https://*.fic.is",
-        "unsafe-inline",
-        "unsafe-eval",
-        "unsafe-hashes",
-        "blob:",
-        "data:",
-      ].join(" ")
-    }`,
+    `script-src 'self'`,
   );
 
   return response;

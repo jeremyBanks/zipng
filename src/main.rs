@@ -50,6 +50,16 @@ use tracing_subscriber::fmt::format::FmtSpan;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::EnvFilter;
 use twox_hash::Xxh3Hash64;
+use std::collections::HashSet;
+use time::error::InvalidFormatDescription;
+use time::format_description;
+use time::OffsetDateTime;
+use time::PrimitiveDateTime;
+
+
+use crate::throttle::throttle;
+use crate::throttle::Throttle;
+
 
 use crate::load::load;
 use crate::load::Load;
@@ -101,10 +111,6 @@ fn digest(bytes: &[u8]) -> String {
     let digest = hasher.finish();
     f!("x{digest:016X}")
 }
-
-use crate::throttle::throttle;
-use crate::throttle::Throttle;
-
 mod web {
     use super::*;
 
@@ -148,10 +154,6 @@ mod web {
 }
 
 mod ia {
-    use time::error::InvalidFormatDescription;
-    use time::format_description;
-    use time::OffsetDateTime;
-    use time::PrimitiveDateTime;
 
     use super::*;
 
@@ -168,13 +170,6 @@ mod ia {
 }
 
 mod royalroad {
-    use std::collections::HashSet;
-
-    use time::error::InvalidFormatDescription;
-    use time::format_description;
-    use time::format_description::well_known::Rfc2822;
-    use time::PrimitiveDateTime;
-
     use super::*;
 
     static SITE_ID: &str = "RYL";

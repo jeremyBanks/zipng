@@ -5,6 +5,7 @@ use std::borrow::Cow;
 use std::borrow::Cow::Borrowed;
 use std::borrow::Cow::Owned;
 use std::collections::BTreeSet;
+use std::collections::HashSet;
 use std::env;
 use std::fmt::Debug;
 use std::format as f;
@@ -31,14 +32,21 @@ use serde::de::DeserializeOwned;
 use serde::Deserialize;
 use serde::Serialize;
 use static_assertions::assert_obj_safe;
+use time::error::InvalidFormatDescription;
+use time::format_description;
+use time::OffsetDateTime;
+use time::PrimitiveDateTime;
 use tokio::fs;
 use tokio::io::AsyncReadExt;
 use tokio::io::AsyncWriteExt;
+use tokio::spawn;
 use tokio::sync::Mutex;
 use tokio::time::interval;
 use tokio::time::Interval;
 use tokio::time::MissedTickBehavior;
+use tokio::try_join;
 use tracing::debug;
+use tracing::error;
 use tracing::info;
 use tracing::instrument;
 use tracing::metadata::LevelFilter;
@@ -50,19 +58,11 @@ use tracing_subscriber::fmt::format::FmtSpan;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::EnvFilter;
 use twox_hash::Xxh3Hash64;
-use std::collections::HashSet;
-use time::error::InvalidFormatDescription;
-use time::format_description;
-use time::OffsetDateTime;
-use time::PrimitiveDateTime;
-
-
-use crate::throttle::throttle;
-use crate::throttle::Throttle;
-
 
 use crate::load::load;
 use crate::load::Load;
+use crate::throttle::throttle;
+use crate::throttle::Throttle;
 use crate::wrapped_error::DebugResultExt;
 
 mod load;
@@ -92,15 +92,12 @@ async fn main() -> Result<(), ErrorReport> {
     )
     .wrap()?;
 
-    let ryl_fic_ids = [49033, 22518, 25137, 21220];
-
-    for ryl_fic_id in ryl_fic_ids {
-        royalroad::spine(ryl_fic_id).await.wrap()?;
-    }
-
-    for ryl_fic_id in ryl_fic_ids {
-        royalroad::fic(ryl_fic_id).await.wrap()?;
-    }
+    try_join!(
+        spawn(async { royalroad::fic(21220).await }),
+        spawn(async { royalroad::fic(22518).await }),
+        spawn(async { royalroad::fic(25137).await }),
+        spawn(async { royalroad::fic(49033).await }),
+    )?;
 
     Ok(())
 }
@@ -111,6 +108,7 @@ fn digest(bytes: &[u8]) -> String {
     let digest = hasher.finish();
     f!("x{digest:016X}")
 }
+
 mod web {
     use super::*;
 
@@ -170,6 +168,8 @@ mod ia {
 }
 
 mod royalroad {
+    use std::io::Write;
+
     use super::*;
 
     static SITE_ID: &str = "RYL";
@@ -321,10 +321,6 @@ mod royalroad {
     pub async fn fic(id: u64) -> Result<Fic, ErrorReport> {
         let spine = spine(id).await?;
 
-        let archive_timestamp = spine.chapters.iter().map(|c| c.timestamp).min();
-
-        let archived = spine_at(id, spine.slug.to_string().into(), archive_timestamp).await?;
-
         let mut chapters = BTreeSet::new();
 
         for chapter in &spine.chapters {
@@ -332,17 +328,53 @@ mod royalroad {
             chapters.insert(chapter);
         }
 
-        for chapter in &archived.chapters {
-            let chapter = fic_chapter_at(&spine, &chapter, archive_timestamp).await?;
-            chapters.insert(chapter);
-        }
+        // let archive_timestamp = spine.chapters.iter().map(|c| c.timestamp).min();
 
-        Ok(Fic {
+        // let archived = spine_at(id, spine.slug.to_string().into(), archive_timestamp)
+        //     .await
+        //     .or_else(|err| {
+        //         error!("{err}");
+        //         Err(err)
+        //     });
+
+        // for chapter in &archived.chapters {
+        //     let chapter = fic_chapter_at(&spine, &chapter, archive_timestamp).await?;
+        //     chapters.insert(chapter);
+        // }
+
+        let fic = Fic {
             id,
             title: spine.title,
             slug: spine.slug,
             chapters,
-        })
+        };
+
+        info!("Loaded fic #{id} {title:?}", title = &fic.title);
+        info!(chapter_count = fic.chapters.len());
+
+        let fic_json = serde_json::to_string(&fic).unwrap();
+        info!(json_size = fic_json.len());
+
+        let fic_brotli_json = {
+            let mut writer = brotli::CompressorWriter::new(Vec::new(), 0, 11, 0);
+            writer.write_all(fic_json.as_bytes()).unwrap();
+            writer.into_inner()
+        };
+
+        info!(json_brotli_size = fic_brotli_json.len());
+
+        let fic_postcard = postcard::to_stdvec(&fic).unwrap();
+        info!(postcard_size = fic_postcard.len());
+
+        let fic_brotli_postcard = {
+            let mut writer = brotli::CompressorWriter::new(Vec::new(), 0, 11, 0);
+            writer.write_all(fic_postcard.as_bytes()).unwrap();
+            writer.into_inner()
+        };
+
+        info!(postcard_brotli_size = fic_brotli_postcard.len());
+
+        Ok(fic)
     }
 
     pub async fn fic_chapter(

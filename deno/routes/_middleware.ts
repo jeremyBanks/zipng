@@ -6,6 +6,7 @@ const hostsSecurity: Record<string, HostSecurityMode> = {
   localhost: "none",
   "127.0.0.1": "none",
   "0.0.0.0": "none",
+  "192.168.0.159": "none",
   "fic.is": "preload",
 };
 

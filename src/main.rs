@@ -87,16 +87,17 @@ async fn main() -> Result<(), ErrorReport> {
         tracing_subscriber::fmt()
             .with_env_filter(EnvFilter::from_default_env())
             .pretty()
+            .with_span_events(FmtSpan::CLOSE)
             .finish()
             .with(ErrorLayer::default()),
     )
     .wrap()?;
 
     try_join!(
-        spawn(async { royalroad::fic(21220).await }),
-        spawn(async { royalroad::fic(22518).await }),
+        // spawn(async { royalroad::fic(21220).await }),
+        // spawn(async { royalroad::fic(22518).await }),
         spawn(async { royalroad::fic(25137).await }),
-        spawn(async { royalroad::fic(49033).await }),
+        // spawn(async { royalroad::fic(49033).await }),
     )?;
 
     Ok(())
@@ -122,7 +123,7 @@ mod web {
         pub body: String,
     }
 
-    #[instrument(skip_all)]
+    #[instrument(level = "trace", skip_all)]
     pub async fn get(url: impl AsRef<str>) -> Result<Page, ErrorReport> {
         let url = url.as_ref().to_string();
         let digest = digest(url.as_bytes());
@@ -175,7 +176,7 @@ mod royalroad {
     static SITE_ID: &str = "RYL";
     static THROTTLE: Lazy<Throttle> = Lazy::new(|| throttle(SITE_ID, 8 * 1024));
 
-    #[instrument(level = "debug")]
+    #[instrument(level = "trace")]
     pub async fn spine_at(
         id: u64,
         slug: Option<String>,
@@ -317,7 +318,7 @@ mod royalroad {
         spine_at(id, None, None).await
     }
 
-    #[instrument]
+    #[instrument(level = "trace")]
     pub async fn fic(id: u64) -> Result<Fic, ErrorReport> {
         let spine = spine(id).await?;
 
@@ -352,27 +353,23 @@ mod royalroad {
         info!("Loaded fic #{id} {title:?}", title = &fic.title);
         info!(chapter_count = fic.chapters.len());
 
-        let fic_json = serde_json::to_string(&fic).unwrap();
-        info!(json_size = fic_json.len());
+        let span = tracing::info_span!("JSON+Brotli...").entered();
+        let mut fic_brotli_json = Vec::new();
+        serde_json::to_writer_pretty(
+            brotli::CompressorWriter::new(&mut fic_brotli_json, 0, 11, 24),
+            &fic,
+        )?;
+        drop(span);
+        info!(json_brotli = fic_brotli_json.len());
 
-        let fic_brotli_json = {
-            let mut writer = brotli::CompressorWriter::new(Vec::new(), 0, 11, 0);
-            writer.write_all(fic_json.as_bytes()).unwrap();
-            writer.into_inner()
-        };
-
-        info!(json_brotli_size = fic_brotli_json.len());
-
-        let fic_postcard = postcard::to_stdvec(&fic).unwrap();
-        info!(postcard_size = fic_postcard.len());
-
-        let fic_brotli_postcard = {
-            let mut writer = brotli::CompressorWriter::new(Vec::new(), 0, 11, 0);
-            writer.write_all(fic_postcard.as_bytes()).unwrap();
-            writer.into_inner()
-        };
-
-        info!(postcard_brotli_size = fic_brotli_postcard.len());
+        let span = tracing::info_span!("JSON+zstd...").entered();
+        let mut fic_zstd_json = Vec::new();
+        serde_json::to_writer_pretty(
+            zstd::Encoder::new(&mut fic_zstd_json, 22)?.auto_finish(),
+            &fic,
+        )?;
+        drop(span);
+        info!(json_zstd = fic_zstd_json.len());
 
         Ok(fic)
     }
@@ -384,7 +381,7 @@ mod royalroad {
         fic_chapter_at(spine, chapter, None).await
     }
 
-    #[instrument(skip_all)]
+    #[instrument(level = "trace", skip_all)]
     pub async fn fic_chapter_at(
         spine: &Spine,
         chapter: &SpineChapter,

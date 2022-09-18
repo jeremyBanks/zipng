@@ -10,7 +10,7 @@ impl<T> Load for T where
 {
 }
 
-#[instrument(skip_all)]
+#[instrument(level = "trace", skip_all)]
 pub async fn load<Output: Load>(
     path: Option<&Path>,
     fetch: impl FnOnce() -> tokio::task::JoinHandle<Result<Output, ErrorReport>>,

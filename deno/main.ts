@@ -11,6 +11,7 @@ import twindPlugin from "$fresh/plugins/twind.ts";
 import twindConfig from "./twind.config.ts";
 
 await start(manifest, {
+  hostname: "0.0.0.0",
   port: Deno.env.get("DENO_DEPLOYMENT_ID") ? 8000 : 80,
   plugins: [twindPlugin(twindConfig)],
 });

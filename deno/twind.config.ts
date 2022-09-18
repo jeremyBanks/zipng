@@ -17,7 +17,7 @@ export default {
   },
   preflight: (preflight) => ({
     ...preflight,
-    html: apply`bg-coolGray-900 text-amber font-sans`,
+    html: apply`bg-coolGray-900 text-white font-sans`,
     code: apply`font-mono`,
     pre: apply`font-mono`,
     "@font-face": [

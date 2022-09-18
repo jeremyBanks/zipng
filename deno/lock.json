@@ -124,6 +124,7 @@
   "https://esm.sh/stable/preact@10.11.0/deno/preact.js": "071b515099e5dff2fe56768be62644e32fab702b194171357ccc4d7d1210144a",
   "https://esm.sh/twind@0.16.17": "fc9e1ea8d7ffb1bab90f2212489fbdfe5e9ca1eb8c51073e2f3432ffe3d905f1",
   "https://esm.sh/twind@0.16.17/colors": "f16880bc249d0bf926cdaaf76eb31ed7364c020bd14e0d9e8c804b4005ecfc2a",
+  "https://esm.sh/twind@0.16.17/css": "ae03cd39adbc6bd6ebfb7d2161fdf5950df122f9562437a3abc44a193f191e29",
   "https://esm.sh/twind@0.16.17/css#css_directive": "ae03cd39adbc6bd6ebfb7d2161fdf5950df122f9562437a3abc44a193f191e29",
   "https://esm.sh/twind@0.16.17/sheets": "82d5becf4718cd6e3b61ca85acd9db97c4660e1e97a073bc10ad371e632bdfb3",
   "https://esm.sh/v95/@preact/signals-core@1.0.1/X-ZS8q/deno/signals-core.js": "cceff90da93a32d4885f394e83c5073b124c455e08cd95a8167503d7f962a743",

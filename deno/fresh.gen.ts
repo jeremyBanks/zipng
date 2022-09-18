@@ -3,8 +3,8 @@
 // This file is automatically updated during development when running `dev.ts`.
 
 import config from "./deno.json" assert { type: "json" };
-import * as $0 from "./routes/RYL[fic_id].tsx";
-import * as $1 from "./routes/RYL[fic_id][chapter_id].tsx";
+import * as $0 from "./routes/RYL[fic_id]/[chapter_id].tsx";
+import * as $1 from "./routes/RYL[fic_id]/index.tsx";
 import * as $2 from "./routes/_404.ts";
 import * as $3 from "./routes/_500.ts";
 import * as $4 from "./routes/_middleware.ts";
@@ -15,8 +15,8 @@ import * as $$0 from "./islands/Scanner.tsx";
 
 const manifest = {
   routes: {
-    "./routes/RYL[fic_id].tsx": $0,
-    "./routes/RYL[fic_id][chapter_id].tsx": $1,
+    "./routes/RYL[fic_id]/[chapter_id].tsx": $0,
+    "./routes/RYL[fic_id]/index.tsx": $1,
     "./routes/_404.ts": $2,
     "./routes/_500.ts": $3,
     "./routes/_middleware.ts": $4,

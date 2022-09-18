@@ -10,14 +10,15 @@ export default {
     extend: {
       colors,
       fontFamily: {
-        mono: ["'JetBrains Mono'", "monospace"],
-        sans: ["'Atkinson Hyperlegible'", "sans-serif"],
+        mono: ["'JetBrains Mono'", "ui-monospace", "monospace"],
+        sans: ["'Atkinson Hyperlegible'", "ui-sans-serif", "sans-serif"],
+        serif: ["Georgia", "ui-serif", "serif"],
       },
     },
   },
   preflight: (preflight) => ({
     ...preflight,
-    html: apply`bg-coolGray-900 text-white font-sans`,
+    html: apply`bg-white text-black font-sans`,
     code: apply`font-mono`,
     pre: apply`font-mono`,
     "@font-face": [

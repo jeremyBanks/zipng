@@ -1,6 +1,8 @@
 import { Handlers, PageProps, RenderContext } from "$fresh/server.ts";
 import { z } from "https://deno.land/x/zod/mod.ts";
 
+import { apply, css, tw } from "twind/css";
+
 export const config = {
   routeOverride: "/RYL:id([0-9A-Z]+)/:chapter_id([0-9]+)",
 };
@@ -29,17 +31,20 @@ export const handler: Handlers = {
 
 export default ({ data: chapter }: PageProps<Chapter>) => {
   return (
-    <main class="mx-auto p-2">
-      <h1 class="text-xl font-bold p-4">{chapter.title}</h1>
-      <style>
-        {`
-        p {
-          text-indent: 1em;
-          margin: 1em;
-        }
-        `}
-      </style>
-      <div class="p-2" dangerouslySetInnerHTML={{ __html: chapter.html }} />
+    <main class="mx-auto my1-16 w-96 text-lg">
+      <h1 class="text-xl font-bold mt-4 border-b-4 border-color-blue-50">
+        {chapter.title}
+      </h1>
+      <div
+        class={tw`${
+          css({
+            "& p": css`text-indent: .5rem; ${
+              apply("my-2 cursor-pointer hover:bg-blue-50")
+            }`,
+          })
+        }`}
+        dangerouslySetInnerHTML={{ __html: chapter.html }}
+      />
     </main>
   );
 };

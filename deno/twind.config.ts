@@ -18,7 +18,7 @@ export default {
   },
   preflight: (preflight) => ({
     ...preflight,
-    html: apply`bg-white text-black font-sans`,
+    'html, body': apply`flex justify-center items-center h-full w-full bg-white text-black font-sans`,
     code: apply`font-mono`,
     pre: apply`font-mono`,
     "@font-face": [

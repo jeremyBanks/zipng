@@ -1,7 +1,8 @@
 import { PageProps } from "$fresh/server.ts";
+import Page from "../components/Page.tsx";
 
-export default function IndexPage(props: PageProps) {
-  return (
+export default (props: PageProps) => (
+  <Page>
     <main className="container mx-auto py-sm px-xs text-amber-100">
       <h1 className="text-2xl font-bold mb-8 mt-16">
         Welcome
@@ -22,5 +23,5 @@ const bar = "baz";
         We will <code>=&lt; find &gt;=</code> you
       </p>
     </main>
-  );
-}
+  </Page>
+);

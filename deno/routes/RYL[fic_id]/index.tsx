@@ -1,5 +1,7 @@
 import { Handlers, PageProps, RenderContext } from "$fresh/server.ts";
 import { z } from "https://deno.land/x/zod/mod.ts";
+import "preact/debug";
+import Page from "../../components/Page.tsx";
 
 export const config = {
   routeOverride: "/RYL:id([0-9A-Z]+)",
@@ -31,8 +33,8 @@ export const handler: Handlers = {
   },
 };
 
-export default ({ data: spine }: PageProps<Spine>) => {
-  return (
+export default ({ data: spine }: PageProps<Spine>) => (
+  <Page>
     <main class="mx-auto p-2">
       <h1 class="text-xl font-bold p-4">{spine.title}</h1>
       <ol>
@@ -48,5 +50,5 @@ export default ({ data: spine }: PageProps<Spine>) => {
         ))}
       </ol>
     </main>
-  );
-};
+  </Page>
+);

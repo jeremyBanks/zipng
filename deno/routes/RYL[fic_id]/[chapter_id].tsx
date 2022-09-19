@@ -32,14 +32,22 @@ export const handler: Handlers = {
 
 export default ({ data: chapter }: PageProps<Chapter>) => (
   <Page>
-    <main class="block h-full overflow-y-auto mx-auto my1-16 w-96 text-lg">
+    <main
+      class={tw`block h-full w-full overflow-y-auto ${
+        css({
+          "&": {
+            "scroll-snap-type": "y mandatory",
+          },
+        })
+      }`}
+    >
       <h1 class="text-xl font-bold mt-4 border-b-4 border-color-blue-50">
         {chapter.title}
       </h1>
       <div
-        class={tw`${
+        class={tw`w-96 text-lg ${
           css({
-            "& p": css`text-indent: .5rem; ${
+            "& p": css`text-indent: .5rem; scroll-snap-align: center; ${
               apply("my-2 cursor-pointer hover:bg-blue-50")
             }`,
           })

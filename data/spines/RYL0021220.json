@@ -1,764 +1,764 @@
 {
-  "id": 21220,
   "id10": "RYL0021220",
   "title": "Mother of Learning",
-  "slug": "mother-of-learning",
+  "author": "TODO",
+  "length": 4845387,
   "chapters": [
     {
-      "id": 301778,
       "id10": "C000301778",
       "timestamp": 1540762483,
       "title": "1. Good Morning Brother",
-      "slug": "1-good-morning-brother"
+      "length": 45368,
+      "starts_with": "<div> <p><strong>Chapter 001<br></strong><strong>Good Morning Brother</strong></p> <p>Zorian’s"
     },
     {
-      "id": 301781,
       "id10": "C000301781",
       "timestamp": 1540763144,
       "title": "2. Life’s Little Problems",
-      "slug": "2-lifes-little-problems"
+      "length": 45945,
+      "starts_with": "<div> <p><strong>Chapter 002<br></strong><strong>Life’s Little Problems</strong></p>"
     },
     {
-      "id": 301784,
       "id10": "C000301784",
       "timestamp": 1540763590,
       "title": "3. The Bitter Truth",
-      "slug": "3-the-bitter-truth"
+      "length": 43485,
+      "starts_with": "<div> <p><strong>Chapter 003<br></strong><strong>The Bitter Truth</strong></p> <p>If someone"
     },
     {
-      "id": 301788,
       "id10": "C000301788",
       "timestamp": 1540763984,
       "title": "4. Stars Fell",
-      "slug": "4-stars-fell"
+      "length": 35205,
+      "starts_with": "<div> <p><strong>Chapter 004<br></strong><strong>Stars Fell</strong></p> <p>“I’m coming, I’m"
     },
     {
-      "id": 301795,
       "id10": "C000301795",
       "timestamp": 1540764443,
       "title": "5. Start Over",
-      "slug": "5-start-over"
+      "length": 39155,
+      "starts_with": "<div> <p><strong>Chapter 005<br></strong><strong>Start Over</strong></p> <p>Zorian’s eyes"
     },
     {
-      "id": 301799,
       "id10": "C000301799",
       "timestamp": 1540765171,
       "title": "6. Concentrate and Try Again",
-      "slug": "6-concentrate-and-try-again"
+      "length": 38888,
+      "starts_with": "<div> <p><strong>Chapter 006<br></strong><strong>Concentrate and Try Again</strong></p>"
     },
     {
-      "id": 301801,
       "id10": "C000301801",
       "timestamp": 1540765838,
       "title": "7. Of Gaps And Pretending",
-      "slug": "7-of-gaps-and-pretending"
+      "length": 43379,
+      "starts_with": "<div> <p><strong>Chapter 007<br></strong><strong>Of Gaps And Pretending</strong></p> <p>At"
     },
     {
-      "id": 301802,
       "id10": "C000301802",
       "timestamp": 1540766184,
       "title": "8. Perspective",
-      "slug": "8-perspective"
+      "length": 34743,
+      "starts_with": "<div> <p><strong>Chapter 008<br></strong><strong>Perspective</strong></p> <p>“Here we are!”"
     },
     {
-      "id": 301984,
       "id10": "C000301984",
       "timestamp": 1540827335,
       "title": "9. Cheaters",
-      "slug": "9-cheaters"
+      "length": 49724,
+      "starts_with": "<div> <p><strong>Chapter 009<br></strong><strong>Cheaters</strong></p> <p>“Majara,” intoned"
     },
     {
-      "id": 302241,
       "id10": "C000302241",
       "timestamp": 1540914715,
       "title": "10. Overlooked Details",
-      "slug": "10-overlooked-details"
+      "length": 30712,
+      "starts_with": "<div> <p><strong>Chapter 010<br></strong><strong>Overlooked Details</strong></p> <p>Zorian’s"
     },
     {
-      "id": 302540,
       "id10": "C000302540",
       "timestamp": 1540999806,
       "title": "11. Limiters",
-      "slug": "11-limiters"
+      "length": 39080,
+      "starts_with": "<div> <p><strong>Chapter 011<br></strong><strong>Limiters</strong></p> <p>“Why is your test"
     },
     {
-      "id": 302854,
       "id10": "C000302854",
       "timestamp": 1541092333,
       "title": "12. Soul Web",
-      "slug": "12-soul-web"
+      "length": 41812,
+      "starts_with": "<div> <p><strong>Chapter 012<br></strong><strong>Soul Web</strong></p> <p>Zorian stomped into"
     },
     {
-      "id": 303116,
       "id10": "C000303116",
       "timestamp": 1541168617,
       "title": "13. Any Second Now",
-      "slug": "13-any-second-now"
+      "length": 37549,
+      "starts_with": "<div> <p><strong>Chapter 013<br></strong><strong>Any Second Now</strong></p> <p>Zorian’s eyes"
     },
     {
-      "id": 303485,
       "id10": "C000303485",
       "timestamp": 1541259203,
       "title": "14. The Sister Effect",
-      "slug": "14-the-sister-effect"
+      "length": 30389,
+      "starts_with": "<div> <p><strong>Chapter 014<br></strong><strong>The Sister Effect</strong></p> <p>After"
     },
     {
-      "id": 303785,
       "id10": "C000303785",
       "timestamp": 1541341940,
       "title": "15. Busy Friday",
-      "slug": "15-busy-friday"
+      "length": 33790,
+      "starts_with": "<div> <p><strong>Chapter 015<br></strong><strong>Busy Friday</strong></p> <p>Zorian felt the"
     },
     {
-      "id": 304097,
       "id10": "C000304097",
       "timestamp": 1541431144,
       "title": "16. We Need To Talk",
-      "slug": "16-we-need-to-talk"
+      "length": 42907,
+      "starts_with": "<div> <p><strong>Chapter 016<br></strong><strong>We Need To Talk</strong></p> <p>Tearing out a"
     },
     {
-      "id": 304398,
       "id10": "C000304398",
       "timestamp": 1541519531,
       "title": "17. Sympathy for the Spider",
-      "slug": "17-sympathy-for-the-spider"
+      "length": 44073,
+      "starts_with": "<div> <p><strong>Chapter 017<br></strong><strong>Sympathy for the Spider</strong></p> <p>For a"
     },
     {
-      "id": 304716,
       "id10": "C000304716",
       "timestamp": 1541605731,
       "title": "18. The Pact is Sealed",
-      "slug": "18-the-pact-is-sealed"
+      "length": 30501,
+      "starts_with": "<div> <p><strong>Chapter 018<br></strong><strong>The Pact is Sealed</strong></p> <p>He should"
     },
     {
-      "id": 305052,
       "id10": "C000305052",
       "timestamp": 1541699933,
       "title": "19. Tangled Webs",
-      "slug": "19-tangled-webs"
+      "length": 41293,
+      "starts_with": "<div> <p><strong>Chapter 019<br></strong><strong>Tangled Webs</strong></p> <p>One thing Zorian"
     },
     {
-      "id": 305359,
       "id10": "C000305359",
       "timestamp": 1541785118,
       "title": "20. A Matter of Faith",
-      "slug": "20-a-matter-of-faith"
+      "length": 35613,
+      "starts_with": "<div> <p><strong>Chapter 020<br></strong><strong>A Matter of Faith</strong></p> <p>Zorian"
     },
     {
-      "id": 305662,
       "id10": "C000305662",
       "timestamp": 1541874423,
       "title": "21. Wheel of Fortune",
-      "slug": "21-wheel-of-fortune"
+      "length": 51899,
+      "starts_with": "<div> <p><strong>Chapter 021<br></strong><strong>Wheel of Fortune</strong></p> <p>In the"
     },
     {
-      "id": 305877,
       "id10": "C000305877",
       "timestamp": 1541945270,
       "title": "22. Complications",
-      "slug": "22-complications"
+      "length": 50115,
+      "starts_with": "<div> <p><strong>Chapter 022<br></strong><strong>Complications</strong></p> <p>Zorian woke up"
     },
     {
-      "id": 306244,
       "id10": "C000306244",
       "timestamp": 1542040577,
       "title": "23. Lighting the Fuse",
-      "slug": "23-lighting-the-fuse"
+      "length": 42981,
+      "starts_with": "<div> <p><strong>Chapter 023<br></strong><strong>Lighting the Fuse</strong></p> <p>On the"
     },
     {
-      "id": 306575,
       "id10": "C000306575",
       "timestamp": 1542136882,
       "title": "24. Smoke and Mirrors",
-      "slug": "24-smoke-and-mirrors"
+      "length": 49556,
+      "starts_with": "<div> <p><strong>Chapter 024<br></strong><strong>Smoke and Mirrors</strong></p> <p>Zorian would"
     },
     {
-      "id": 306758,
       "id10": "C000306758",
       "timestamp": 1542211929,
       "title": "25. The Unexpected",
-      "slug": "25-the-unexpected"
+      "length": 48239,
+      "starts_with": "<div> <p><strong>Chapter 025<br></strong><strong>The Unexpected</strong></p> <p>Zorian stared"
     },
     {
-      "id": 307245,
       "id10": "C000307245",
       "timestamp": 1542349004,
       "title": "26. Soulkill",
-      "slug": "26-soulkill"
+      "length": 86021,
+      "starts_with": "<div> <p><strong>Chapter 026<br></strong><strong>Soulkill</strong></p> <p>The temple was just"
     },
     {
-      "id": 307248,
       "id10": "C000307248",
       "timestamp": 1542349791,
       "title": "27. Cast Adrift",
-      "slug": "27-cast-adrift"
+      "length": 33245,
+      "starts_with": "<div> <p><strong>Chapter 027<br></strong><strong>Cast Adrift</strong></p> <p>Zorian’s eyes"
     },
     {
-      "id": 307587,
       "id10": "C000307587",
       "timestamp": 1542468509,
       "title": "28. Cauldron",
-      "slug": "28-cauldron"
+      "length": 36817,
+      "starts_with": "<div> <p><strong>Chapter 028<br></strong><strong>Cauldron</strong></p> <p>‘Life takes you to"
     },
     {
-      "id": 307852,
       "id10": "C000307852",
       "timestamp": 1542553866,
       "title": "29. The Hunters and the Hunted",
-      "slug": "29-the-hunters-and-the-hunted"
+      "length": 36888,
+      "starts_with": "<div> <p><strong>Chapter 029<br></strong><strong>The Hunters and the Hunted</strong></p>"
     },
     {
-      "id": 308104,
       "id10": "C000308104",
       "timestamp": 1542640130,
       "title": "30. A Game of Shops",
-      "slug": "30-a-game-of-shops"
+      "length": 37771,
+      "starts_with": "<div> <p><strong>Chapter 030<br></strong><strong>A Game of Shops</strong></p> <p>“I want you to"
     },
     {
-      "id": 308373,
       "id10": "C000308373",
       "timestamp": 1542729531,
       "title": "31. Marked",
-      "slug": "31-marked"
+      "length": 51020,
+      "starts_with": "<div> <p><strong>Chapter 031<br></strong><strong>Marked</strong></p> <p>Zorian stared at the"
     },
     {
-      "id": 308643,
       "id10": "C000308643",
       "timestamp": 1542823439,
       "title": "32. Alternatives",
-      "slug": "32-alternatives"
+      "length": 35454,
+      "starts_with": "<div> <p><strong>Chapter 032<br></strong><strong>Alternatives</strong></p> <p>Despite Alanic’s"
     },
     {
-      "id": 308876,
       "id10": "C000308876",
       "timestamp": 1542900113,
       "title": "33. Gateways",
-      "slug": "33-gateways"
+      "length": 43609,
+      "starts_with": "<div> <p><strong>Chapter 033<br></strong><strong>Gateways</strong></p> <p>Standing still in the"
     },
     {
-      "id": 309130,
       "id10": "C000309130",
       "timestamp": 1542988939,
       "title": "34. Unreasonable Things",
-      "slug": "34-unreasonable-things"
+      "length": 42911,
+      "starts_with": "<div> <p><strong>Chapter 034<br></strong><strong>Unreasonable Things</strong></p> <p>He didn’t"
     },
     {
-      "id": 309417,
       "id10": "C000309417",
       "timestamp": 1543075931,
       "title": "35. Mistakes Have Been Made",
-      "slug": "35-mistakes-have-been-made"
+      "length": 41143,
+      "starts_with": "<div> <p><strong>Chapter 035<br></strong><strong>Mistakes Have Been Made</strong></p> <p>‘The"
     },
     {
-      "id": 309946,
       "id10": "C000309946",
       "timestamp": 1543246284,
       "title": "36. A Battle of Minds",
-      "slug": "36-a-battle-of-minds"
+      "length": 44597,
+      "starts_with": "<div> <p><strong>Chapter 036<br></strong><strong>A Battle of Minds</strong></p> <p>Eventually,"
     },
     {
-      "id": 310296,
       "id10": "C000310296",
       "timestamp": 1543344517,
       "title": "37. Slow Burn",
-      "slug": "37-slow-burn"
+      "length": 47484,
+      "starts_with": "<div> <p><strong>Chapter 037<br></strong><strong>Slow Burn</strong></p> <p>As the weeks went"
     },
     {
-      "id": 310557,
       "id10": "C000310557",
       "timestamp": 1543421315,
       "title": "38. Return to Cyoria",
-      "slug": "38-return-to-cyoria"
+      "length": 41744,
+      "starts_with": "<div> <p><strong>Chapter 038<br></strong><strong>Return to Cyoria</strong></p> <p>Zorian’s"
     },
     {
-      "id": 311034,
       "id10": "C000311034",
       "timestamp": 1543579940,
       "title": "39. Suspicious Coincidences",
-      "slug": "39-suspicious-coincidences"
+      "length": 50656,
+      "starts_with": "<div> <p><strong>Chapter 039<br></strong><strong>Suspicious Coincidences</strong></p> <p>Zorian"
     },
     {
-      "id": 311406,
       "id10": "C000311406",
       "timestamp": 1543680396,
       "title": "40. Shifting Tracks",
-      "slug": "40-shifting-tracks"
+      "length": 53033,
+      "starts_with": "<div> <p><strong>Chapter 040<br></strong><strong>Shifting Tracks</strong></p> <p>Zorian woke up"
     },
     {
-      "id": 311668,
       "id10": "C000311668",
       "timestamp": 1543761041,
       "title": "41. Myriad Clashing Motives",
-      "slug": "41-myriad-clashing-motives"
+      "length": 42882,
+      "starts_with": "<div> <p><strong>Chapter 041<br></strong><strong>Myriad Clashing Motives</strong></p> <p>The"
     },
     {
-      "id": 311973,
       "id10": "C000311973",
       "timestamp": 1543852868,
       "title": "42. Sum of its Parts",
-      "slug": "42-sum-of-its-parts"
+      "length": 44599,
+      "starts_with": "<div> <p><strong>Chapter 042<br></strong><strong>Sum of its Parts</strong></p> <p>Not far from"
     },
     {
-      "id": 312321,
       "id10": "C000312321",
       "timestamp": 1543950247,
       "title": "43. Overwhelmed",
-      "slug": "43-overwhelmed"
+      "length": 53094,
+      "starts_with": "<div> <p><strong>Chapter 043<br></strong><strong>Overwhelmed</strong></p> <p>Perhaps it was"
     },
     {
-      "id": 312539,
       "id10": "C000312539",
       "timestamp": 1544029086,
       "title": "44. A Show of Trust",
-      "slug": "44-a-show-of-trust"
+      "length": 43781,
+      "starts_with": "<div> <p><strong>Chapter 044<br></strong><strong>A Show of Trust</strong></p> <p>The idea that"
     },
     {
-      "id": 312749,
       "id10": "C000312749",
       "timestamp": 1544104275,
       "title": "45. Fine Structures",
-      "slug": "45-fine-structures"
+      "length": 44440,
+      "starts_with": "<div> <p><strong>Chapter 045<br></strong><strong>Fine Structures</strong></p> <p>Zorian was"
     },
     {
-      "id": 313133,
       "id10": "C000313133",
       "timestamp": 1544200555,
       "title": "46. The Other Side",
-      "slug": "46-the-other-side"
+      "length": 42946,
+      "starts_with": "<div> <p><strong>Chapter 046<br></strong><strong>The Other Side</strong></p> <p>“I’m ready,”"
     },
     {
-      "id": 313489,
       "id10": "C000313489",
       "timestamp": 1544300874,
       "title": "47. Politics",
-      "slug": "47-politics"
+      "length": 45823,
+      "starts_with": "<div> <p><strong>Chapter 047<br></strong><strong>Politics</strong></p> <p>Sitting alone in the"
     },
     {
-      "id": 313816,
       "id10": "C000313816",
       "timestamp": 1544377104,
       "title": "48. Well of Souls",
-      "slug": "48-well-of-souls"
+      "length": 38765,
+      "starts_with": "<div> <p><strong>Chapter 048<br></strong><strong>Well of Souls</strong></p> <p>Far away from"
     },
     {
-      "id": 314133,
       "id10": "C000314133",
       "timestamp": 1544460796,
       "title": "49. Substitution",
-      "slug": "49-substitution"
+      "length": 49907,
+      "starts_with": "<div> <p><strong>Chapter 049<br></strong><strong>Substitution</strong></p> <p>Time travel was a"
     },
     {
-      "id": 314391,
       "id10": "C000314391",
       "timestamp": 1544545472,
       "title": "50. Containment",
-      "slug": "50-containment"
+      "length": 45723,
+      "starts_with": "<div> <p><strong>Chapter 050<br></strong><strong>Containment</strong></p> <p>The idea that"
     },
     {
-      "id": 314625,
       "id10": "C000314625",
       "timestamp": 1544626753,
       "title": "51. Out of Control",
-      "slug": "51-out-of-control"
+      "length": 39052,
+      "starts_with": "<div> <p><strong>Chapter 051<br></strong><strong>Out of Control</strong></p> <p>The new restart"
     },
     {
-      "id": 314869,
       "id10": "C000314869",
       "timestamp": 1544716651,
       "title": "52. Things Fall Apart",
-      "slug": "52-things-fall-apart"
+      "length": 55935,
+      "starts_with": "<div> <p><strong>Chapter 052<br></strong><strong>Things Fall Apart</strong></p> <p>Zorian was"
     },
     {
-      "id": 315172,
       "id10": "C000315172",
       "timestamp": 1544798849,
       "title": "53. Phantoms",
-      "slug": "53-phantoms"
+      "length": 51997,
+      "starts_with": "<div> <p><strong>Chapter 053<br></strong><strong>Phantoms</strong></p> <p>The moment Zorian"
     },
     {
-      "id": 315504,
       "id10": "C000315504",
       "timestamp": 1544900334,
       "title": "54. The Gate Is Barred",
-      "slug": "54-the-gate-is-barred"
+      "length": 53078,
+      "starts_with": "<div> <p><strong>Chapter 054<br></strong><strong>The Gate Is Barred</strong></p> <p>In the wake"
     },
     {
-      "id": 315711,
       "id10": "C000315711",
       "timestamp": 1544972309,
       "title": "55. Threshold",
-      "slug": "55-threshold"
+      "length": 43242,
+      "starts_with": "<div> <p><strong>Chapter 055<br></strong><strong>Threshold</strong></p> <p>For nearly half a"
     },
     {
-      "id": 315980,
       "id10": "C000315980",
       "timestamp": 1545058807,
       "title": "56. Obscure",
-      "slug": "56-obscure"
+      "length": 41263,
+      "starts_with": "<div> <p><strong>Chapter 056<br></strong><strong>Obscure</strong></p> <p>Despite how much the"
     },
     {
-      "id": 316328,
       "id10": "C000316328",
       "timestamp": 1545159550,
       "title": "57. Unwanted",
-      "slug": "57-unwanted"
+      "length": 37020,
+      "starts_with": "<div> <p><strong>Chapter 057<br></strong><strong>Unwanted</strong></p> <p>Zorian stared"
     },
     {
-      "id": 316549,
       "id10": "C000316549",
       "timestamp": 1545227424,
       "title": "58. Questions and Answers",
-      "slug": "58-questions-and-answers"
+      "length": 39970,
+      "starts_with": "<div> <p><strong>Chapter 058<br></strong><strong>Questions and Answers</strong></p> <p>Xvim’s"
     },
     {
-      "id": 316947,
       "id10": "C000316947",
       "timestamp": 1545320483,
       "title": "59. One Step Forward",
-      "slug": "59-one-step-forward"
+      "length": 47719,
+      "starts_with": "<div> <p><strong>Chapter 059<br></strong><strong>One Step Forward</strong></p> <p>Not too long"
     },
     {
-      "id": 317193,
       "id10": "C000317193",
       "timestamp": 1545402026,
       "title": "60. Into the Abyss",
-      "slug": "60-into-the-abyss"
+      "length": 48582,
+      "starts_with": "<div> <p><strong>Chapter 060<br></strong><strong>Into the Abyss</strong></p> <p>Zorian didn’t"
     },
     {
-      "id": 317506,
       "id10": "C000317506",
       "timestamp": 1545489659,
       "title": "61. Anthills",
-      "slug": "61-anthills"
+      "length": 43086,
+      "starts_with": "<div> <p><strong>Chapter 061<br></strong><strong>Anthills</strong></p> <p>When Zorian woke up,"
     },
     {
-      "id": 317781,
       "id10": "C000317781",
       "timestamp": 1545576139,
       "title": "62. Improperly Used",
-      "slug": "62-improperly-used"
+      "length": 48551,
+      "starts_with": "<div> <p><strong>Chapter 062<br></strong><strong>Improperly Used</strong></p> <p>Inside the"
     },
     {
-      "id": 318066,
       "id10": "C000318066",
       "timestamp": 1545657101,
       "title": "63. The March of Days",
-      "slug": "63-the-march-of-days"
+      "length": 67261,
+      "starts_with": "<div> <p><strong>Chapter 063<br></strong><strong>The March of Days</strong></p> <p>To the north"
     },
     {
-      "id": 318332,
       "id10": "C000318332",
       "timestamp": 1545737646,
       "title": "64. Distance",
-      "slug": "64-distance"
+      "length": 47500,
+      "starts_with": "<div> <p><strong>Chapter 064<br></strong><strong>Distance</strong></p> <p>Eldemar and Koth were"
     },
     {
-      "id": 318639,
       "id10": "C000318639",
       "timestamp": 1545841009,
       "title": "65. Dangerous Ground",
-      "slug": "65-dangerous-ground"
+      "length": 59063,
+      "starts_with": "<div> <p><strong>Chapter 065<br></strong><strong>Dangerous Ground</strong></p> <p>Far to the"
     },
     {
-      "id": 318950,
       "id10": "C000318950",
       "timestamp": 1545932828,
       "title": "66. Marred Perfection",
-      "slug": "66-marred-perfection"
+      "length": 45699,
+      "starts_with": "<div> <p><strong>Chapter 066<br></strong><strong>Marred Perfection</strong></p> <p>For nearly"
     },
     {
-      "id": 319347,
       "id10": "C000319347",
       "timestamp": 1546040026,
       "title": "67. Convergence",
-      "slug": "67-convergence"
+      "length": 48093,
+      "starts_with": "<div> <p><strong>Chapter 067<br></strong><strong>Convergence</strong></p> <p>Zorian had to"
     },
     {
-      "id": 319545,
       "id10": "C000319545",
       "timestamp": 1546106805,
       "title": "68. Green Hell",
-      "slug": "68-green-hell"
+      "length": 50963,
+      "starts_with": "<div> <p><strong>Chapter 068<br></strong><strong>Green Hell</strong></p> <p>Historically, Koth"
     },
     {
-      "id": 319853,
       "id10": "C000319853",
       "timestamp": 1546191940,
       "title": "69. Ruin",
-      "slug": "69-ruin"
+      "length": 47607,
+      "starts_with": "<div> <p><strong>Chapter 069<br></strong><strong>Ruin</strong></p> <p>Zorian could tell right"
     },
     {
-      "id": 320107,
       "id10": "C000320107",
       "timestamp": 1546274415,
       "title": "70. Carried Away",
-      "slug": "70-carried-away"
+      "length": 36388,
+      "starts_with": "<div> <p><strong>Chapter 070<br></strong><strong>Carried Away</strong></p> <p>Deep beneath"
     },
     {
-      "id": 320370,
       "id10": "C000320370",
       "timestamp": 1546354510,
       "title": "71. Shadows of the Past",
-      "slug": "71-shadows-of-the-past"
+      "length": 45355,
+      "starts_with": "<div> <p><strong>Chapter 071<br></strong><strong>Shadows of the Past</strong></p> <p>After the"
     },
     {
-      "id": 320672,
       "id10": "C000320672",
       "timestamp": 1546447558,
       "title": "72. Crossroads",
-      "slug": "72-crossroads"
+      "length": 44630,
+      "starts_with": "<div> <p><strong>Chapter 072<br></strong><strong>Crossroads</strong></p> <p>He never really"
     },
     {
-      "id": 320954,
       "id10": "C000320954",
       "timestamp": 1546533747,
       "title": "73. Plodding Ahead",
-      "slug": "73-plodding-ahead"
+      "length": 46412,
+      "starts_with": "<div> <p><strong>Chapter 073<br></strong><strong>Plodding Ahead</strong></p> <p>Deep in the"
     },
     {
-      "id": 321285,
       "id10": "C000321285",
       "timestamp": 1546633448,
       "title": "74. The Return",
-      "slug": "74-the-return"
+      "length": 55009,
+      "starts_with": "<div> <p><strong>Chapter 074<br></strong><strong>The Return</strong></p> <p>Simulacrum number"
     },
     {
-      "id": 321479,
       "id10": "C000321479",
       "timestamp": 1546695561,
       "title": "75. Soul Stealer",
-      "slug": "75-soul-stealer"
+      "length": 57845,
+      "starts_with": "<div> <p><strong>Chapter 075<br></strong><strong>Soul Stealer</strong></p> <p>The great"
     },
     {
-      "id": 321816,
       "id10": "C000321816",
       "timestamp": 1546790157,
       "title": "76. Critical Blunder",
-      "slug": "76-critical-blunder"
+      "length": 43100,
+      "starts_with": "<div> <p><strong>Chapter 076<br></strong><strong>Critical Blunder</strong></p> <p>The evening"
     },
     {
-      "id": 322204,
       "id10": "C000322204",
       "timestamp": 1546896253,
       "title": "77. Testing",
-      "slug": "77-testing"
+      "length": 39654,
+      "starts_with": "<div> <p><strong>Chapter 077<br></strong><strong>Testing</strong></p> <p>Primordials were"
     },
     {
-      "id": 322443,
       "id10": "C000322443",
       "timestamp": 1546964759,
       "title": "78. Grinding Stone",
-      "slug": "78-grinding-stone"
+      "length": 41609,
+      "starts_with": "<div> <p><strong>Chapter 078<br></strong><strong>Grinding Stone</strong></p> <p>Airships were"
     },
     {
-      "id": 322733,
       "id10": "C000322733",
       "timestamp": 1547050913,
       "title": "79. Crime and Evading Punishment",
-      "slug": "79-crime-and-evading-punishment"
+      "length": 36949,
+      "starts_with": "<div> <p><strong>Chapter 079<br></strong><strong>Crime and Evading Punishment</strong></p>"
     },
     {
-      "id": 323014,
       "id10": "C000323014",
       "timestamp": 1547135928,
       "title": "80. Enemies",
-      "slug": "80-enemies"
+      "length": 44126,
+      "starts_with": "<div> <p><strong>Chapter 080<br></strong><strong>Enemies</strong></p> <p>Although the Xlotic"
     },
     {
-      "id": 323436,
       "id10": "C000323436",
       "timestamp": 1547226420,
       "title": "81. A Civil Conversation",
-      "slug": "81-a-civil-conversation"
+      "length": 39360,
+      "starts_with": "<div> <p><strong>Chapter 081<br></strong><strong>A Civil Conversation</strong></p> <p>The"
     },
     {
-      "id": 323769,
       "id10": "C000323769",
       "timestamp": 1547307486,
       "title": "82. Ancient Circles",
-      "slug": "82-ancient-circles"
+      "length": 45404,
+      "starts_with": "<div> <p><strong>Chapter 082<br></strong><strong>Ancient Circles</strong></p> <p>Aranhal, the"
     },
     {
-      "id": 324024,
       "id10": "C000324024",
       "timestamp": 1547388475,
       "title": "83. Scorpion",
-      "slug": "83-scorpion"
+      "length": 60020,
+      "starts_with": "<div> <p><strong>Chapter 083<br></strong><strong>Scorpion</strong></p> <p>Zach and Zorian were"
     },
     {
-      "id": 324123,
       "id10": "C000324123",
       "timestamp": 1547415834,
       "title": "84. Powerless",
-      "slug": "84-powerless"
+      "length": 37139,
+      "starts_with": "<div> <p><strong>Chapter 084<br></strong><strong>Powerless</strong></p> <p>Zorian slowly awoke"
     },
     {
-      "id": 324397,
       "id10": "C000324397",
       "timestamp": 1547486408,
       "title": "85. Critical Mass",
-      "slug": "85-critical-mass"
+      "length": 55531,
+      "starts_with": "<div> <p><strong>Chapter 085<br></strong><strong>Critical Mass</strong></p> <p>Zorian would be"
     },
     {
-      "id": 324653,
       "id10": "C000324653",
       "timestamp": 1547570714,
       "title": "86. A New World",
-      "slug": "86-a-new-world"
+      "length": 38374,
+      "starts_with": "<div> <p><strong>Chapter 086<br></strong><strong>A New World</strong></p> <p>“Good morning,"
     },
     {
-      "id": 325051,
       "id10": "C000325051",
       "timestamp": 1547661576,
       "title": "87. Agents of the Crown",
-      "slug": "87-agents-of-the-crown"
+      "length": 46892,
+      "starts_with": "<div> <p><strong>Chapter 087<br></strong><strong>Agents of the Crown</strong></p> <p>Deep in"
     },
     {
-      "id": 325392,
       "id10": "C000325392",
       "timestamp": 1547753291,
       "title": "88. Mysterious Ways",
-      "slug": "88-mysterious-ways"
+      "length": 41576,
+      "starts_with": "<div> <p><strong>Chapter 088<br></strong><strong>Mysterious Ways</strong></p> <p>With the"
     },
     {
-      "id": 325706,
       "id10": "C000325706",
       "timestamp": 1547828524,
       "title": "89. Victory",
-      "slug": "89-victory"
+      "length": 62886,
+      "starts_with": "<div> <p><strong>Chapter 089<br></strong><strong>Victory</strong></p> <p>It was a peaceful"
     },
     {
-      "id": 326028,
       "id10": "C000326028",
       "timestamp": 1547918604,
       "title": "90. Change of Plans",
-      "slug": "90-change-of-plans"
+      "length": 50275,
+      "starts_with": "<div> <p><strong>Chapter 090<br></strong><strong>Change of Plans</strong></p> <p>It wasn’t long"
     },
     {
-      "id": 326370,
       "id10": "C000326370",
       "timestamp": 1547992112,
       "title": "91. A Path Paid in Blood",
-      "slug": "91-a-path-paid-in-blood"
+      "length": 78767,
+      "starts_with": "<div> <p><strong>Chapter 091<br></strong><strong>A Path Paid in Blood</strong></p> <p>“This"
     },
     {
-      "id": 326727,
       "id10": "C000326727",
       "timestamp": 1548090135,
       "title": "92. The Scramble",
-      "slug": "92-the-scramble"
+      "length": 49133,
+      "starts_with": "<div> <p><strong>Chapter 092<br></strong><strong>The Scramble</strong></p> <p>In the months"
     },
     {
-      "id": 327015,
       "id10": "C000327015",
       "timestamp": 1548173271,
       "title": "93. Shelter in the Storm",
-      "slug": "93-shelter-in-the-storm"
+      "length": 43385,
+      "starts_with": "<div> <p><strong>Chapter 093<br></strong><strong>Shelter in the Storm</strong></p> <p>Sometimes"
     },
     {
-      "id": 327316,
       "id10": "C000327316",
       "timestamp": 1548262086,
       "title": "94. Ghosts",
-      "slug": "94-ghosts"
+      "length": 36534,
+      "starts_with": "<div> <p><strong>Chapter 094<br></strong><strong>Ghosts</strong></p> <p>The next morning,"
     },
     {
-      "id": 328843,
       "id10": "C000328843",
       "timestamp": 1548637812,
       "title": "95. Betrayer",
-      "slug": "95-betrayer"
+      "length": 40571,
+      "starts_with": "<div> <p><strong>Chapter 095<br></strong><strong>Betrayer</strong></p> <p>Veyers was a"
     },
     {
-      "id": 335040,
       "id10": "C000335040",
       "timestamp": 1550456412,
       "title": "96. Contract",
-      "slug": "96-contract"
+      "length": 64989,
+      "starts_with": "<div> <p><strong>Chapter 096<br></strong><strong>Contract</strong></p> <p>Before the time loop,"
     },
     {
-      "id": 344062,
       "id10": "C000344062",
       "timestamp": 1552873412,
       "title": "97. Illusory",
-      "slug": "97-illusory"
+      "length": 42280,
+      "starts_with": "<div> <p><strong>Chapter 097<br></strong><strong>Illusory</strong></p> <p>Standing on the roof"
     },
     {
-      "id": 353454,
       "id10": "C000353454",
       "timestamp": 1555462362,
       "title": "98. Beneath the Surface",
-      "slug": "98-beneath-the-surface"
+      "length": 43863,
+      "starts_with": "<div> <p><strong>Chapter 098<br></strong><strong>Beneath the Surface</strong></p> <p>After the"
     },
     {
-      "id": 361412,
       "id10": "C000361412",
       "timestamp": 1557711014,
       "title": "99. Powderkeg",
-      "slug": "99-powderkeg"
+      "length": 36254,
+      "starts_with": "<div> <p><strong>Chapter 099<br></strong><strong>Powderkeg</strong></p> <p>Arranging a meeting"
     },
     {
-      "id": 371224,
       "id10": "C000371224",
       "timestamp": 1560290861,
       "title": "100. Sacrifice",
-      "slug": "100-sacrifice"
+      "length": 40609,
+      "starts_with": "<div> <p><strong>Chapter 100<br></strong><strong>Sacrifice</strong></p> <p>Standing in Rea’s"
     },
     {
-      "id": 386938,
       "id10": "C000386938",
       "timestamp": 1564449944,
       "title": "101. The Switch",
-      "slug": "101-the-switch"
+      "length": 51024,
+      "starts_with": "<div> <p><strong>Chapter 101<br></strong><strong>The Switch</strong></p> <p>Cyoria was burning."
     },
     {
-      "id": 400666,
       "id10": "C000400666",
       "timestamp": 1567995327,
       "title": "102. Giants",
-      "slug": "102-giants"
+      "length": 42567,
+      "starts_with": "<div> <p><strong>Chapter 102<br></strong><strong>Giants</strong></p> <p>In the middle of"
     },
     {
-      "id": 452729,
       "id10": "C000452729",
       "timestamp": 1580678661,
       "title": "103. Window of Opportunity",
-      "slug": "103-window-of-opportunity"
+      "length": 74533,
+      "starts_with": "<div> <p><strong>Chapter 103<br></strong><strong>Window of Opportunity</strong></p> <p>As"
     },
     {
-      "id": 452730,
       "id10": "C000452730",
       "timestamp": 1580678791,
       "title": "104. I Win (I)",
-      "slug": "104-i-win-i"
+      "length": 20332,
+      "starts_with": "<div> <p><strong>Chapter 104<br></strong><strong>I Win (I)</strong></p> <p>He was Zach Noveda,"
     },
     {
-      "id": 452733,
       "id10": "C000452733",
       "timestamp": 1580678947,
       "title": "105. I Win (II)",
-      "slug": "105-i-win-ii"
+      "length": 36085,
+      "starts_with": "<div> <p><strong>Chapter 105<br></strong><strong>I Win (II)</strong></p> <p>He was Jornak"
     },
     {
-      "id": 452736,
       "id10": "C000452736",
       "timestamp": 1580679717,
       "title": "106. I Win (III)",
-      "slug": "106-i-win-iii"
+      "length": 19518,
+      "starts_with": "<div> <p><strong>Chapter 106<br></strong><strong>I Win (III)</strong></p> <p>He was Zorian"
     },
     {
-      "id": 455876,
       "id10": "C000455876",
       "timestamp": 1581374471,
       "title": "Epilogue",
-      "slug": "epilogue"
+      "length": 73525,
+      "starts_with": "<div> <p><strong>Epilogue</strong></p> <p>Zorian’s eyes abruptly shot open as a sharp pain"
     },
     {
-      "id": 455877,
       "id10": "C000455877",
       "timestamp": 1581374539,
       "title": "Afterword",
-      "slug": "afterword"
+      "length": 6449,
+      "starts_with": "<div> <p><strong>Afterword</strong></p> <p>You have reached the end of the story. What follows"
     }
   ]
 }

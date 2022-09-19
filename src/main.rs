@@ -93,17 +93,13 @@ async fn main() -> Result<(), ErrorReport> {
     )
     .wrap()?;
 
-    let (a, b, c, d) = join!(
-        spawn(async { royalroad::fic(21220).await }),
-        spawn(async { royalroad::fic(22518).await }),
-        spawn(async { royalroad::fic(25137).await }),
-        spawn(async { royalroad::fic(49033).await }),
-    );
+    let mol = royalroad::fic(21220);
+    let ant = royalroad::fic(22518);
+    let wtc = royalroad::fic(25137);
+    let mox = royalroad::fic(49033);
 
-    a?;
-    b?;
-    c?;
-    d?;
+    let (mol, ant, wtc, mox) = join!(mol, ant, wtc, mox);
+    let (mol, ant, wtc, mox) = (mol?, ant?, wtc?, mox?);
 
     Ok(())
 }
@@ -167,28 +163,12 @@ mod royalroad {
     #[instrument(level = "trace")]
     pub async fn spine(id: u64) -> Result<Spine, ErrorReport> {
         let id10 = fic_id10(id);
-        load!("data/spines/{id10}", async move || {
+        let spine = load!("target/spines/{id10}", async move || {
             THROTTLE.tick().await;
 
             let url = f!["https://www.royalroad.com/fiction/{id}"];
 
             let page = web::get(url).await?;
-
-            let slug = page
-                .url_final
-                .split("://")
-                .last()
-                .unwrap()
-                .split("/fiction/")
-                .skip(1)
-                .next()
-                .unwrap()
-                .split("/")
-                .skip(1)
-                .next()
-                .unwrap()
-                .to_string()
-                .into();
 
             let html = page.body;
 
@@ -272,14 +252,12 @@ mod royalroad {
                     .unwrap()
                     .split("/");
                 let id = id_slug.next().unwrap().parse().wrap()?;
-                let slug = id_slug.next().unwrap().to_string().into();
 
                 chapters.insert(SpineChapter {
                     id,
                     id10: chapter_id10(id),
                     timestamp,
                     title,
-                    slug,
                 });
             }
 
@@ -287,17 +265,18 @@ mod royalroad {
                 id,
                 id10: fic_id10(id),
                 title,
-                slug,
                 chapters,
             }
-        })
+        })?;
+
+        Ok(spine)
     }
 
     #[instrument(level = "trace")]
     pub async fn fic(id: u64) -> Result<Fic, ErrorReport> {
         let id10 = fic_id10(id);
 
-        load!("target/fics/{id10}", async move || {
+        let fic = load!("target/fics/{id10}", async move || {
             let spine = spine(id).await?;
 
             let mut chapters = BTreeSet::new();
@@ -311,7 +290,6 @@ mod royalroad {
                 id,
                 id10: fic_id10(id),
                 title: spine.title,
-                slug: spine.slug,
                 chapters,
             };
 
@@ -337,7 +315,47 @@ mod royalroad {
             // info!(json_zstd = fic_zstd_json.len());
 
             fic
-        })
+        })?;
+
+        let ff = fic.clone();
+        let _rich: Result<RichSpine, _> = load!("data/spines/{id10}", async move || {
+            let mut chapters = BTreeSet::new();
+
+            for chapter in ff.chapters {
+                let starts_with = chapter
+                    .html
+                    .to_string()
+                    .split_ascii_whitespace()
+                    .collect::<Vec<_>>()
+                    .join(" ")
+                    .chars()
+                    .take(96)
+                    .collect::<String>()
+                    .rsplit_once(" ")
+                    .unwrap()
+                    .0
+                    .to_string();
+
+                let chapter = RichSpineChapter {
+                    id10: chapter.id10.clone(),
+                    timestamp: chapter.timestamp,
+                    title: chapter.title.clone(),
+                    length: chapter.html.len() as _,
+                    starts_with,
+                };
+                chapters.insert(chapter);
+            }
+
+            RichSpine {
+                id10,
+                author: "TODO".to_string(),
+                title: ff.title,
+                length: chapters.iter().map(|c| c.length).sum(),
+                chapters,
+            }
+        });
+
+        Ok(fic)
     }
 
     pub async fn fic_chapter(
@@ -347,9 +365,7 @@ mod royalroad {
         let spine = spine.clone();
         let chapter = chapter.clone();
         let fic_id = spine.id;
-        let fic_slug = spine.slug.clone();
         let chapter_id = chapter.id;
-        let chapter_slug = chapter.slug.clone();
 
         let fic10 = fic_id10(fic_id);
         let id10 = chapter_id10(chapter_id);
@@ -357,7 +373,7 @@ mod royalroad {
         load!("target/chapters/{fic10}{id10}", async move || {
             THROTTLE.tick().await;
 
-            let url = f!["https://www.royalroad.com/fiction/{fic_id}/{fic_slug}/chapter/{chapter_id}/{chapter_slug}"];
+            let url = f!["https://www.royalroad.com/chapter/{chapter_id}"];
 
             let html = web::get(url).await?.body;
 
@@ -384,7 +400,6 @@ mod royalroad {
                 id10: chapter_id10(chapter.id),
                 title: chapter.title.clone(),
                 timestamp: chapter.timestamp,
-                slug: chapter.slug.clone(),
                 html,
             }
         })
@@ -403,7 +418,6 @@ mod royalroad {
         id: u64,
         id10: String,
         title: String,
-        slug: String,
         chapters: BTreeSet<FicChapter>,
     }
 
@@ -413,16 +427,13 @@ mod royalroad {
         id10: String,
         timestamp: i64,
         title: String,
-        slug: String,
         html: String,
     }
-
     #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
     pub struct Spine {
         id: u64,
         id10: String,
         title: String,
-        slug: String,
         chapters: BTreeSet<SpineChapter>,
     }
 
@@ -432,6 +443,23 @@ mod royalroad {
         id10: String,
         timestamp: i64,
         title: String,
-        slug: String,
+    }
+
+    #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
+    pub struct RichSpine {
+        id10: String,
+        title: String,
+        author: String,
+        length: u64,
+        chapters: BTreeSet<RichSpineChapter>,
+    }
+
+    #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
+    pub struct RichSpineChapter {
+        id10: String,
+        timestamp: i64,
+        title: String,
+        length: u64,
+        starts_with: String,
     }
 }

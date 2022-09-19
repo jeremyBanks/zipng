@@ -5,11 +5,27 @@ import { apply, css, tw } from "twind/css";
 import Page from "../../components/Page.tsx";
 
 export const config = {
-  routeOverride: "/RYL:id([0-9A-Z]+)/:chapter_id([0-9]+)",
+  routeOverride: "/RYL:id([0-9A-Z]{7})/C:chapter_id([0-9A-Z]{9})",
 };
+
+const Spine = z.object({
+  id: z.number(),
+  id10: z.string(),
+  title: z.string(),
+  slug: z.string(),
+  chapters: z.array(z.object({
+    id: z.number(),
+    id10: z.string(),
+    timestamp: z.number(),
+    title: z.string(),
+    slug: z.string(),
+  })),
+});
+type Spine = z.infer<typeof Spine>;
 
 const Chapter = z.object({
   id: z.number(),
+  id10: z.string(),
   timestamp: z.number(),
   title: z.string(),
   slug: z.string(),
@@ -22,7 +38,7 @@ export const handler: Handlers = {
     const chapter = Chapter.parse(
       JSON.parse(
         await Deno.readTextFile(
-          `../target/chapters/RYL${context.params.chapter_id}.json`,
+          `../target/chapters/C${context.params.chapter_id}.json`,
         ),
       ),
     );

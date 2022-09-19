@@ -1,5 +1,5 @@
 import { Handlers, PageProps, RenderContext } from "$fresh/server.ts";
-import { z } from "https://deno.land/x/zod/mod.ts";
+import { z } from "zod";
 import "preact/debug";
 import Page from "../../components/Page.tsx";
 
@@ -9,10 +9,12 @@ export const config = {
 
 const Spine = z.object({
   id: z.number(),
+  id10: z.string(),
   title: z.string(),
   slug: z.string(),
   chapters: z.array(z.object({
     id: z.number(),
+    id10: z.string(),
     timestamp: z.number(),
     title: z.string(),
     slug: z.string(),
@@ -35,13 +37,13 @@ export const handler: Handlers = {
 
 export default ({ data: spine }: PageProps<Spine>) => (
   <Page>
-    <main class="mx-auto p-2">
+    <main class="mx-auto p-2 self-start">
       <h1 class="text-xl font-bold p-4">{spine.title}</h1>
       <ol>
         {spine.chapters.map((chapter) => (
           <li class="p-2">
             <a
-              href={`/RYL${spine.id}/${chapter.id}`}
+              href={`/${spine.id10}/${chapter.id10}`}
               class="hover:underline p-2"
             >
               {chapter.title}

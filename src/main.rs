@@ -295,45 +295,49 @@ mod royalroad {
 
     #[instrument(level = "trace")]
     pub async fn fic(id: u64) -> Result<Fic, ErrorReport> {
-        let spine = spine(id).await?;
+        let id10 = fic_id10(id);
 
-        let mut chapters = BTreeSet::new();
+        load!("target/fics/{id10}", async move || {
+            let spine = spine(id).await?;
 
-        for chapter in &spine.chapters {
-            let chapter = fic_chapter(&spine, &chapter).await?;
-            chapters.insert(chapter);
-        }
+            let mut chapters = BTreeSet::new();
 
-        let fic = Fic {
-            id,
-            id10: fic_id10(id),
-            title: spine.title,
-            slug: spine.slug,
-            chapters,
-        };
+            for chapter in &spine.chapters {
+                let chapter = fic_chapter(&spine, &chapter).await?;
+                chapters.insert(chapter);
+            }
 
-        info!("Loaded fic #{id} {title:?}", title = &fic.title);
-        info!(chapter_count = fic.chapters.len());
+            let fic = Fic {
+                id,
+                id10: fic_id10(id),
+                title: spine.title,
+                slug: spine.slug,
+                chapters,
+            };
 
-        // let span = tracing::info_span!("JSON+Brotli...").entered();
-        // let mut fic_brotli_json = Vec::new();
-        // serde_json::to_writer_pretty(
-        //     brotli::CompressorWriter::new(&mut fic_brotli_json, 0, 11, 24),
-        //     &fic,
-        // )?;
-        // drop(span);
-        // info!(json_brotli = fic_brotli_json.len());
+            info!("Loaded fic #{id} {title:?}", title = &fic.title);
+            info!(chapter_count = fic.chapters.len());
 
-        let span = tracing::info_span!("JSON+zstd...").entered();
-        let mut fic_zstd_json = Vec::new();
-        serde_json::to_writer_pretty(
-            zstd::Encoder::new(&mut fic_zstd_json, 22)?.auto_finish(),
-            &fic,
-        )?;
-        drop(span);
-        info!(json_zstd = fic_zstd_json.len());
+            // let span = tracing::info_span!("JSON+Brotli...").entered();
+            // let mut fic_brotli_json = Vec::new();
+            // serde_json::to_writer_pretty(
+            //     brotli::CompressorWriter::new(&mut fic_brotli_json, 0, 11, 24),
+            //     &fic,
+            // )?;
+            // drop(span);
+            // info!(json_brotli = fic_brotli_json.len());
 
-        Ok(fic)
+            // let span = tracing::info_span!("JSON+zstd...").entered();
+            // let mut fic_zstd_json = Vec::new();
+            // serde_json::to_writer_pretty(
+            //     zstd::Encoder::new(&mut fic_zstd_json, 22)?.auto_finish(),
+            //     &fic,
+            // )?;
+            // drop(span);
+            // info!(json_zstd = fic_zstd_json.len());
+
+            fic
+        })
     }
 
     pub async fn fic_chapter(

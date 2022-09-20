@@ -54,29 +54,41 @@ export default ({ data: spine }: PageProps<Spine>) => {
       <Head>
         <title>{spine.title}</title>
       </Head>
-      <main class="mx-auto p-2 self-start">
+      <main class="p-10 text-lg bg-white lg:w-192">
         <h1 class="text-xl font-bold p-4">{spine.title}</h1>
-        <ol>
+        <ol class="list-decimal ml-4">
           {spine.chapters.map((chapter) => (
-            <li class="p-2">
+            <li class="pb-4">
+              <Head>
+                <link
+                  rel="prefetch"
+                  as="document"
+                  href={`/${spine.id10}/${chapter.id10}`}
+                />
+              </Head>
               <a
                 href={`/${spine.id10}/${chapter.id10}`}
-                class="hover:underline p-2"
+                class={tw(css({
+                  "&": {
+                    display: "block",
+                    overflow: "clip",
+                    contain: "content",
+                    maxWidth: "100%",
+                    whiteSpace: "nowrap",
+                  },
+                  "& em": {
+                    color: "transparent",
+                    textShadow: "0 0 5px rgba(0, 0, 0, 0.5)",
+                  },
+                  "&:hover em": {
+                    color: "inherit",
+                    textShadow: "none",
+                  },
+                  "& em *": { "display": "inline" },
+                }))}
               >
-                <strong>{chapter.title}</strong>
-                {": "}
-                <q
-                  class={tw(css({
-                    "&": {
-                      color: "transparent",
-                      textShadow: "0 0 5px rgba(0, 0, 0, 0.5)",
-                    },
-                    "&:hover": {
-                      color: "inherit",
-                      textShadow: "none",
-                    },
-                    "& *": { "display": "inline" },
-                  }))}
+                <strong>{chapter.title}</strong>{" "}
+                <em
                   dangerouslySetInnerHTML={{
                     __html: clean(chapter.starts_with),
                   }}

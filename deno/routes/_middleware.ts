@@ -25,16 +25,16 @@ export const handler: MiddlewareHandler = async (request, context) => {
     );
   }
 
-  // if (!response.headers.has("Cache-Control")) {
-  //   response.headers.append(
-  //     "Cache-Control",
-  //     [
-  //       `max-age=${60 * 60 * 24 * 32}`,
-  //       `stale-while-revalidate=${60 * 60 * 24 * 256}`,
-  //       `stale-if-error=${60 * 60 * 24 * 256}`,
-  //     ].join(", "),
-  //   );
-  // }
+  if (!response.headers.has("Cache-Control")) {
+    response.headers.append(
+      "Cache-Control",
+      [
+        `max-age=${60 * 60 * 24 * 32}`,
+        `stale-while-revalidate=${60 * 60 * 24 * 256}`,
+        `stale-if-error=${60 * 60 * 24 * 256}`,
+      ].join(", "),
+    );
+  }
 
   return response;
 };

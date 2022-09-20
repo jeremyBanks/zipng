@@ -12,7 +12,7 @@ export default (props: RenderableProps<Props>) => (
       <link rel="icon" href={asset("/icon.svg")} />
     </Head>
 
-    <main class="flex flex-grow self-stretch items-center justify-center bg-yellow-50 color-white">
+    <main class="flex flex-grow self-stretch items-start justify-center bg-yellow-50 color-white max-w-full overflow-y-scroll">
       {props.children}
     </main>
   </>

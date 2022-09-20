@@ -14,6 +14,11 @@ export default {
         sans: ["'Atkinson Hyperlegible'", "ui-sans-serif", "sans-serif"],
         serif: ["Georgia", "ui-serif", "serif"],
       },
+      spacing: {
+        '96': '24rem',
+        '128': '32rem',
+        '192': '48rem',
+      }
     },
   },
   preflight: (preflight) => ({

@@ -71,12 +71,12 @@ export default (
 ) => {
   const nav = (
     <>
-      <nav class="flex">
+      <nav class="flex text-xl">
         {previous
           ? (
             <a
               href={`/${spine.id10}/${previous.id10}`}
-              class="block flex-grow bg-red-50 text-center"
+              class="block center flex-grow bg-red-50 text-center p-4"
               rel="previous"
             >
               Previous
@@ -87,7 +87,7 @@ export default (
           ? (
             <a
               href={`/${spine.id10}/${next.id10}`}
-              class="block flex-grow bg-green-300 text-center"
+              class="block flex-grow bg-green-300 text-center p-4"
               rel="next"
             >
               Next
@@ -102,15 +102,7 @@ export default (
       <Head>
         <title>{chapter.title} &mdash; {spine.title}</title>
       </Head>
-      <main
-        class={tw`block h-full overflow-y-auto p-10 bg-white ${
-          css({
-            "&": {
-              "scroll-snap-type": "y mandatory",
-            },
-          })
-        }`}
-      >
+      <main class="p-10 text-lg bg-white lg:w-192">
         <nav class="flex">
           <a
             href={`/${spine.id10}`}
@@ -119,16 +111,15 @@ export default (
             {spine.title}
           </a>
         </nav>
-        <h1 class="text-xl font-bold mt-4 p-4 text-center">
+        <h1 class="text-xl font-bold mt-4 p-4 text-center text-xl">
           {chapter.title}
         </h1>
         {nav}
         <div
           class={tw`text-lg p-4 ${
             css({
-              "max-width": "600px",
-              "& p": css`text-indent: .5rem; scroll-snap-align: center; ${
-                apply("my-2 cursor-pointer hover:bg-blue-50")
+              "& p": css`text-indent: .5rem; scroll-snap-align: top; ${
+                apply("my-2")
               }`,
             })
           }`}

@@ -1,10 +1,12 @@
 import { Handlers, PageProps, RenderContext } from "$fresh/server.ts";
 import { z } from "zod";
 import Page from "../../components/Page.tsx";
-import { DOMParser as WasmDomParser } from "https://deno.land/x/deno_dom/deno-dom-wasm.ts";
 import { css, tw } from "twind/css";
+import { Head, IS_BROWSER } from "$fresh/runtime.ts";
 
-const DOMParser = globalThis.DOMParser ?? WasmDomParser;
+const { DOMParser } = IS_BROWSER
+  ? globalThis
+  : await import("deno-dom") as unknown as typeof globalThis;
 
 export const config = {
   routeOverride: "/:fic_id(RYL[0-9A-Z]{7})",
@@ -49,6 +51,9 @@ const clean = (s: string) =>
 export default ({ data: spine }: PageProps<Spine>) => {
   return (
     <Page>
+      <Head>
+        <title>{spine.title}</title>
+      </Head>
       <main class="mx-auto p-2 self-start">
         <h1 class="text-xl font-bold p-4">{spine.title}</h1>
         <ol>

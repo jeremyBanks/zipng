@@ -1,5 +1,6 @@
 import { Handlers, PageProps, RenderContext } from "$fresh/server.ts";
-import { z } from "https://deno.land/x/zod/mod.ts";
+import { z } from "zod";
+import { Head } from "$fresh/runtime.ts";
 
 import { apply, css, tw } from "twind/css";
 import Page from "../../components/Page.tsx";
@@ -16,7 +17,6 @@ const Spine = z.object({
     id10: z.string(),
     timestamp: z.number(),
     title: z.string(),
-    slug: z.string(),
     length: z.number(),
     starts_with: z.string(),
   })),
@@ -33,6 +33,14 @@ type Chapter = z.infer<typeof Chapter>;
 
 export const handler: Handlers = {
   async GET(_request, context) {
+    const spine = Spine.parse(
+      JSON.parse(
+        await Deno.readTextFile(
+          `../data/spines/${context.params.fic_id}.json`,
+        ),
+      ),
+    );
+
     const chapter = Chapter.parse(
       JSON.parse(
         await Deno.readTextFile(
@@ -40,34 +48,94 @@ export const handler: Handlers = {
         ),
       ),
     );
-    return await context.render(chapter);
+
+    const next =
+      spine.chapters.filter((c) => c.timestamp > chapter.timestamp)[0];
+    const previous = spine.chapters.filter((c) =>
+      c.timestamp < chapter.timestamp
+    ).pop();
+
+    return await context.render({ chapter, spine, next, previous });
   },
 };
 
-export default ({ data: chapter }: PageProps<Chapter>) => (
-  <Page>
-    <main
-      class={tw`block h-full w-full overflow-y-auto ${
-        css({
-          "&": {
-            "scroll-snap-type": "y mandatory",
-          },
-        })
-      }`}
-    >
-      <h1 class="text-xl font-bold mt-4 border-b-4 border-color-blue-50">
-        {chapter.title}
-      </h1>
-      <div
-        class={tw`w-96 text-lg ${
+export default (
+  { data: { spine, chapter, next, previous } }: PageProps<
+    {
+      spine: Spine;
+      chapter: Chapter;
+      next: Spine["chapters"][0];
+      previous: Spine["chapters"][0];
+    }
+  >,
+) => {
+  const nav = (
+    <>
+      <nav class="flex">
+        {previous
+          ? (
+            <a
+              href={`/${spine.id10}/${previous.id10}`}
+              class="block flex-grow bg-red-50 text-center"
+              rel="previous"
+            >
+              Previous
+            </a>
+          )
+          : null}
+        {next
+          ? (
+            <a
+              href={`/${spine.id10}/${next.id10}`}
+              class="block flex-grow bg-green-300 text-center"
+              rel="next"
+            >
+              Next
+            </a>
+          )
+          : null}
+      </nav>
+    </>
+  );
+  return (
+    <Page>
+      <Head>
+        <title>{chapter.title} &mdash; {spine.title}</title>
+      </Head>
+      <main
+        class={tw`block h-full overflow-y-auto p-10 bg-white ${
           css({
-            "& p": css`text-indent: .5rem; scroll-snap-align: center; ${
-              apply("my-2 cursor-pointer hover:bg-blue-50")
-            }`,
+            "&": {
+              "scroll-snap-type": "y mandatory",
+            },
           })
         }`}
-        dangerouslySetInnerHTML={{ __html: chapter.html }}
-      />
-    </main>
-  </Page>
-);
+      >
+        <nav class="flex">
+          <a
+            href={`/${spine.id10}`}
+            class="block flex-grow bg-yellow-100 text-center font-bold p-4"
+          >
+            {spine.title}
+          </a>
+        </nav>
+        <h1 class="text-xl font-bold mt-4 p-4 text-center">
+          {chapter.title}
+        </h1>
+        {nav}
+        <div
+          class={tw`text-lg p-4 ${
+            css({
+              "max-width": "600px",
+              "& p": css`text-indent: .5rem; scroll-snap-align: center; ${
+                apply("my-2 cursor-pointer hover:bg-blue-50")
+              }`,
+            })
+          }`}
+          dangerouslySetInnerHTML={{ __html: chapter.html }}
+        />
+        {nav}
+      </main>
+    </Page>
+  );
+};

@@ -57,45 +57,51 @@ export default ({ data: spine }: PageProps<Spine>) => {
       <main class="p-10 text-lg bg-white lg:w-192">
         <h1 class="text-xl font-bold p-4">{spine.title}</h1>
         <ol class="list-decimal ml-4">
-          {spine.chapters.map((chapter) => (
-            <li class="pb-4">
-              <Head>
-                <link
-                  rel="prefetch"
-                  as="document"
+          {spine.chapters.map((chapter) => {
+            const chapter_prefix_pattern =
+              /^\s*ch(?:ap(?:t(?:er)?)?)?\b\s*(\d+)\b[\s\-\:]*/i;
+            const match = chapter_prefix_pattern.exec(
+              chapter.title,
+            );
+            let chapter_number: number | undefined;
+            if (match) {
+              chapter_number = z.number().parse(parseInt(match[1], 10));
+              chapter.title = chapter.title.replace(chapter_prefix_pattern, "");
+            }
+
+            return (
+              <li class="pb-4" value={chapter_number}>
+                <a
                   href={`/${spine.id10}/${chapter.id10}`}
-                />
-              </Head>
-              <a
-                href={`/${spine.id10}/${chapter.id10}`}
-                class={tw(css({
-                  "&": {
-                    display: "block",
-                    overflow: "clip",
-                    contain: "content",
-                    maxWidth: "100%",
-                    whiteSpace: "nowrap",
-                  },
-                  "& em": {
-                    color: "transparent",
-                    textShadow: "0 0 5px rgba(0, 0, 0, 0.5)",
-                  },
-                  "&:hover em": {
-                    color: "inherit",
-                    textShadow: "none",
-                  },
-                  "& em *": { "display": "inline" },
-                }))}
-              >
-                <strong>{chapter.title}</strong>{" "}
-                <em
-                  dangerouslySetInnerHTML={{
-                    __html: clean(chapter.starts_with),
-                  }}
-                />
-              </a>
-            </li>
-          ))}
+                  class={tw(css({
+                    "&": {
+                      display: "block",
+                      overflow: "clip",
+                      contain: "content",
+                      maxWidth: "100%",
+                      whiteSpace: "nowrap",
+                    },
+                    "& em": {
+                      color: "transparent",
+                      textShadow: "0 0 5px rgba(0, 0, 0, 0.5)",
+                    },
+                    "&:hover em": {
+                      color: "inherit",
+                      textShadow: "none",
+                    },
+                    "& em *": { "display": "inline" },
+                  }))}
+                >
+                  <strong>{chapter.title}</strong>{" "}
+                  <em
+                    dangerouslySetInnerHTML={{
+                      __html: clean(chapter.starts_with),
+                    }}
+                  />
+                </a>
+              </li>
+            );
+          })}
         </ol>
       </main>
     </Page>

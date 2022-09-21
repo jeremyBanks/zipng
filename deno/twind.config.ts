@@ -15,10 +15,10 @@ export default {
         serif: ["Georgia", "ui-serif", "serif"],
       },
       spacing: {
-        '96': '24rem',
-        '128': '32rem',
-        '192': '48rem',
-      }
+        "96": "24rem",
+        "128": "32rem",
+        "192": "48rem",
+      },
     },
   },
   preflight: (preflight) => ({

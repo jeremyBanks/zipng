@@ -25,7 +25,10 @@ export const handler: MiddlewareHandler = async (request, context) => {
     );
   }
 
-  if (!response.headers.has("Cache-Control")) {
+  if (
+    !response.headers.has("Cache-Control") &&
+    response.headers.get("Content-Type") === "text/html"
+  ) {
     response.headers.append(
       "Cache-Control",
       [

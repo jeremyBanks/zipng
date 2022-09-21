@@ -25,6 +25,7 @@ use color_eyre::install;
 use eyre::Report as ErrorReport;
 use once_cell::sync::Lazy;
 use once_cell::sync::OnceCell;
+use regex::Regex;
 use scraper::Html;
 use scraper::Selector;
 use serde::de::DeserializeOwned;
@@ -155,6 +156,9 @@ mod web {
 
 mod royalroad {
     use std::io::Write;
+    use std::str::FromStr;
+
+    use once_cell_regex::regex;
 
     use super::*;
 
@@ -317,8 +321,53 @@ mod royalroad {
             fic
         })?;
 
+        #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
+        struct ChapterLabel {
+            major: i32,
+            minor: Option<String>,
+        }
+
+        impl ChapterLabel {
+            const PATTERN: &'static Regex = regex! {r#"
+                (?ix)
+                ^\s*
+                [\[\(]*
+                cha?p?t?e?r?
+                \s*
+                (?P<major>[-]?\d+)
+                (?P<minor>[a-z0-9\-\.]*[a-z0-9])?
+                \b
+                [\]\)\:\-\s]*
+            "#};
+
+            pub fn strip_prefix(s: &str) -> Option<(String, ChapterLabel)> {
+                Some((Self::PATTERN.replace(s, "").to_string(), s.parse().ok()?))
+            }
+        }
+
+        impl FromStr for ChapterLabel {
+            type Err = ErrorReport;
+            fn from_str(s: &str) -> Result<Self, Self::Err> {
+                let captures = Self::PATTERN.captures(s).unwrap();
+                let major = captures.name("major").unwrap().as_str().parse()?;
+                let minor = captures.name("minor").map(|m| m.as_str().to_string());
+                Ok(ChapterLabel { major, minor })
+            }
+        }
+
         let ff = fic.clone();
         let _rich: Result<RichSpine, _> = load!("data/spines/{id10}", async move || {
+            let unknown = u64::MAX;
+            let mut chapter_numbers = vec![unknown; ff.chapters.len()];
+
+            let mut previous = unknown;
+
+            for chapter in &ff.chapters {
+                if let Some((chapter_title, chapter_label)) =
+                    ChapterLabel::strip_prefix(&chapter.title)
+                {}
+            }
+
             let mut chapters = BTreeSet::new();
 
             for chapter in ff.chapters {
@@ -342,6 +391,7 @@ mod royalroad {
                     title: chapter.title.clone(),
                     length: chapter.html.len() as _,
                     starts_with,
+                    number: (u64::MAX, u64::MAX),
                 };
                 chapters.insert(chapter);
             }
@@ -456,6 +506,7 @@ mod royalroad {
 
     #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
     pub struct RichSpineChapter {
+        number: (u64, u64),
         id10: String,
         timestamp: i64,
         title: String,

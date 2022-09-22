@@ -4,6 +4,7 @@ import { Head } from "$fresh/runtime.ts";
 
 import { apply, css, tw } from "twind/css";
 import Page from "../../components/Page.tsx";
+import ChapterPlayer from "../../islands/ChapterPlayer.tsx";
 
 export const config = {
   routeOverride: "/:fic_id(RYL[0-9A-Z]{7})/:chapter_id(C[0-9A-Z]{9})",
@@ -115,6 +116,7 @@ export default (
           {chapter.title}
         </h1>
         {nav}
+        <ChapterPlayer chapter={chapter} />
         <div
           class={tw`text-lg p-4 ${
             css({

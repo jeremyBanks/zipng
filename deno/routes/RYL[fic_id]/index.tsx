@@ -3,6 +3,7 @@ import { z } from "zod";
 import Page from "../../components/Page.tsx";
 import { css, tw } from "twind/css";
 import { Head, IS_BROWSER } from "$fresh/runtime.ts";
+import { sortBy } from "https://deno.land/std@0.156.0/collections/mod.ts";
 
 const { DOMParser } = IS_BROWSER
   ? globalThis
@@ -58,19 +59,8 @@ export default ({ data: spine }: PageProps<Spine>) => {
         <h1 class="text-xl font-bold p-4">{spine.title}</h1>
         <ol class="list-decimal ml-4">
           {spine.chapters.map((chapter) => {
-            const chapter_prefix_pattern =
-              /^\s*ch(?:ap(?:t(?:er)?)?)?\b\s*(\d+)\b[\s\-\:]*/i;
-            const match = chapter_prefix_pattern.exec(
-              chapter.title,
-            );
-            let chapter_number: number | undefined;
-            if (match) {
-              chapter_number = z.number().parse(parseInt(match[1], 10));
-              chapter.title = chapter.title.replace(chapter_prefix_pattern, "");
-            }
-
             return (
-              <li class="pb-4" value={chapter_number}>
+              <li class="pb-4">
                 <a
                   href={`/${spine.id10}/${chapter.id10}`}
                   class={tw(css({

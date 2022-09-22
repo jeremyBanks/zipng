@@ -11,7 +11,8 @@ import * as $4 from "./routes/_middleware.ts";
 import * as $5 from "./routes/gtin/resolver.ts";
 import * as $6 from "./routes/index.tsx";
 import * as $7 from "./routes/scan.tsx";
-import * as $$0 from "./islands/Scanner.tsx";
+import * as $$0 from "./islands/ChapterPlayer.tsx";
+import * as $$1 from "./islands/Scanner.tsx";
 
 const manifest = {
   routes: {
@@ -25,7 +26,8 @@ const manifest = {
     "./routes/scan.tsx": $7,
   },
   islands: {
-    "./islands/Scanner.tsx": $$0,
+    "./islands/ChapterPlayer.tsx": $$0,
+    "./islands/Scanner.tsx": $$1,
   },
   baseUrl: import.meta.url,
   config,

@@ -3,8 +3,8 @@ import { z } from "zod";
 import { Head, IS_BROWSER } from "$fresh/runtime.ts";
 
 import { apply, css, tw } from "twind/css";
-import Page from "../../components/Page.tsx";
-import ChapterPlayer from "../../islands/ChapterPlayer.tsx";
+import Page from "~/components/Page.tsx";
+import ChapterPlayer from "~/islands/ChapterPlayer.tsx";
 
 const { DOMParser } = IS_BROWSER
   ? globalThis

@@ -5,10 +5,11 @@ import { Head, IS_BROWSER } from "$fresh/runtime.ts";
 import { apply, css, tw } from "twind/css";
 import Page from "~/components/Page.tsx";
 import ChapterPlayer from "~/islands/ChapterPlayer.tsx";
+import * as fakeDom from "deno-dom";
 
 const { DOMParser } = IS_BROWSER
   ? globalThis
-  : await import("deno-dom") as unknown as typeof globalThis;
+  : fakeDom as unknown as typeof globalThis;
 export const config = {
   routeOverride: "/:fic_id(RYL[0-9A-Z]{7})/:chapter_id(C[0-9A-Z]{9})",
 };

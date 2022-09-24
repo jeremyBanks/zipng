@@ -16,6 +16,7 @@ export const handler = (request: Request, context: HandlerContext) =>
     <itunes:author>Test Author</itunes:author>
     <itunes:image href="/icon.svg" />
     <language>en-US</language>
+    <atom:link href="https://fic.is/${context.params.fic_id}/feed.xml" rel="self" type="application/rss+xml" />
 
     <item>
       <title>Test Item</title>

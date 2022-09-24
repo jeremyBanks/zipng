@@ -5,9 +5,11 @@ import { css, tw } from "twind/css";
 import { Head, IS_BROWSER } from "$fresh/runtime.ts";
 import { sortBy } from "https://deno.land/std@0.156.0/collections/mod.ts";
 
+import * as fakeDom from "deno-dom";
+
 const { DOMParser } = IS_BROWSER
   ? globalThis
-  : await import("deno-dom") as unknown as typeof globalThis;
+  : fakeDom as unknown as typeof globalThis;
 export const config = {
   routeOverride: "/:fic_id(RYL[0-9A-Z]{7})",
 };

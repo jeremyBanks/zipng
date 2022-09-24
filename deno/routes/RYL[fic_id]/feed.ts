@@ -1,10 +1,16 @@
-import { HandlerContext, Handlers, PageProps, RenderContext } from "$fresh/server.ts";
+import {
+  HandlerContext,
+  Handlers,
+  PageProps,
+  RenderContext,
+} from "$fresh/server.ts";
 
 export const config = {
   routeOverride: "/:fic_id(RYL[0-9A-Z]{7})/feed.xml",
 };
 export const handler = (request: Request, context: HandlerContext) =>
-  new Response(`<?xml version="1.0" encoding="UTF-8"?><rss
+  new Response(
+    `<?xml version="1.0" encoding="UTF-8"?><rss
   version="2.0"
   xmlns:atom="http://www.w3.org/2005/Atom"
   xmlns:content="http://purl.org/rss/1.0/modules/content/"
@@ -21,13 +27,15 @@ export const handler = (request: Request, context: HandlerContext) =>
     <item>
       <title>Test Item</title>
       <description>or maybe replaced</description>
-      <enclosure url="/.mp3" type="audio/mpeg" />
-      <enclosure url="./" type="text/html" />
-      <guid>/${context.params.fic_id}/0</guid>
+      <enclosure url="https://s3.amazonaws.com/s.fic.is/0.ogg" type="audio/mpeg" />
+      <enclosure url="https://fic.is/${context.params.fic_id}" type="text/html" />
+      <guid>https://fic.is/${context.params.fic_id}/0</guid>
     </item>
   </channel>
-</rss>`, {
-    headers: {
-      "Content-Type": "application/rss+xml",
-    }
-  });
+</rss>`,
+    {
+      headers: {
+        "Content-Type": "application/rss+xml",
+      },
+    },
+  );

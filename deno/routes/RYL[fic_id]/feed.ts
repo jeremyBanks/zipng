@@ -27,9 +27,9 @@ export const handler = (request: Request, context: HandlerContext) =>
     <item>
       <title>Test Item</title>
       <description>or maybe replaced</description>
-      <pubDate>Tue, 02 Oct 2016 19:45:01</pubDate>
+      <pubDate>Tue, 02 Oct 2020 19:45:01</pubDate>
       <enclosure url="https://sfic.s3.amazonaws.com/0.ogg" type="audio/ogg" />
-      <guid>https://fic.is/${context.params.fic_id}/0</guid>
+      <guid>https://fic.is/${context.params.fic_id}/1</guid>
     </item>
   </channel>
 </rss>`,

@@ -27,8 +27,7 @@ export const handler = (request: Request, context: HandlerContext) =>
     <item>
       <title>Test Item</title>
       <description>or maybe replaced</description>
-      <enclosure url="https://s3.amazonaws.com/s.fic.is/0.ogg" type="audio/mpeg" />
-      <enclosure url="https://fic.is/${context.params.fic_id}" type="text/html" />
+      <enclosure url="https://s3.amazonaws.com/s.fic.is/0.ogg" type="audio/ogg" />
       <guid>https://fic.is/${context.params.fic_id}/0</guid>
     </item>
   </channel>

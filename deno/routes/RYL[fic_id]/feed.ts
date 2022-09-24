@@ -20,15 +20,15 @@ export const handler = (request: Request, context: HandlerContext) =>
     <title>Test Feed ${context.params.fic_id}</title>
     <description>to be erased</description>
     <itunes:author>Test Author</itunes:author>
-    <itunes:image href="/icon.svg" />
-    <language>en-US</language>
+    <itunes:image href="https://fic.is/icon.svg" />
+    <language>en</language>
+    <link>https://fic.is/${context.params.fic_id}</link>
     <atom:link href="https://fic.is/${context.params.fic_id}/feed.xml" rel="self" type="application/rss+xml" />
-
     <item>
       <title>Test Item</title>
       <description>or maybe replaced</description>
       <pubDate>Tue, 02 Oct 2016 19:45:01</pubDate>
-      <enclosure url="https://s3.amazonaws.com/s.fic.is/0.ogg" type="audio/ogg" />
+      <enclosure url="https://sfic.s3.amazonaws.com/0.ogg" type="audio/ogg" />
       <guid>https://fic.is/${context.params.fic_id}/0</guid>
     </item>
   </channel>

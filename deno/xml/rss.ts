@@ -71,9 +71,10 @@ export const Rss = (
   );
 
 export const Item = (
-  { children, title, link, pubDate, enclosure }: RenderableProps<{
+  { children, title, link, guid, pubDate, enclosure }: RenderableProps<{
     title?: string;
     link?: string;
+    guid?: string;
     pubDate?: number;
     enclosure?: {
       url: string;
@@ -87,6 +88,7 @@ export const Item = (
     {},
     title && h("title", {}, title),
     link && h("link", {}, link),
+    guid && h("guid", {}, guid),
     pubDate && h("pubDate", {}, rfc2822DateTime(pubDate)),
     enclosure && h("enclosure", enclosure),
     children && h("description", {}, children),

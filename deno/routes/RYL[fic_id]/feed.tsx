@@ -60,7 +60,7 @@ export const handler: Handlers = {
 
     return renderXml(
       <Rss
-        title="Test Feed"
+        title={spine.title}
         link={`https://${url.host}/${context.params.fic_id}`}
         description="to be determined"
         author="Test Author"
@@ -69,6 +69,7 @@ export const handler: Handlers = {
           <Item
             pubDate={chapter.timestamp}
             title={chapter.title}
+            link={`https://${url.host}/${context.params.fic_id}/${chapter.id10}`}
             enclosure={{
               type: "audio/ogg",
               "url": "https://sfic.s3.amazonaws.com/0.ogg",

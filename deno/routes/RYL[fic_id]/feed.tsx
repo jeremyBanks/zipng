@@ -12,10 +12,12 @@ export const config = {
 import render from "preact-render-to-string";
 import * as fakeDom from "deno-dom";
 import { IS_BROWSER } from "$fresh/runtime.ts";
-import { h } from "preact";
+import { h, VNode } from "preact";
 import * as z from "zod";
 import { RenderableProps } from "https://esm.sh/v95/preact@10.11.0/src/index.d.ts";
 import { string } from "https://deno.land/x/zod/mod.ts";
+import { renderXml } from "../../xml/xml.ts";
+import { Item, Rss } from "../../xml/rss.ts";
 
 const { DOMParser } = IS_BROWSER
   ? globalThis
@@ -35,19 +37,6 @@ const Spine = z.object({
 });
 type Spine = z.infer<typeof Spine>;
 
-const Rss = (props: RenderableProps<{}>) => {
-};
-
-declare global {
-  namespace preact.createElement.JSX {
-    interface IntrinsicElements {
-      rss: preact.JSX.HTMLAttributes<HTMLElement> & {
-        version: "2.0";
-      };
-    }
-  }
-}
-
 export const handler: Handlers = {
   async GET(request, context) {
     const url = new URL(request.url);
@@ -60,69 +49,35 @@ export const handler: Handlers = {
       ),
     );
 
-    const after = url.searchParams.get("after") ?? "";
-    const chapters = spine.chapters.filter((c) => c.id10 > after);
+    const pageSize = 16;
+    const pageCount = Math.ceil(spine.chapters.length / pageSize);
+    const page = parseInt(url.searchParams.get("page") ?? "1", 10);
+    if (!Number.isFinite(page) || page < 1 || page > pageCount) {
+      return new Response("invalid page number", { status: 400 });
+    }
+    const offset = (page - 1) * pageSize;
+    const chapters = spine.chapters.slice(offset, offset + pageSize);
 
-    const pageSizeFloorChars = 128 * 1024;
-
-    const xml = `<?xml version="1.0" encoding="UTF-8"?>${
-      render(
-        <rss
-          version="2.0"
-          {...{
-            "xmlns:content": "http://purl.org/rss/1.0/modules/content/",
-            "xmlns:itunes": "http://www.itunes.com/dtds/podcast-1.0.dtd",
-            "xmlns:atom": "http://www.w3.org/2005/Atom",
-          }}
-        >
-          {h("atom:link", {
-            children: [
-              <b></b>,
-            ],
-          })}
-          "hello"
-        </rss>,
-        {
-          xml: true,
-        },
-      ).replace(/\sxmlns\-(\w+)="http/g, ` xmlns:$1="http`)
-    }`;
-
-    /*
-      `\
-<?xml
-  version="1.0"
-  encoding="UTF-8"
-?><rss
-  version="2.0"
-  xmlns:atom="http://www.w3.org/2005/Atom"
-  xmlns:content="http://purl.org/rss/1.0/modules/content/"
-  xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd"
-><channel>
-  <title>${spine.title}</title>
-  <description>to be determined</description>
-  <itunes:author>Test Author</itunes:author>
-  <itunes:image href="https://${url.host}/icon.svg" />
-  <language>en</language>
-  <link>https://${url.host}/${context.params.fic_id}</link>
-  <item>
-    <title><![CDATA[${spine.chapters[0].title}]]></title>
-    <description><![CDATA[${spine.chapters[0].starts_with}]]></description>
-    <pubDate><![CDATA[${
-        new Date(spine.chapters[0].timestamp * 1000).toISOString()
-      }]]></pubDate>
-    <enclosure url="https://sfic.s3.amazonaws.com/0.ogg" type="audio/ogg" />
-    <guid>https://${url.host}/${context.params.fic_id}/1</guid>
-  </item>
-</channel></rss>`,*/
-
-    return new Response(
-      xml,
-      {
-        headers: {
-          "Content-Type": "application/rss+xml",
-        },
-      },
+    return renderXml(
+      <Rss
+        title="Test Feed"
+        link={`https://${url.host}/${context.params.fic_id}`}
+        description="to be determined"
+        author="Test Author"
+      >
+        {chapters.map((chapter) => (
+          <Item
+            pubDate={chapter.timestamp}
+            title={chapter.title}
+            enclosure={{
+              type: "audio/ogg",
+              "url": "https://sfic.s3.amazonaws.com/0.ogg",
+            }}
+          >
+            {chapter.starts_with}
+          </Item>
+        ))}
+      </Rss>,
     );
   },
 };

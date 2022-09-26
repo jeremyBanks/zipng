@@ -1,5 +1,5 @@
 import { PageProps } from "$fresh/server.ts";
-import Page from "../components/Page.tsx";
+import Page from "~/components/Page.tsx";
 
 export default (props: PageProps) => (
   <Page>

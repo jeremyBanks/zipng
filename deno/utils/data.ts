@@ -18,12 +18,12 @@ export const load = async (path: string) => {
       const url = new URL(path, dataUrlBase);
       const response = await fetch(url);
       if (!response.ok) {
-        throw new Error(`HTTP Error ${response.status} ${response.statusText}`);
+        throw new Error(`HTTP ${response.status} ${response.statusText}`);
       }
       return response.text();
     }).catch((error) => {
       errors.push(error);
-      throw new Error(`Failed to load ${path}:\n${errors.join("\n")}`);
+      throw new Error(`Unable to load ${path}\n${errors.join("\n")}`);
     });
 
   if (text.length > cacheCharacterCapacity) {

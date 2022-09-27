@@ -9,11 +9,8 @@ import * as $2 from "./routes/RYL[fic_id]/index.tsx";
 import * as $3 from "./routes/_404.ts";
 import * as $4 from "./routes/_500.ts";
 import * as $5 from "./routes/_middleware.ts";
-import * as $6 from "./routes/gtin/resolver.ts";
-import * as $7 from "./routes/index.tsx";
-import * as $8 from "./routes/scan.tsx";
+import * as $6 from "./routes/index.tsx";
 import * as $$0 from "./islands/ChapterPlayer.tsx";
-import * as $$1 from "./islands/Scanner.tsx";
 
 const manifest = {
   routes: {
@@ -23,13 +20,10 @@ const manifest = {
     "./routes/_404.ts": $3,
     "./routes/_500.ts": $4,
     "./routes/_middleware.ts": $5,
-    "./routes/gtin/resolver.ts": $6,
-    "./routes/index.tsx": $7,
-    "./routes/scan.tsx": $8,
+    "./routes/index.tsx": $6,
   },
   islands: {
     "./islands/ChapterPlayer.tsx": $$0,
-    "./islands/Scanner.tsx": $$1,
   },
   baseUrl: import.meta.url,
   config,

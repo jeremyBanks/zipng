@@ -1,7 +1,7 @@
 import { Handlers, PageProps, RenderContext } from "$fresh/server.ts";
 import { z } from "zod";
 import { Head, IS_BROWSER } from "$fresh/runtime.ts";
-
+import { h } from "preact";
 import { apply, css, tw } from "twind/css";
 import Page from "~/components/Page.tsx";
 import ChapterPlayer from "~/islands/ChapterPlayer.tsx";

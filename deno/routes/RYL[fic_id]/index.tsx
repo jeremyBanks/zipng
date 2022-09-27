@@ -9,7 +9,7 @@ import Page from "~/components/Page.tsx";
 import { css, tw } from "twind/css";
 import { Head, IS_BROWSER } from "$fresh/runtime.ts";
 import { sortBy } from "https://deno.land/std@0.156.0/collections/mod.ts";
-
+import { h } from "preact";
 import * as fakeDom from "deno-dom";
 import { load } from "~/utils/data.ts";
 

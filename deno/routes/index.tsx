@@ -1,5 +1,6 @@
 import { PageProps } from "$fresh/server.ts";
 import Page from "~/components/Page.tsx";
+import { h } from "preact";
 
 export default (props: PageProps) => (
   <Page>

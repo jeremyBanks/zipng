@@ -79,8 +79,8 @@ export const handler: Handlers = {
           <Item
             pubDate={chapter.timestamp}
             title={chapter.title}
-            link={`ficUrl/${chapter.id10}`}
-            guid={`ficUrl/${chapter.id10}`}
+            link={`${ficUrl}/${chapter.id10}`}
+            guid={`${ficUrl}/${chapter.id10}`}
             enclosure={{
               type: "audio/ogg",
               url: `${ficUrl}/${chapter.id10}.ogg`,

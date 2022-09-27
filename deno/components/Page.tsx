@@ -1,6 +1,7 @@
 import { PageProps } from "$fresh/server.ts";
 import { Component, RenderableProps } from "preact";
 import { asset, Head } from "$fresh/runtime.ts";
+import { h } from "preact";
 
 export type Props = {
   _?: unknown;

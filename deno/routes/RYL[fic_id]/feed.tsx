@@ -59,6 +59,7 @@ export const handler: Handlers = {
       <Rss
         title={spine.title}
         link={`https://${url.host}/${context.params.fic_id}`}
+        image={`https://${url.host}/cover.png`}
         description="to be determined"
         author="Test Author"
       >

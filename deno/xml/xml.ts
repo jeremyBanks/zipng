@@ -11,7 +11,9 @@ export const renderXml = (node: VNode, opts?: {
       render(node, null, { xml: true, pretty: opts?.pretty ? "  " : " " }),
     {
       headers: {
-        "Content-Type": opts?.type ?? node.type != Rss ? "application/xml" : "application/rss+xml",
+        "Content-Type": opts?.type ?? node.type != Rss
+          ? "application/xml"
+          : "application/rss+xml",
       },
     },
   );

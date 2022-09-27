@@ -1,11 +1,12 @@
 import { Handlers, PageProps, RenderContext } from "$fresh/server.ts";
 import { z } from "zod";
-import Page from "../../components/Page.tsx";
+import Page from "~/components/Page.tsx";
 import { css, tw } from "twind/css";
 import { Head, IS_BROWSER } from "$fresh/runtime.ts";
 import { sortBy } from "https://deno.land/std@0.156.0/collections/mod.ts";
 
 import * as fakeDom from "deno-dom";
+import { load } from "~/utils/data.ts";
 
 const { DOMParser } = IS_BROWSER
   ? globalThis
@@ -30,13 +31,7 @@ type Spine = z.infer<typeof Spine>;
 
 export const handler: Handlers = {
   async GET(_request, context) {
-    const spine = Spine.parse(
-      JSON.parse(
-        await Deno.readTextFile(
-          `../data/spines/${context.params.fic_id}.json`,
-        ),
-      ),
-    );
+    const spine = Spine.parse(load(`spines/${context.params.fic_id}.json`));
     return await context.render(spine);
   },
 };

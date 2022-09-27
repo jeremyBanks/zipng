@@ -81,7 +81,8 @@ export const handler: Handlers = {
             guid={`https://${url.host}/${context.params.fic_id}/${chapter.id10}`}
             enclosure={{
               type: "audio/ogg",
-              "url": "https://sfic.s3.amazonaws.com/0.ogg",
+              "url":
+                `https://sfic.s3.amazonaws.com/0.ogg?/${context.params.fic_id}/${chapter.id10}.ogg`,
             }}
           >
             {chapter.starts_with}

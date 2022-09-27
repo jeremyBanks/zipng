@@ -117,4 +117,4 @@ export const Item = (
     enclosure && h("enclosure", enclosure),
     children && h("description", {}, children),
   );
-}
+};

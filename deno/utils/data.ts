@@ -40,7 +40,9 @@ export const load = async (path: string) => {
     return text;
   }).catch((error) => {
     errors.push(error);
-    throw new Error(`Unable to load(${JSON.stringify(path)})\n${errors.join("\n")}`);
+    throw new Error(
+      `Unable to load(${JSON.stringify(path)})\n${errors.join("\n")}`,
+    );
   });
 
   if (text.length > cacheCharacterCapacity) {

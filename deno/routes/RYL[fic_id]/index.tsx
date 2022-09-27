@@ -1,4 +1,9 @@
-import { Handlers, PageProps, RenderContext } from "$fresh/server.ts";
+import {
+  HandlerContext,
+  Handlers,
+  PageProps,
+  RenderContext,
+} from "$fresh/server.ts";
 import { z } from "zod";
 import Page from "~/components/Page.tsx";
 import { css, tw } from "twind/css";
@@ -29,11 +34,12 @@ const Spine = z.object({
 });
 type Spine = z.infer<typeof Spine>;
 
-export const handler: Handlers = {
-  async GET(_request, context) {
-    const spine = Spine.parse(load(`spines/${context.params.fic_id}`));
-    return await context.render(spine);
-  },
+export const handler = async (
+  _request: Request,
+  context: HandlerContext<unknown>,
+) => {
+  const spine = Spine.parse(load(`spines/${context.params.fic_id}`));
+  return await context.render(spine);
 };
 
 const clean = (s: string) =>

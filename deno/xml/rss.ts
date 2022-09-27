@@ -42,14 +42,18 @@ const rfc2822DateTime = (timestamp: number | Date) => {
 };
 
 export const Rss = (
-  { children, title, description, author, image }: RenderableProps<{
-    title?: string;
-    description?: string;
-    language?: string;
-    link?: string;
-    author?: string;
-    image?: string;
-  }>,
+  { children, title, description, author, image, link, self, next, prev }:
+    RenderableProps<{
+      title?: string;
+      description?: string;
+      language?: string;
+      link?: string;
+      self?: string;
+      next?: string;
+      prev?: string;
+      author?: string;
+      image?: string;
+    }>,
 ) =>
   h(
     "rss",
@@ -64,6 +68,25 @@ export const Rss = (
       {},
       title && h("title", {}, title),
       description && h("description", {}, description),
+      link && h("link", {}, link),
+      self &&
+        h("atom:link", {
+          rel: "self",
+          href: self,
+          type: "application/rss+xml",
+        }),
+      next &&
+        h("atom:link", {
+          rel: "next",
+          href: next,
+          type: "application/rss+xml",
+        }),
+      prev &&
+        h("atom:link", {
+          rel: "prev",
+          href: prev,
+          type: "application/rss+xml",
+        }),
       author && h("itunes:author", {}, author),
       image && h("itunes:image", { href: image.toString() }),
       children,
@@ -88,7 +111,7 @@ export const Item = (
     {},
     title && h("title", {}, title),
     link && h("link", {}, link),
-    guid && h("guid", {}, guid),
+    guid && h("guid", {}, guid ?? link),
     pubDate && h("pubDate", {}, rfc2822DateTime(pubDate)),
     enclosure && h("enclosure", enclosure),
     children && h("description", {}, children),

@@ -55,10 +55,20 @@ export const handler: Handlers = {
     const offset = (page - 1) * pageSize;
     const chapters = spine.chapters.slice(offset, offset + pageSize);
 
+    const first = `https://${url.host}/${context.params.fic_id}/feed.xml`;
+    const self = `${first}${page > 1 ? `?page=${page}` : ""}`;
+    const next = page < pageCount ? `${first}?page=${page + 1}` : undefined;
+    const prev = page > 1
+      ? page == 2 ? first : `${first}?page=${page - 1}`
+      : undefined;
+
     return renderXml(
       <Rss
         title={spine.title}
         link={`https://${url.host}/${context.params.fic_id}`}
+        self={self}
+        prev={prev}
+        next={next}
         image={`https://${url.host}/cover.png`}
         description="to be determined"
         author="Test Author"

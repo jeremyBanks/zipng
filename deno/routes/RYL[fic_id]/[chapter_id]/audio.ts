@@ -13,16 +13,13 @@ export const handler = (
     {
       status: 302,
       headers: {
-        "Location": "https://sfic.s3.amazonaws.com/0.ogg",
+        "Location": "https://s3.amazonaws.com/sfic/0.ogg",
         "Cache-Control": [
           `max-age=${24 * 32}`,
           `stale-while-revalidate=${24 * 256}`,
           `stale-if-error=${24 * 256}`,
         ].join(", "),
-      },
-    } ?? {
-      status: 301,
-      headers: {
+      } ?? {
         "Location":
           `https://s3.amazonaws.com/sfic/audio/${fic_id}/${chapter_id}.ogg`,
         "Cache-Control": [

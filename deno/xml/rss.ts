@@ -42,7 +42,7 @@ const rfc2822DateTime = (timestamp: number | Date) => {
 };
 
 export const Rss = (
-  { children, title, description, author, image, link, self, next, prev }:
+  { children, title, description, author, image, link, self, next, prev, type }:
     RenderableProps<{
       title?: string;
       description?: string;
@@ -53,6 +53,7 @@ export const Rss = (
       prev?: string;
       author?: string;
       image?: string;
+      type?: "serial" | "episodic";
     }>,
 ) =>
   h(
@@ -88,6 +89,7 @@ export const Rss = (
           type: "application/rss+xml",
         }),
       author && h("itunes:author", {}, author),
+      type && h("itunes:type", {}, type),
       image && h("itunes:image", { href: image.toString() }),
       children,
     ),

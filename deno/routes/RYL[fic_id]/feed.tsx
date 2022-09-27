@@ -74,6 +74,7 @@ export const handler: Handlers = {
         image={`https://${url.host}/cover.png`}
         description="to be determined"
         author="Test Author"
+        type="serial"
       >
         {chapters.map((chapter) => (
           <Item

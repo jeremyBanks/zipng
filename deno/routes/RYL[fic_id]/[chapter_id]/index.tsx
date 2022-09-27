@@ -4,7 +4,6 @@ import { Head, IS_BROWSER } from "$fresh/runtime.ts";
 import { h } from "preact";
 import { apply, css, tw } from "twind/css";
 import Page from "~/components/Page.tsx";
-import ChapterPlayer from "~/islands/ChapterPlayer.tsx";
 import * as fakeDom from "deno-dom";
 import { load } from "~/utils/data.ts";
 
@@ -113,7 +112,6 @@ export default (
           {chapter.title}
         </h1>
         {nav}
-        <ChapterPlayer chapter={chapter} />
         <div
           class={tw`text-lg p-4 ${
             css({

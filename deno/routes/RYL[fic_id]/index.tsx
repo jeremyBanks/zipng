@@ -36,7 +36,7 @@ type Spine = z.infer<typeof Spine>;
 
 export const handler = async (
   _request: Request,
-  context: HandlerContext<unknown>,
+  context: HandlerContext,
 ) => {
   const spine = Spine.parse(await load(`spines/${context.params.fic_id}`));
   return await context.render(spine);

@@ -4,7 +4,10 @@ export const config = {
     "/:fic_id(RYL[0-9A-Z]{7})/:chapter_id(C[0-9A-Z]{9})\.(ogg|mp3|m4a|aac)",
 };
 
-export default ({ params: { fic_id, chapter_id } }: HandlerContext) =>
+export const handler = (
+  _request: Request,
+  { params: { fic_id, chapter_id } }: HandlerContext,
+) =>
   new Response(
     null,
     {

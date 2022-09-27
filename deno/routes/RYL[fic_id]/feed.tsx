@@ -55,7 +55,9 @@ export const handler: Handlers = {
     const offset = (page - 1) * pageSize;
     const chapters = spine.chapters.slice(offset, offset + pageSize);
 
-    const first = `https://${url.host}/${context.params.fic_id}/feed.xml`;
+    const ficUrl = `https://${url.host}/${context.params.fic_id}`;
+
+    const first = `${ficUrl}/feed.xml`;
     const self = `${first}${page > 1 ? `?page=${page}` : ""}`;
     const next = page < pageCount ? `${first}?page=${page + 1}` : undefined;
     const prev = page > 1
@@ -65,7 +67,7 @@ export const handler: Handlers = {
     return renderXml(
       <Rss
         title={spine.title}
-        link={`https://${url.host}/${context.params.fic_id}`}
+        link={ficUrl}
         self={self}
         prev={prev}
         next={next}
@@ -77,12 +79,11 @@ export const handler: Handlers = {
           <Item
             pubDate={chapter.timestamp}
             title={chapter.title}
-            link={`https://${url.host}/${context.params.fic_id}/${chapter.id10}`}
-            guid={`https://${url.host}/${context.params.fic_id}/${chapter.id10}`}
+            link={`ficUrl/${chapter.id10}`}
+            guid={`ficUrl/${chapter.id10}`}
             enclosure={{
               type: "audio/ogg",
-              "url":
-                `https://sfic.s3.amazonaws.com/0.ogg?/${context.params.fic_id}/${chapter.id10}.ogg`,
+              url: `${ficUrl}/${chapter.id10}.ogg`,
             }}
           >
             {chapter.starts_with}

@@ -106,7 +106,7 @@ export const Item = (
     };
   }>,
 ) => {
-  guid ??= enclosure.url ?? link;
+  guid ??= enclosure?.url ?? link;
   return h(
     "item",
     {},

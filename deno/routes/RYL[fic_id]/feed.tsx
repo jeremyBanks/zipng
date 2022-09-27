@@ -78,6 +78,7 @@ export const handler: Handlers = {
             pubDate={chapter.timestamp}
             title={chapter.title}
             link={`https://${url.host}/${context.params.fic_id}/${chapter.id10}`}
+            guid={`https://${url.host}/${context.params.fic_id}/${chapter.id10}`}
             enclosure={{
               type: "audio/ogg",
               "url": "https://sfic.s3.amazonaws.com/0.ogg",

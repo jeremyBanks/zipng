@@ -105,14 +105,16 @@ export const Item = (
       length?: number;
     };
   }>,
-) =>
-  h(
+) => {
+  guid ??= enclosure.url ?? link;
+  return h(
     "item",
     {},
     title && h("title", {}, title),
     link && h("link", {}, link),
-    guid && h("guid", {}, guid ?? link),
+    guid && h("guid", {}, guid),
     pubDate && h("pubDate", {}, rfc2822DateTime(pubDate)),
     enclosure && h("enclosure", enclosure),
     children && h("description", {}, children),
   );
+}

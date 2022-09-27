@@ -94,17 +94,19 @@ export const Rss = (
   );
 
 export const Item = (
-  { children, title, link, guid, pubDate, enclosure }: RenderableProps<{
-    title?: string;
-    link?: string;
-    guid?: string;
-    pubDate?: number;
-    enclosure?: {
-      url: string;
-      type: string;
-      length?: number;
-    };
-  }>,
+  { children, title, link, guid, pubDate, enclosure, duration }:
+    RenderableProps<{
+      title?: string;
+      link?: string;
+      guid?: string;
+      pubDate?: number;
+      duration?: number;
+      enclosure?: {
+        url: string;
+        type: string;
+        length?: number;
+      };
+    }>,
 ) => {
   guid = guid || enclosure?.url || link;
   return h(
@@ -115,6 +117,7 @@ export const Item = (
     guid && h("guid", {}, guid),
     pubDate && h("pubDate", {}, rfc2822DateTime(pubDate)),
     enclosure && h("enclosure", enclosure),
+    duration && h("itunes:duration", {}, duration),
     children && h("description", {}, children),
   );
 };

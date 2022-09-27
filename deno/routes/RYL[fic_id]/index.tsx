@@ -38,7 +38,7 @@ export const handler = async (
   _request: Request,
   context: HandlerContext<unknown>,
 ) => {
-  const spine = Spine.parse(load(`spines/${context.params.fic_id}`));
+  const spine = Spine.parse(await load(`spines/${context.params.fic_id}`));
   return await context.render(spine);
 };
 

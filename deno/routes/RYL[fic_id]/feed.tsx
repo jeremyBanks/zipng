@@ -43,7 +43,7 @@ export const handler: Handlers = {
     const url = new URL(request.url);
 
     const spine = Spine.parse(
-      await load(`spines/${context.params.fic_id}.json`),
+      await load(`spines/${context.params.fic_id}`),
     );
 
     const pageSize = 16;

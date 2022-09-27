@@ -6,6 +6,7 @@ import { apply, css, tw } from "twind/css";
 import Page from "~/components/Page.tsx";
 import ChapterPlayer from "~/islands/ChapterPlayer.tsx";
 import * as fakeDom from "deno-dom";
+import { load } from "~/utils/data.ts";
 
 const { DOMParser } = IS_BROWSER
   ? globalThis
@@ -38,19 +39,11 @@ type Chapter = z.infer<typeof Chapter>;
 
 export const handler: Handlers = {
   async GET(_request, context) {
-    const spine = Spine.parse(
-      JSON.parse(
-        await Deno.readTextFile(
-          `../data/spines/${context.params.fic_id}.json`,
-        ),
-      ),
-    );
+    const spine = Spine.parse(await load(`spines/${context.params.fic_id}`));
 
     const chapter = Chapter.parse(
-      JSON.parse(
-        await Deno.readTextFile(
-          `../target/chapters/${context.params.fic_id}${context.params.chapter_id}.json`,
-        ),
+      await load(
+        `chapters/${context.params.fic_id}${context.params.chapter_id}`,
       ),
     );
 

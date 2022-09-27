@@ -31,7 +31,7 @@ type Spine = z.infer<typeof Spine>;
 
 export const handler: Handlers = {
   async GET(_request, context) {
-    const spine = Spine.parse(load(`spines/${context.params.fic_id}.json`));
+    const spine = Spine.parse(load(`spines/${context.params.fic_id}`));
     return await context.render(spine);
   },
 };

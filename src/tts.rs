@@ -1,16 +1,13 @@
 use std::rc::Rc;
+use std::fmt::Debug;
+use async_trait::async_trait;
+use std::any::Any;
 
 mod windows;
 
+#[async_trait]
 pub trait Tts {
-    fn obj(self) -> Rc<dyn Tts>
-    where
-        Self: Sized + 'static,
-    {
-        Rc::new(self)
-    }
-
-    fn text_to_speech(&self, text: &str) -> Result<Speech, eyre::Report>;
+    async fn text_to_speech(&self, text: &str) -> Result<Speech, eyre::Report>;
 }
 
 pub fn tts() -> impl Tts {

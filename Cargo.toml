@@ -10,6 +10,7 @@ brotli = "3.3.4"
 bstr = "1.0.0"
 color-eyre = "0.6.2"
 eyre = "0.6.8"
+futures = "0.3.24"
 http = "0.2.8"
 miette = { version = "5.3.0", features = ["fancy"] }
 once-cell-regex = "0.2.1"

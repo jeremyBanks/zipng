@@ -68,8 +68,8 @@ use crate::wrapped_error::DebugResultExt;
 
 mod load;
 mod throttle;
-mod wrapped_error;
 mod tts;
+mod wrapped_error;
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> Result<(), ErrorReport> {
@@ -95,13 +95,30 @@ async fn main() -> Result<(), ErrorReport> {
     )
     .wrap()?;
 
-    let mol = royalroad::fic(21220);
-    let ant = royalroad::fic(22518);
-    let wtc = royalroad::fic(25137);
-    let mox = royalroad::fic(49033);
-
-    let (mol, ant, wtc, mox) = join!(mol, ant, wtc, mox);
-    let (mol, ant, wtc, mox) = (mol?, ant?, wtc?, mox?);
+    // Most of these were picked at random from the list of popular works,
+    // so no guarauntees are made about the nature of their content.
+    let results = futures::future::join_all(
+        [
+            16984,
+            17173,
+            21220,
+            22518,
+            22848,
+            24779,
+            25137,
+            30108,
+            32291,
+            41251,
+            45534,
+            48012,
+            49033,
+        ]
+        .into_iter()
+        .map(royalroad::fic),
+    )
+    .await
+    .into_iter()
+    .collect::<Result<Vec<_>, _>>()?;
 
     Ok(())
 }
@@ -378,7 +395,7 @@ mod royalroad {
         load!("target/chapters/{fic10}{id10}", async move || {
             THROTTLE.tick().await;
 
-            let url = f!["https://www.royalroad.com/chapter/{chapter_id}"];
+            let url = f!["https://www.royalroad.com/fiction/{fic_id}/_/chapter/{chapter_id}/_"];
 
             let html = web::get(url).await?.body;
 

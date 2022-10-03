@@ -102,12 +102,11 @@ impl Tts {
         log!("        Length: {:>18}B", buffer.Length().wrap()?);
         log!("          Type: {:>19}", content_type.to_string());
 
-    let mut bytes = vec![0u8; buffer.Length().wrap()? as usize];
-    DataReader::FromBuffer(InParam::from(Some(&buffer)))
-        .wrap()?
-        .ReadBytes(&mut bytes)
-        .wrap()?;
-
+        let mut bytes = vec![0u8; buffer.Length().wrap()? as usize];
+        DataReader::FromBuffer(InParam::from(Some(&buffer)))
+            .wrap()?
+            .ReadBytes(&mut bytes)
+            .wrap()?;
 
         Ok(Speech {
             text: text.to_owned(),

@@ -10,7 +10,6 @@ export type Props = {
 export default (props: RenderableProps<Props>) => (
   <>
     <Head>
-      <link rel="icon" href={asset("/icon.svg")} />
     </Head>
 
     <main class="flex flex-grow self-stretch items-start justify-center bg-yellow-50 color-white max-w-full overflow-y-scroll">

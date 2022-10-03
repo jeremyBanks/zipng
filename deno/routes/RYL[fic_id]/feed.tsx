@@ -15,6 +15,7 @@ import * as z from "zod";
 import { renderXml } from "~/xml/xml.ts";
 import { Item, Rss } from "~/xml/rss.ts";
 import { load } from "~/utils/data.ts";
+import { h } from "preact";
 
 const { DOMParser } = IS_BROWSER
   ? globalThis

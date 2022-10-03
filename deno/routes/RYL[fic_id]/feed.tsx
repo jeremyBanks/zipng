@@ -9,13 +9,9 @@ export const config = {
   routeOverride: "/:fic_id(RYL[0-9A-Z]{7})/feed.xml",
 };
 
-import render from "preact-render-to-string";
 import * as fakeDom from "deno-dom";
 import { IS_BROWSER } from "$fresh/runtime.ts";
-import { h, VNode } from "preact";
 import * as z from "zod";
-import { RenderableProps } from "https://esm.sh/v95/preact@10.11.0/src/index.d.ts";
-import { string } from "https://deno.land/x/zod/mod.ts";
 import { renderXml } from "~/xml/xml.ts";
 import { Item, Rss } from "~/xml/rss.ts";
 import { load } from "~/utils/data.ts";
@@ -72,9 +68,9 @@ export const handler: Handlers = {
         self={self}
         prev={prev}
         next={next}
-        image={`https://${url.host}/cover.png`}
-        description="to be determined"
-        author="Test Author"
+        image={`${ficUrl}/cover.png`}
+        description="God Only Knows"
+        author="Lost to Time"
         type="serial"
       >
         {chapters.map((chapter) => (

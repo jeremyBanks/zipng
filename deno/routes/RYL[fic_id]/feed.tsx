@@ -46,7 +46,8 @@ export const handler: Handlers = {
       await load(`spines/${context.params.fic_id}`),
     );
 
-    const pageSize = 16;
+    const pageSize = 32;
+
     const pageCount = Math.ceil(spine.chapters.length / pageSize);
     const page = parseInt(url.searchParams.get("page") ?? "1", 10);
     if (!Number.isFinite(page) || page < 1 || page > pageCount) {
@@ -81,7 +82,6 @@ export const handler: Handlers = {
             pubDate={chapter.timestamp}
             title={chapter.title}
             link={`${ficUrl}/${chapter.id10}`}
-            guid={`${ficUrl}/${chapter.id10}`}
             enclosure={{
               type: "audio/ogg",
               url: `${ficUrl}/${chapter.id10}.ogg`,

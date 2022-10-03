@@ -69,6 +69,7 @@ use crate::wrapped_error::DebugResultExt;
 mod load;
 mod throttle;
 mod wrapped_error;
+mod tts;
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> Result<(), ErrorReport> {

@@ -1,5 +1,4 @@
-import { h } from "preact";
-import { RenderableProps } from "https://esm.sh/v95/preact@10.11.0/src/index.d.ts";
+import { h, RenderableProps } from "preact";
 
 declare global {
   namespace preact.createElement.JSX {

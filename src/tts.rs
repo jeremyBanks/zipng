@@ -1,5 +1,7 @@
 use std::rc::Rc;
 
+mod windows;
+
 pub trait Tts {
     fn obj(self) -> Rc<dyn Tts>
     where
@@ -8,7 +10,7 @@ pub trait Tts {
         Rc::new(self)
     }
 
-    fn text_to_speech(&self, text: Rc<str>) -> Result<Speech, eyre::Report>;
+    fn text_to_speech(&self, text: &str) -> Result<Speech, eyre::Report>;
 }
 
 pub fn tts() -> impl Tts {
@@ -17,30 +19,11 @@ pub fn tts() -> impl Tts {
     #[cfg(windows)]
     return windows::WindowsTts::default();
 
-    return unimplemented!();
+    return unimplemented!("TTS is not available");
 }
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Speech {
-    pub text: Rc<str>,
-    pub audio: Rc<[u8]>,
-}
-
-#[cfg(windows)]
-mod windows {
-    use std::rc::Rc;
-
-    use super::Speech;
-
-    #[derive(Default, Debug, Clone)]
-    pub struct WindowsTts;
-
-    impl crate::Tts for WindowsTts {
-        fn text_to_speech(&self, text: Rc<str>) -> Result<Speech, eyre::Report> {
-            Ok(Speech {
-                text,
-                audio: todo!(),
-            })
-        }
-    }
+    pub text: String,
+    pub audio: Vec<u8>,
 }

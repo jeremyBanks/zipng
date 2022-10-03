@@ -56,6 +56,11 @@ export default ({ data: spine }: PageProps<Spine>) => {
     <Page>
       <Head>
         <title>{spine.title}</title>
+        <link
+          rel="alternate"
+          type="application/rss+xml"
+          href={`/${spine.id10}/feed.xml`}
+        />
       </Head>
       <main class="p-10 text-lg bg-white lg:w-192">
         <h1 class="text-xl font-bold p-4">{spine.title}</h1>

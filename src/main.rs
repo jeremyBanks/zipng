@@ -306,24 +306,6 @@ mod royalroad {
             info!("Loaded fic #{id} {title:?}", title = &fic.title);
             info!(chapter_count = fic.chapters.len());
 
-            // let span = tracing::info_span!("JSON+Brotli...").entered();
-            // let mut fic_brotli_json = Vec::new();
-            // serde_json::to_writer_pretty(
-            //     brotli::CompressorWriter::new(&mut fic_brotli_json, 0, 11, 24),
-            //     &fic,
-            // )?;
-            // drop(span);
-            // info!(json_brotli = fic_brotli_json.len());
-
-            // let span = tracing::info_span!("JSON+zstd...").entered();
-            // let mut fic_zstd_json = Vec::new();
-            // serde_json::to_writer_pretty(
-            //     zstd::Encoder::new(&mut fic_zstd_json, 22)?.auto_finish(),
-            //     &fic,
-            // )?;
-            // drop(span);
-            // info!(json_zstd = fic_zstd_json.len());
-
             fic
         })?;
 
@@ -332,19 +314,20 @@ mod royalroad {
             let mut chapters = BTreeSet::new();
 
             for chapter in ff.chapters {
-                let starts_with = chapter
-                    .html
-                    .to_string()
-                    .split_ascii_whitespace()
-                    .collect::<Vec<_>>()
-                    .join(" ")
-                    .chars()
-                    .take(96)
-                    .collect::<String>()
-                    .rsplit_once(" ")
-                    .unwrap()
-                    .0
-                    .to_string();
+                let starts_with = ammonia::clean(
+                    chapter
+                        .html
+                        .to_string()
+                        .split_ascii_whitespace()
+                        .collect::<Vec<_>>()
+                        .join(" ")
+                        .chars()
+                        .take(255)
+                        .collect::<String>()
+                        .rsplit_once(" ")
+                        .unwrap()
+                        .0,
+                );
 
                 let chapter = RichSpineChapter {
                     id10: chapter.id10.clone(),

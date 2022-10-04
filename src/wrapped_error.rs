@@ -3,6 +3,8 @@ use std::any::Any;
 use std::any::TypeId;
 use std::fmt::Debug;
 
+use error_stack::IntoReport;
+
 #[derive(Debug, thiserror::Error, miette::Diagnostic)]
 #[error("{0}{1}")]
 pub(crate) struct WrappedError(&'static str, String);
@@ -16,6 +18,7 @@ impl WrappedError {
 pub(crate) trait DebugResultExt {
     type Ok;
     fn wrap(self) -> Result<Self::Ok, WrappedError>;
+    fn report(self) -> Result<Self::Ok, error_stack::Report<WrappedError>>;
 }
 
 impl<T, E: Debug + Any> DebugResultExt for Result<T, E> {
@@ -33,5 +36,8 @@ impl<T, E: Debug + Any> DebugResultExt for Result<T, E> {
                 Err(WrappedError::new(prefix, err))
             },
         }
+    }
+    fn report(self) -> Result<T, error_stack::Report<WrappedError>> {
+        self.wrap().into_report()
     }
 }

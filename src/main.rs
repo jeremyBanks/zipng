@@ -22,7 +22,11 @@ use bstr::BStr;
 use bstr::ByteSlice;
 use bstr::ByteVec;
 use color_eyre::install;
-use eyre::Report as ErrorReport;
+use error_stack::Context as _;
+use error_stack::IntoReport as _;
+use error_stack::IntoReportCompat as _;
+use error_stack::Report as _;
+use error_stack::ResultExt as _;
 use once_cell::sync::Lazy;
 use once_cell::sync::OnceCell;
 use regex::Regex;
@@ -72,7 +76,7 @@ mod tts;
 mod wrapped_error;
 
 #[tokio::main(flavor = "current_thread")]
-async fn main() -> Result<(), ErrorReport> {
+async fn main() -> Result<(), eyre::Report> {
     if cfg!(debug_assertions) {
         if env::var("RUST_LOG").is_err() {
             env::set_var("RUST_LOG", f!("warn,{}=trace", env!("CARGO_CRATE_NAME")));
@@ -96,17 +100,29 @@ async fn main() -> Result<(), ErrorReport> {
     .wrap()?;
 
     // assortment of fics with varying lengths from the most popular list
-    let results = futures::future::join_all(
-        [
-            16984, 17173, 17644, 18489, 21220, 22518, 22848, 24779, 25137, 30108, 32291, 35858,
-            36950, 41251, 45534, 47997, 48012, 48274, 48948, 49033, 51404, 51925, 58362, 59240,
-        ]
-        .into_iter()
-        .map(royalroad::fic),
-    )
-    .await
-    .into_iter()
-    .collect::<Result<Vec<_>, _>>()?;
+    let ryl_fic_ids = [
+        16984, 17173, 17644, 18489, 21220, 22518, 22848, 24779, 25137, 30108, 32291, 35858, 36950,
+        41251, 45534, 47997, 48012, 48274, 48948, 49033, 51404, 51925, 58362, 59240,
+    ];
+
+    let index = load!("data/spines/index", async move || {
+        futures::future::join_all(ryl_fic_ids.map(royalroad::fic))
+            .await
+            .into_iter()
+            .collect::<Result<Vec<_>, _>>()?
+            .into_iter()
+            .map(|royalroad::Fic { id10, title, .. }| {
+                #[derive(
+                    Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash,
+                )]
+                struct IndexFic {
+                    id10: String,
+                    title: String,
+                }
+                IndexFic { id10, title }
+            })
+            .collect::<BTreeSet<_>>()
+    })?;
 
     Ok(())
 }
@@ -132,7 +148,7 @@ mod web {
     }
 
     #[instrument(level = "trace", skip_all)]
-    pub async fn get(url: impl AsRef<str>) -> Result<Page, ErrorReport> {
+    pub async fn get(url: impl AsRef<str>) -> Result<Page, eyre::Report> {
         let url = url.as_ref().to_string();
         let digest = digest(url.as_bytes());
         load!("target/web/{digest}", async move || {
@@ -171,7 +187,7 @@ mod royalroad {
     static THROTTLE: Lazy<Throttle> = Lazy::new(|| throttle("RoyalRoad", 128));
 
     #[instrument(level = "trace")]
-    pub async fn spine(id: u64) -> Result<Spine, ErrorReport> {
+    pub async fn spine(id: u64) -> Result<Spine, eyre::Report> {
         let id10 = fic_id10(id);
         let spine = load!("target/spines/{id10}", async move || {
             THROTTLE.tick().await;
@@ -283,7 +299,7 @@ mod royalroad {
     }
 
     #[instrument(level = "trace")]
-    pub async fn fic(id: u64) -> Result<Fic, ErrorReport> {
+    pub async fn fic(id: u64) -> Result<Fic, eyre::Report> {
         let id10 = fic_id10(id);
 
         let fic = load!("target/fics/{id10}", async move || {
@@ -354,7 +370,7 @@ mod royalroad {
     pub async fn fic_chapter(
         spine: &Spine,
         chapter: &SpineChapter,
-    ) -> Result<FicChapter, ErrorReport> {
+    ) -> Result<FicChapter, eyre::Report> {
         let spine = spine.clone();
         let chapter = chapter.clone();
         let fic_id = spine.id;
@@ -408,51 +424,51 @@ mod royalroad {
 
     #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
     pub struct Fic {
-        id: u64,
-        id10: String,
-        title: String,
-        chapters: BTreeSet<FicChapter>,
+        pub id: u64,
+        pub id10: String,
+        pub title: String,
+        pub chapters: BTreeSet<FicChapter>,
     }
 
     #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
     pub struct FicChapter {
-        id: u64,
-        id10: String,
-        timestamp: i64,
-        title: String,
-        html: String,
+        pub id: u64,
+        pub id10: String,
+        pub timestamp: i64,
+        pub title: String,
+        pub html: String,
     }
     #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
     pub struct Spine {
-        id: u64,
-        id10: String,
-        title: String,
-        chapters: BTreeSet<SpineChapter>,
+        pub id: u64,
+        pub id10: String,
+        pub title: String,
+        pub chapters: BTreeSet<SpineChapter>,
     }
 
     #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
     pub struct SpineChapter {
-        id: u64,
-        id10: String,
-        timestamp: i64,
-        title: String,
+        pub id: u64,
+        pub id10: String,
+        pub timestamp: i64,
+        pub title: String,
     }
 
     #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
     pub struct RichSpine {
-        id10: String,
-        title: String,
-        author: String,
-        length: u64,
-        chapters: BTreeSet<RichSpineChapter>,
+        pub id10: String,
+        pub title: String,
+        pub author: String,
+        pub length: u64,
+        pub chapters: BTreeSet<RichSpineChapter>,
     }
 
     #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
     pub struct RichSpineChapter {
-        id10: String,
-        timestamp: i64,
-        title: String,
-        length: u64,
-        starts_with: String,
+        pub id10: String,
+        pub timestamp: i64,
+        pub title: String,
+        pub length: u64,
+        pub starts_with: String,
     }
 }

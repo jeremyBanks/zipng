@@ -1,5 +1,5 @@
 export const config = {
-  routeOverride: "/:fic_id(RYL[0-9A-Z]{7})/cover.png",
+  routeOverride: "/:fic_id(RYL[0-9A-Z]{7})(/cover)?.png",
 };
 
 import { Handlers } from "$fresh/server.ts";
@@ -49,15 +49,15 @@ export const handler: Handlers = {
     new DataView(bytes.buffer).setUint32(0, crc);
 
     if (bytes[0] & 0b101) {
-      foreground.r ^= bytes[0] & 0b0111_1111;
-      foreground.g ^= bytes[1] & 0b0111_1111;
-      foreground.b ^= bytes[2] & 0b0111_1111;
+      foreground.r ^= bytes[0] & 0b1111_1111;
+      foreground.g ^= bytes[1] & 0b1111_1111;
+      foreground.b ^= bytes[2] & 0b1111_1111;
     }
 
     if (~bytes[0] & 0b001) {
-      background.r ^= bytes[1] & 0b0111_1111;
-      background.g ^= bytes[2] & 0b0111_1111;
-      background.b ^= bytes[3] & 0b0111_1111;
+      background.r ^= bytes[0] & 0b1111_1111;
+      background.g ^= bytes[1] & 0b1111_1111;
+      background.b ^= bytes[2] & 0b1111_1111;
     }
 
     view.setUint32(PLTE.byteOffset + 0x08 + PLTE_length, crc32(PLTE_body));

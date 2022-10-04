@@ -56,7 +56,7 @@ export const Rss = (
     }>,
 ) =>
   h(
-    "rss",
+    "rss" as any,
     {
       "version": "2.0",
       "xmlns:content": "http://purl.org/rss/1.0/modules/content/",
@@ -90,6 +90,7 @@ export const Rss = (
       author && h("itunes:author", {}, author),
       type && h("itunes:type", {}, type),
       image && h("itunes:image", { href: image.toString() }),
+      h("itunes:block", {}, "yes"),
       children,
     ),
   );
@@ -109,7 +110,6 @@ export const Item = (
       };
     }>,
 ) => {
-  guid = guid || enclosure?.url || link;
   return h(
     "item",
     {},

@@ -1,7 +1,7 @@
 import { HandlerContext } from "$fresh/server.ts";
 export const config = {
   routeOverride:
-    "/:fic_id(RYL[0-9A-Z]{7})/:chapter_id(C[0-9A-Z]{9})\.(ogg|mp3|m4a|aac)",
+    "/:fic_id(RYL[0-9A-Z]{7})/:chapter_id(C[0-9A-Z]{9})\.(opus|ogg|mp3|m4a|aac)",
 };
 
 export const handler = (

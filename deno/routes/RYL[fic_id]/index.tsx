@@ -56,6 +56,7 @@ export default ({ data: spine }: PageProps<Spine>) => {
     <Page>
       <Head>
         <title>{spine.title}</title>
+        <meta name="robots" content="noindex" />
         <link
           rel="alternate"
           type="application/rss+xml"
@@ -64,7 +65,7 @@ export default ({ data: spine }: PageProps<Spine>) => {
         <link
           rel="icon"
           type="image/png"
-          href={`/${spine.id10}/cover.png`}
+          href={`/${spine.id10}.png`}
         />
       </Head>
       <main class="p-10 text-lg bg-white lg:w-192">

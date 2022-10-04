@@ -6,7 +6,7 @@ import {
 } from "$fresh/server.ts";
 
 export const config = {
-  routeOverride: "/:fic_id(RYL[0-9A-Z]{7})/feed.xml",
+  routeOverride: "/:fic_id(RYL[0-9A-Z]{7})(.rss|/feed.xml)",
 };
 
 import * as fakeDom from "deno-dom";
@@ -70,8 +70,10 @@ export const handler: Handlers = {
         prev={prev}
         next={next}
         image={`${ficUrl}/cover.png`}
-        description="God Only Knows"
-        author="Lost to Time"
+        description={[...spine.title].sort(() => Math.random() - 0.125).join(
+          "",
+        )}
+        author={[...spine.title].sort(() => Math.random() - 0.125).join("")}
         type="serial"
       >
         {chapters.map((chapter) => (
@@ -79,9 +81,10 @@ export const handler: Handlers = {
             pubDate={chapter.timestamp}
             title={chapter.title}
             link={`${ficUrl}/${chapter.id10}`}
+            guid={`${ficUrl}/${chapter.id10}`}
             enclosure={{
               type: "audio/ogg",
-              url: `${ficUrl}/${chapter.id10}.ogg`,
+              url: `${ficUrl}/${chapter.id10}.opus`,
             }}
           >
             {chapter.starts_with}

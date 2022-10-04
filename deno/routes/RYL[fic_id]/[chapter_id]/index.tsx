@@ -98,6 +98,7 @@ export default (
     <Page>
       <Head>
         <title>{chapter.title} &mdash; {spine.title}</title>
+        <meta name="robots" content="noindex" />
       </Head>
       <main class="p-10 text-lg bg-white lg:w-192">
         <nav class="flex">

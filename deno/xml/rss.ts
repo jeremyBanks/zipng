@@ -90,7 +90,6 @@ export const Rss = (
       author && h("itunes:author", {}, author),
       type && h("itunes:type", {}, type),
       image && h("itunes:image", { href: image.toString() }),
-      h("itunes:block", {}, "yes"),
       children,
     ),
   );

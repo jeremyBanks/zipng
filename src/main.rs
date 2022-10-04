@@ -101,10 +101,11 @@ async fn main() -> Result<(), eyre::Report> {
 
     // assortment of fics with varying lengths from the most popular list
     let ryl_fic_ids = [
-        16984, 17173, 17644, 18489, 21220, 22518, 22848, 24779, 25137, 30108, 32291, 35858, 36950,
-        41251, 45534, 47997, 48012, 48274, 48948, 49033, 51404, 51925, 58362, 59240,
+        11313, 16984, 17173, 17644, 18489, 21220, 22518, 22848, 24779, 25137, 25225, 30108, 32291,
+        35858, 36950, 41251, 45534, 47997, 48012, 48274, 48948, 49033, 51404, 51925, 58362, 59240,
     ];
 
+    tokio::fs::remove_file("data/spines/index.json").await.ok();
     let index = load!("data/spines/index", async move || {
         futures::future::join_all(ryl_fic_ids.map(royalroad::fic))
             .await
@@ -330,7 +331,7 @@ mod royalroad {
             let mut chapters = BTreeSet::new();
 
             for chapter in ff.chapters {
-                let starts_with = ammonia::clean(
+                let starts_with = ammonia::clean(&(
                     chapter
                         .html
                         .to_string()
@@ -342,8 +343,8 @@ mod royalroad {
                         .collect::<String>()
                         .rsplit_once(" ")
                         .unwrap()
-                        .0,
-                );
+                        .0.to_string() + "…"
+                ));
 
                 let chapter = RichSpineChapter {
                     id10: chapter.id10.clone(),

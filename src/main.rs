@@ -36,6 +36,7 @@ use serde::de::DeserializeOwned;
 use serde::Deserialize;
 use serde::Serialize;
 use static_assertions::assert_obj_safe;
+use serde_json::json;
 use time::error::InvalidFormatDescription;
 use time::format_description;
 use time::OffsetDateTime;
@@ -112,16 +113,7 @@ async fn main() -> Result<(), eyre::Report> {
             .into_iter()
             .collect::<Result<Vec<_>, _>>()?
             .into_iter()
-            .map(|royalroad::Fic { id10, title, .. }| {
-                #[derive(
-                    Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash,
-                )]
-                struct IndexFic {
-                    id10: String,
-                    title: String,
-                }
-                IndexFic { id10, title }
-            })
+            .map(|royalroad::Fic { id10, title, .. }| json!{ id10, title } )
             .collect::<BTreeSet<_>>()
     })?;
 
@@ -331,8 +323,8 @@ mod royalroad {
             let mut chapters = BTreeSet::new();
 
             for chapter in ff.chapters {
-                let starts_with = ammonia::clean(&(
-                    chapter
+                let starts_with = ammonia::clean(
+                    &(chapter
                         .html
                         .to_string()
                         .split_ascii_whitespace()
@@ -343,8 +335,10 @@ mod royalroad {
                         .collect::<String>()
                         .rsplit_once(" ")
                         .unwrap()
-                        .0.to_string() + "…"
-                ));
+                        .0
+                        .to_string()
+                        + "…"),
+                );
 
                 let chapter = RichSpineChapter {
                     id10: chapter.id10.clone(),

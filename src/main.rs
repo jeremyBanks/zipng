@@ -95,23 +95,11 @@ async fn main() -> Result<(), ErrorReport> {
     )
     .wrap()?;
 
-    // Most of these were picked at random from the list of popular works,
-    // so no guarauntees are made about the nature of their content.
+    // assortment of fics with varying lengths from the most popular list
     let results = futures::future::join_all(
         [
-            16984,
-            17173,
-            21220,
-            22518,
-            22848,
-            24779,
-            25137,
-            30108,
-            32291,
-            41251,
-            45534,
-            48012,
-            49033,
+            16984, 17173, 17644, 18489, 21220, 22518, 22848, 24779, 25137, 30108, 32291, 35858,
+            36950, 41251, 45534, 47997, 48012, 48274, 48948, 49033, 51404, 51925, 58362, 59240,
         ]
         .into_iter()
         .map(royalroad::fic),
@@ -133,7 +121,7 @@ fn digest(bytes: &[u8]) -> String {
 mod web {
     use super::*;
 
-    static THROTTLE: Lazy<Throttle> = Lazy::new(|| throttle("web", 16 * 1024));
+    static THROTTLE: Lazy<Throttle> = Lazy::new(|| throttle("web", 4 * 1024));
 
     #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
     pub struct Page {

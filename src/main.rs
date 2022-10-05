@@ -22,6 +22,7 @@ use bstr::BStr;
 use bstr::ByteSlice;
 use bstr::ByteVec;
 use color_eyre::install;
+use duct::cmd;
 use error_stack::Context as _;
 use error_stack::IntoReport as _;
 use error_stack::IntoReportCompat as _;
@@ -35,8 +36,8 @@ use scraper::Selector;
 use serde::de::DeserializeOwned;
 use serde::Deserialize;
 use serde::Serialize;
-use static_assertions::assert_obj_safe;
 use serde_json::json;
+use static_assertions::assert_obj_safe;
 use time::error::InvalidFormatDescription;
 use time::format_description;
 use time::OffsetDateTime;
@@ -65,12 +66,14 @@ use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::EnvFilter;
 use twox_hash::Xxh3Hash64;
 
+use crate::ffmpeg::FFMPEG;
 use crate::load::load;
 use crate::load::Load;
 use crate::throttle::throttle;
 use crate::throttle::Throttle;
 use crate::wrapped_error::DebugResultExt;
 
+mod ffmpeg;
 mod load;
 mod throttle;
 mod tts;
@@ -88,6 +91,16 @@ async fn main() -> Result<(), eyre::Report> {
         }
     }
 
+    println!(
+        "{}",
+        ffmpeg!(-h, -r (30 + 30).to_string(), -s "10")
+            .stderr_to_stdout()
+            .unchecked()
+            .read()?
+    );
+
+    return Ok(());
+
     color_eyre::install().wrap()?;
 
     tracing::subscriber::set_global_default(
@@ -99,6 +112,8 @@ async fn main() -> Result<(), eyre::Report> {
             .with(ErrorLayer::default()),
     )
     .wrap()?;
+
+    panic!("{:?}", cmd!("./ffmpeg").read()?);
 
     // assortment of fics with varying lengths from the most popular list
     let ryl_fic_ids = [
@@ -113,8 +128,14 @@ async fn main() -> Result<(), eyre::Report> {
             .into_iter()
             .collect::<Result<Vec<_>, _>>()?
             .into_iter()
-            .map(|royalroad::Fic { id10, title, .. }| json!{ id10, title } )
-            .collect::<BTreeSet<_>>()
+            .map(
+                |royalroad::Fic {
+                     ref id10,
+                     ref title,
+                     ..
+                 }| json! {{ id10: id10, title: title }},
+            )
+            .collect::<Vec<_>>()
     })?;
 
     Ok(())

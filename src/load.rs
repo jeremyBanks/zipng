@@ -1,12 +1,12 @@
 use super::*;
 
 pub trait Load:
-    DeserializeOwned + Serialize + Clone + Debug + Send + Sync + PartialEq + Hash + 'static
+    DeserializeOwned + Serialize + Clone + Debug + Send + Sync + PartialEq + 'static
 {
 }
 
 impl<T> Load for T where
-    T: DeserializeOwned + Serialize + Clone + Debug + Send + Sync + PartialEq + Hash + 'static
+    T: DeserializeOwned + Serialize + Clone + Debug + Send + Sync + PartialEq + 'static
 {
 }
 

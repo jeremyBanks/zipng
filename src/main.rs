@@ -89,7 +89,8 @@ async fn main() -> Result<(), eyre::Report> {
         }
     }
 
-    dbg!(ffmpeg! {
+    dbg!(run! {
+        ffmpeg
         "-f", "wav", "-i", "in.wav",
         "-vn",
         "-ac", "1",
@@ -105,8 +106,23 @@ async fn main() -> Result<(), eyre::Report> {
     println!(
         "{}",
         ffmpeg! {
-            r: (30 + 30).to_string(),
-            s: "10",
+            read {
+                from "./in.wav"
+                as "wav"
+            }
+            write {
+                to "./out.opus.mka"
+                as "webm"
+                video disabled
+                audio {
+                    as "libopus"
+                    bps "24Ki"
+                    channels "1"
+                }
+                text {
+                    as "webvtt"
+                }
+            }
         }
         .stderr_to_stdout()
         .unchecked()

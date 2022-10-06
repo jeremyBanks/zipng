@@ -1,36 +1,39 @@
-use std::path::PathBuf;
-
-use once_cell::sync::Lazy;
-use which::which;
-
-pub static FFMPEG: Lazy<PathBuf> =
-    Lazy::new(|| which("ffmpeg").or_else(|_| which("./ffmpeg")).unwrap());
-
-pub static FFPROBE: Lazy<PathBuf> =
-    Lazy::new(|| which("ffprobe").or_else(|_| which("./ffprobe")).unwrap());
-
+#[doc(hidden)]
 #[macro_export]
-macro_rules! ffmpeg {
-    ($(-$flag:ident $($expr:expr)? ),+) => {
-        ffmpeg!($(concat!("-", stringify!($flag)) $(,$expr)?),+)
+macro_rules! run {
+    ($name:ident with $(-$flag:ident $($expr:expr)? ),+) => {
+        $crate::run!($name with $(concat!("-", stringify!($flag)) $(,$expr)?),+)
     };
-    ($($flag:ident = $expr:expr ),+) => {
-        ffmpeg!($(concat!("-", stringify!($flag)) ,$expr),+)
+    ($name:ident with $($flag:ident = $expr:expr $(,)?$(;)? )+) => {
+        $crate::run!($name with $(concat!("-", stringify!($flag)) ,$expr),+)
     };
-    ($($expr:expr),*) => {
-        ::duct::cmd!(&*$crate::ffmpeg::FFMPEG, $($expr),*)
+    ($name:ident with $($flag:ident: $expr:expr $(,)?$(;)? )+) => {
+        $crate::run!($name with $(concat!("-", stringify!($flag)) ,$expr),+)
+    };
+    ($name:ident with $($expr:expr),*) => {
+        ::duct::cmd!({
+            static PATH: ::once_cell::sync::Lazy<::std::path::PathBuf> = ::once_cell::sync::Lazy::new(|| {
+                let name = stringify!($name);
+                if let Ok(name) = ::which::which(&name) {
+                    if let Ok(name) = ::std::fs::canonicalize(&name) {
+                        name
+                    } else {
+                        name
+                    }
+                } else {
+                    name.into()
+                }
+            });
+            &*PATH
+        }, $($expr),*)
     };
 }
 
 #[macro_export]
-macro_rules! ffprobe {
-    ($(-$flag:ident $($expr:expr)? ),+) => {
-        ffprobe!($(concat!("-", stringify!($flag)) $(,$expr)?),+)
-    };
-    ($($flag:ident = $expr:expr ),+) => {
-        ffprobe!($(concat!("-", stringify!($flag)) ,$expr),+)
-    };
-    ($($expr:expr),*) => {
-        ::duct::cmd!(&*$crate::ffprobe::FFPROBE, $($expr),*)
-    };
-}
+macro_rules! ffmpeg(($($tt:tt)*) => ($crate::run!(ffmpeg with $($tt)*)));
+
+#[macro_export]
+macro_rules! ffprobe(($($tt:tt)*) => ($crate::run!(ffprobe with $($tt)*)));
+
+#[macro_export]
+macro_rules! ffplay(($($tt:tt)*) => ($crate::run!(ffplay with $($tt)*)));

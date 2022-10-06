@@ -22,7 +22,6 @@ use bstr::BStr;
 use bstr::ByteSlice;
 use bstr::ByteVec;
 use color_eyre::install;
-use duct::cmd;
 use error_stack::Context as _;
 use error_stack::IntoReport as _;
 use error_stack::IntoReportCompat as _;
@@ -66,7 +65,6 @@ use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::EnvFilter;
 use twox_hash::Xxh3Hash64;
 
-use crate::ffmpeg::FFMPEG;
 use crate::load::load;
 use crate::load::Load;
 use crate::throttle::throttle;
@@ -91,13 +89,31 @@ async fn main() -> Result<(), eyre::Report> {
         }
     }
 
+    dbg!(ffmpeg! {
+        "-f", "wav", "-i", "in.wav",
+        "-vn",
+        "-ac", "1",
+        "-ab", "24576",
+        "-acodec", "libopus",
+        "-f", "webm", "out.opus.mka"
+    }
+    .unchecked()
+    .run()?);
+
+    return Ok(());
+
     println!(
         "{}",
-        ffmpeg!(-h, -r (30 + 30).to_string(), -s "10")
-            .stderr_to_stdout()
-            .unchecked()
-            .read()?
+        ffmpeg! {
+            r: (30 + 30).to_string(),
+            s: "10",
+        }
+        .stderr_to_stdout()
+        .unchecked()
+        .read()?
     );
+
+    // println!("{}", ffprobe!(-h).stderr_to_stdout().unchecked().read()?);
 
     return Ok(());
 
@@ -113,7 +129,7 @@ async fn main() -> Result<(), eyre::Report> {
     )
     .wrap()?;
 
-    panic!("{:?}", cmd!("./ffmpeg").read()?);
+    // panic!("{:?}", cmd!("./ffmpeg").read()?);
 
     // assortment of fics with varying lengths from the most popular list
     let ryl_fic_ids = [

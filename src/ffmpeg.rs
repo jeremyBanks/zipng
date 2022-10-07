@@ -1,10 +1,8 @@
 use std::convert::Infallible;
-use std::marker::PhantomData;
-use std::io::Write;
 use std::io::Read;
+use std::io::Write;
+use std::marker::PhantomData;
 use std::sync::Arc;
-
-
 
 fn tempdir() -> Result<impl AsRef<std::path::Path>, std::io::Error> {
     tempfile::tempdir_in("target/ffmpegging")
@@ -41,34 +39,52 @@ macro_rules! run {
     };
 }
 
-pub fn ffmpeg(inputs: Vec<Input<Vec<u8>>, outputs: Vec<Input<Vec<u8>>) -> Result<duct::Expression, eyre::Report> {
-    let dir = tempdir()?.as_ref();
+// pub fn ffmpeg(inputs: Vec<Input<Vec<u8>>, outputs: Vec<Input<Vec<u8>>) ->
+// Result<duct::Expression, eyre::Report> {     let dir = tempdir()?.as_ref();
 
-
-
-    todo!()
-}
+//     todo!()
+// }
 
 fn test() {
     let title = vec![0u8, 1000];
     let body = vec![0u8, 1000];
 
-    macro_rules! input { ($($tt:tt)*) => {{}} }
-    macro_rules! output { ($($tt:tt)*) => {{}} }
+    macro_rules! input {
+        ($($tt:tt)*) => {{}};
+    }
+    macro_rules! output {
+        ($($tt:tt)*) => {{}};
+    }
 
     let title = input(title).dot("wav").build();
     let body = input(body).dot("wav").build();
 
-    let mut output = output().dot("mka").audio(
-        audio()
-            .codec("opus")
-            .channels(1)
-            .bitrate(32 * 1024)
-    );
+    struct Audio;
+    struct Video;
+
+    struct Container {
+        format: &'static str,
+        audio: Option<Audio>,
+        video: Option<Video>,
+        text: Option<Text>,
+    }
+
+    struct Audio {
+        codec: &'static str,
+        bitrate: u32,
+        channels: u32,
+    }
+
+    let mut output = output()
+        .dot("opus.mka")
+        .container("webm")
+        .audio(|a| a.codec("opus").channels(1).bitrate(32 * 1024))
+        .text(|t| t.codex("webvtt"))
+        .video(|v| v.disabled())
 
     let outputs = HashMap::<Arc<Input>, Vec<u8>>::new();
 
-    todo()!
+    todo!()
 }
 
 #[derive(Debug, Clone, Default)]

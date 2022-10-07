@@ -1,3 +1,15 @@
+use std::convert::Infallible;
+use std::marker::PhantomData;
+use std::io::Write;
+use std::io::Read;
+use std::sync::Arc;
+
+
+
+fn tempdir() -> Result<impl AsRef<std::path::Path>, std::io::Error> {
+    tempfile::tempdir_in("target/ffmpegging")
+}
+
 #[doc(hidden)]
 #[macro_export]
 macro_rules! run {
@@ -27,6 +39,96 @@ macro_rules! run {
             &*PATH
         }, $($expr),*)
     };
+}
+
+pub fn ffmpeg(inputs: Vec<Input<Vec<u8>>, outputs: Vec<Input<Vec<u8>>) -> Result<duct::Expression, eyre::Report> {
+    let dir = tempdir()?.as_ref();
+
+
+
+    todo!()
+}
+
+fn test() {
+    let title = vec![0u8, 1000];
+    let body = vec![0u8, 1000];
+
+    macro_rules! input { ($($tt:tt)*) => {{}} }
+    macro_rules! output { ($($tt:tt)*) => {{}} }
+
+    let title = input(title).dot("wav").build();
+    let body = input(body).dot("wav").build();
+
+    let mut output = output().dot("mka").audio(
+        audio()
+            .codec("opus")
+            .channels(1)
+            .bitrate(32 * 1024)
+    );
+
+    let outputs = HashMap::<Arc<Input>, Vec<u8>>::new();
+
+    todo()!
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct Input {
+    pub bytes: Vec<u8>,
+    pub dot: Option<String>,
+    pub container: Option<String>,
+    pub video: Option<Vec<VideoStream>>,
+    pub audio: Option<Vec<AudioStream>>,
+    pub text: Option<Vec<TextStream>>,
+}
+
+pub fn input(bytes: Vec<u8>) -> Input {
+    Input::new(bytes)
+}
+
+impl Input {
+    pub fn new(bytes: Vec<u8>) -> Self {
+        todo!()
+    }
+
+    pub fn dot(self, dot: impl ToString) -> Self {
+        self.dot = Some(dot.to_string());
+        self
+    }
+
+    pub fn build(self) -> Arc<Self> {
+        Arc::new(self)
+    }
+
+    pub fn id(self: &Arc<Self>) -> u64 {
+        Arc::as_ptr(self) as u64
+    }
+}
+
+#[derive(Debug)]
+pub struct Output<'bytes> {
+    pub bytes: &'bytes mut Vec<u8>,
+    pub suffix: Option<String>,
+    pub container: Option<String>,
+    pub video: Option<Vec<VideoStream>>,
+    pub audio: Option<Vec<AudioStream>>,
+    pub text: Option<Vec<TextStream>>,
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct AudioStream {
+    pub codec: Option<String>,
+    pub channels: Option<u32>,
+    pub bitrate: Option<u32>,
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct VideoStream {
+    _not_implemented: PhantomData<Infallible>,
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct TextStream {
+    _not_implemented: PhantomData<Infallible>,
 }
 
 #[macro_export]

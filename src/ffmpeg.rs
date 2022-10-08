@@ -12,10 +12,12 @@ use once_cell::sync::Lazy;
 use which::which;
 
 fn tempdir() -> Result<impl AsRef<std::path::Path>, std::io::Error> {
+    let dir = PathBuf::from("target").join("ffmpegging");
+    fs::create_dir_all(&dir);
     tempfile::Builder::new()
         .prefix("")
         .suffix("")
-        .tempdir_in(PathBuf::from("target").join("ffmpegging"))
+        .tempdir_in(dir)
 }
 
 fn ffmpeg<Args>(args: Args) -> duct::Expression
@@ -40,32 +42,31 @@ where
 
 pub fn wavs_to_opus(wavs: Vec<Vec<u8>>) -> Result<Vec<u8>, eyre::Report> {
     let dir = tempdir()?;
-    let dir = Box::leak(Box::new(dir));
+    // let dir = Box::leak(Box::new(dir));
     let dir = dir.as_ref();
 
     let mut args = Vec::<OsString>::new();
-    let output = dir.join("out.opus.mka");
-    let mut filter_inputs = String::new();
+    let output = dir.join("out.opus.webm");
 
     for (i, wav) in wavs.iter().enumerate() {
         let path = dir.join(format!("input-{i}.wav"));
         fs::write(&path, wav)?;
-        args.extend(["-f".into(), "wav".into(), "-i".into(), path.into()]);
-        filter_inputs += &format!("[{i}:0] ");
+        args.extend(["-f", "wav", "-i"].map(Into::into));
+        args.push(path.into());
     }
 
     args.extend(
         [
             "-filter_complex".into(),
-            filter_inputs + &format!("concat=n={n}:v=0:a=1 [a]", n = wavs.len()),
+            format!("concat=n={n}:v=0:a=1 [output]", n = wavs.len()),
             "-map".into(),
-            "[a]".into(),
+            "[output]".into(),
         ]
         .map(Into::into),
     );
 
-    args.extend(["-acodec", "libopus", "-frame_duration", "60", "-ab", "24Ki"].map(Into::into));
-    args.extend(["-vcodec", "png"].map(Into::into));
+    args.extend(["-acodec", "libopus", "-ab", "24Ki", "-ac", "1"].map(Into::into));
+    args.extend(["-vcodec", "webp"].map(Into::into));
     args.extend(["-scodec", "webvtt"].map(Into::into));
     args.extend(["-f", "webm"].map(Into::into));
     args.push(output.clone().into());

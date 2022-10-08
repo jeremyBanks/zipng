@@ -65,6 +65,7 @@ use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::EnvFilter;
 use twox_hash::Xxh3Hash64;
 
+use crate::ffmpeg::wavs_to_opus;
 use crate::load::load;
 use crate::load::Load;
 use crate::throttle::throttle;
@@ -88,46 +89,7 @@ async fn main() -> Result<(), eyre::Report> {
             env::set_var("RUST_LOG", f!("error,{}=warn", env!("CARGO_CRATE_NAME")));
         }
     }
-
-    dbg!(run! {
-        ffmpeg
-        "-f", "wav", "-i", "in.wav",
-        "-vn",
-        "-ac", "1",
-        "-ab", "24576",
-        "-acodec", "libopus",
-        "-f", "webm", "out.opus.mka"
-    }
-    .unchecked()
-    .run()?);
-
-    return Ok(());
-
-    println!(
-        "{}",
-        ffmpeg! {
-            read {
-                from "./in.wav"
-                as "wav"
-            }
-            write {
-                to "./out.opus.mka"
-                as "webm"
-                video disabled
-                audio {
-                    as "libopus"
-                    bps "24Ki"
-                    channels "1"
-                }
-                text {
-                    as "webvtt"
-                }
-            }
-        }
-        .stderr_to_stdout()
-        .unchecked()
-        .read()?
-    );
+    dbg!(wavs_to_opus(vec![]));
 
     // println!("{}", ffprobe!(-h).stderr_to_stdout().unchecked().read()?);
 

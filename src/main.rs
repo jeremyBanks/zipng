@@ -70,6 +70,7 @@ use crate::load::load;
 use crate::load::Load;
 use crate::throttle::throttle;
 use crate::throttle::Throttle;
+use crate::tts::speak;
 use crate::wrapped_error::DebugResultExt;
 
 mod ffmpeg;
@@ -89,7 +90,12 @@ async fn main() -> Result<(), eyre::Report> {
             env::set_var("RUST_LOG", f!("error,{}=warn", env!("CARGO_CRATE_NAME")));
         }
     }
-    dbg!(wavs_to_opus(vec![]));
+
+    let speech = wavs_to_opus(vec![
+        speak("hello, world!").await?.audio,
+        speak("would you like to play a game?").await?.audio,
+        speak("let's do it together!").await?.audio,
+    ])?;
 
     // println!("{}", ffprobe!(-h).stderr_to_stdout().unchecked().read()?);
 

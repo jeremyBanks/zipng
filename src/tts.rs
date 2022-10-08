@@ -11,6 +11,7 @@ use tracing::trace as log;
 use tracing_subscriber::fmt::format::FmtSpan;
 use windows::core::InParam;
 use windows::core::Interface;
+use windows::core::HSTRING;
 use windows::w;
 use windows::Media::SpeechSynthesis::SpeechSynthesizer;
 use windows::Storage::Streams::Buffer;
@@ -21,14 +22,14 @@ use super::*;
 
 #[derive(Debug, Clone, Default)]
 pub struct Tts {
-    voice_required: Option<Vec<String>>,
-    voice_preferred: Option<Vec<String>>,
+    pub voice_required: Option<Vec<String>>,
+    pub voice_preferred: Option<Vec<String>>,
 }
 
 #[derive(Debug, Clone)]
 pub struct Speech {
-    text: String,
-    audio: Vec<u8>,
+    pub text: String,
+    pub audio: Vec<u8>,
 }
 
 pub async fn speak(text: &str) -> Result<Speech, eyre::Report> {
@@ -78,7 +79,7 @@ impl Tts {
         );
 
         let stream = synth
-            .SynthesizeTextToStreamAsync(w!("hello, world!"))
+            .SynthesizeTextToStreamAsync(&HSTRING::from(text))
             .wrap()?
             .await
             .wrap()?;

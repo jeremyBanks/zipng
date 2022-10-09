@@ -14,6 +14,7 @@ use windows::core::Interface;
 use windows::core::HSTRING;
 use windows::w;
 use windows::Media::SpeechSynthesis::SpeechSynthesizer;
+use windows::Media::SpeechSynthesis::VoiceInformation;
 use windows::Storage::Streams::Buffer;
 use windows::Storage::Streams::DataReader;
 use windows::Storage::Streams::IBuffer;
@@ -22,6 +23,9 @@ use super::*;
 
 #[derive(Debug, Clone, Default)]
 pub struct Tts {
+    // who needs this?
+    // just require specific voices, you idiot.
+    // more flexibility can come later if you earn it.
     pub voice_required: Option<Vec<String>>,
     pub voice_preferred: Option<Vec<String>>,
 }
@@ -36,6 +40,10 @@ pub async fn speak(text: &str) -> Result<Speech, eyre::Report> {
     Tts::default().speak(text).await
 }
 
+pub async fn speak_as(text: &str, voice_name: &str) -> Result<Speech, eyre::Report> {
+    Tts { voice_required: Some(vec![text.to_string()]), voice_preferred: None }.speak(text).await
+}
+
 impl Tts {
     fn new() -> Self {
         Self::default()
@@ -43,6 +51,17 @@ impl Tts {
 
     async fn speak(&self, text: &str) -> Result<Speech, eyre::Report> {
         let synth = SpeechSynthesizer::new().wrap()?;
+
+        let voices = Vec::from_iter(SpeechSynthesizer::AllVoices()?);
+
+        // first, if we have a list of required voices, filter out all other voices
+        // voice names can case-insensitive full matches for the voice name or description,
+        // or suffix matches for the voice "ID".
+
+        // then sort the candidates, with "preferred" voices first, with ties broken
+        // by system default, then alphabetically by ID.
+
+        dbg!(voices);
 
         let voice = synth.Voice().wrap()?;
         let options = synth.Options().wrap()?;

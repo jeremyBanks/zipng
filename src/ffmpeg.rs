@@ -46,8 +46,7 @@ pub fn wavs_to_opus(wavs: Vec<Vec<u8>>) -> Result<Vec<u8>, eyre::Report> {
     let dir = Box::leak(Box::new(dir));
     let dir = dir.as_ref();
 
-    let mut args = Vec::<OsString>::new();
-    let output = dir.join("out.opus.webm");
+    let mut args: Vec<OsString> = vec!["-hide_banner".into()];
 
     for (i, wav) in wavs.iter().enumerate() {
         let path = dir.join(format!("input-{i}.wav"));
@@ -64,16 +63,17 @@ pub fn wavs_to_opus(wavs: Vec<Vec<u8>>) -> Result<Vec<u8>, eyre::Report> {
         .map(Into::into),
     );
 
+    let output = dir.join("output.webm");
     args.extend(["-map", "[output]"].map(Into::into));
-    args.extend(["-acodec", "libopus", "-ab", "24Ki", "-ac", "1"].map(Into::into));
-    args.extend(["-vcodec", "webp"].map(Into::into));
-    args.extend(["-scodec", "webvtt"].map(Into::into));
+    args.extend(["-codec:a", "libopus", "-ab", "32Ki", "-ac", "1"].map(Into::into));
+    args.extend(["-codec:v", "webp"].map(Into::into));
+    args.extend(["-codec:s", "webvtt"].map(Into::into));
     args.extend(["-f", "webm"].map(Into::into));
     args.push(output.clone().into());
 
-    args.push("-hide_banner".into());
-
     ffmpeg(args).dir(dir).run()?;
 
-    Ok(fs::read(output)?)
+    let output = fs::read(output)?;
+
+    Ok(output)
 }

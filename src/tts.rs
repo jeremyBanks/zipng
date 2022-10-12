@@ -41,7 +41,12 @@ pub async fn speak(text: &str) -> Result<Speech, eyre::Report> {
 }
 
 pub async fn speak_as(text: &str, voice_name: &str) -> Result<Speech, eyre::Report> {
-    Tts { voice_required: Some(vec![text.to_string()]), voice_preferred: None }.speak(text).await
+    Tts {
+        voice_required: Some(vec![text.to_string()]),
+        voice_preferred: None,
+    }
+    .speak(text)
+    .await
 }
 
 impl Tts {
@@ -55,8 +60,8 @@ impl Tts {
         let voices = Vec::from_iter(SpeechSynthesizer::AllVoices()?);
 
         // first, if we have a list of required voices, filter out all other voices
-        // voice names can case-insensitive full matches for the voice name or description,
-        // or suffix matches for the voice "ID".
+        // voice names can case-insensitive full matches for the voice name or
+        // description, or suffix matches for the voice "ID".
 
         // then sort the candidates, with "preferred" voices first, with ties broken
         // by system default, then alphabetically by ID.

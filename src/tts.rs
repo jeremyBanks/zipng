@@ -21,40 +21,11 @@ use windows::Storage::Streams::IBuffer;
 
 use super::*;
 
-#[derive(Debug, Clone, Default)]
-pub struct Tts {
-    // who needs this?
-    // just require specific voices, you idiot.
-    // more flexibility can come later if you earn it.
-    pub voice_required: Option<Vec<String>>,
-    pub voice_preferred: Option<Vec<String>>,
+pub async fn speak(text: &str) -> Result<Vec<u8>, eyre::Report> {
+    speak_as(text, None).await
 }
 
-#[derive(Debug, Clone)]
-pub struct Speech {
-    pub text: String,
-    pub audio: Vec<u8>,
-}
-
-pub async fn speak(text: &str) -> Result<Speech, eyre::Report> {
-    Tts::default().speak(text).await
-}
-
-pub async fn speak_as(text: &str, voice_name: &str) -> Result<Speech, eyre::Report> {
-    Tts {
-        voice_required: Some(vec![text.to_string()]),
-        voice_preferred: None,
-    }
-    .speak(text)
-    .await
-}
-
-impl Tts {
-    fn new() -> Self {
-        Self::default()
-    }
-
-    async fn speak(&self, text: &str) -> Result<Speech, eyre::Report> {
+pub async fn speak_as(text: &str, voice_name: impl Into<Option<&str>>) -> Result<Vec<u8>, eyre::Report> {
         let synth = SpeechSynthesizer::new().wrap()?;
 
         let voices = Vec::from_iter(SpeechSynthesizer::AllVoices()?);
@@ -134,9 +105,5 @@ impl Tts {
             .ReadBytes(&mut bytes)
             .wrap()?;
 
-        Ok(Speech {
-            text: text.to_owned(),
-            audio: bytes,
-        })
+        Ok(bytes)
     }
-}

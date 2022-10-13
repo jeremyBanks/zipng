@@ -63,6 +63,7 @@ use tracing_error::SpanTrace;
 use tracing_subscriber::fmt::format::FmtSpan;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::EnvFilter;
+use tts::speak_as;
 use twox_hash::Xxh3Hash64;
 
 use crate::ffmpeg::wavs_to_opus;
@@ -91,16 +92,6 @@ async fn main() -> Result<(), eyre::Report> {
         }
     }
 
-    let speech = wavs_to_opus(vec![
-        speak("hello, world!").await?.audio,
-        speak("would you like to play a game?").await?.audio,
-        speak("let's do it together!").await?.audio,
-    ])?;
-
-    // println!("{}", ffprobe!(-h).stderr_to_stdout().unchecked().read()?);
-
-    return Ok(());
-
     color_eyre::install().wrap()?;
 
     tracing::subscriber::set_global_default(
@@ -117,8 +108,11 @@ async fn main() -> Result<(), eyre::Report> {
 
     // assortment of fics with varying lengths from the most popular list
     let ryl_fic_ids = [
-        11313, 16984, 17173, 17644, 18489, 21220, 22518, 22848, 24779, 25137, 25225, 30108, 32291,
-        35858, 36950, 41251, 45534, 47997, 48012, 48274, 48948, 49033, 51404, 51925, 58362, 59240,
+        // 11313, 16984, 17173, 17644, 18489, 21220,
+        22518,
+        // 22848, 24779, 25137, 25225, 30108, 32291,
+        // 35858, 36950, 41251, 45534, 47997, 48012, 48274, 48948, 49033, 51404, 51925, 58362,
+        // 59240,
     ];
 
     tokio::fs::remove_file("data/spines/index.json").await.ok();
@@ -137,6 +131,19 @@ async fn main() -> Result<(), eyre::Report> {
             )
             .collect::<Vec<_>>()
     })?;
+
+    let speech = wavs_to_opus(vec![
+        speak_as(
+            "Chrysalis, by Rhino Z... Chapter 85: The Egg and the Serpent",
+            "Microsoft Zira",
+        )
+        .await?,
+        speak_as(
+            "hello, world! said the egg. and that was the end.",
+            "Microsoft Richard",
+        )
+        .await?,
+    ])?;
 
     Ok(())
 }

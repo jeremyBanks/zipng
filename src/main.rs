@@ -80,6 +80,12 @@ mod throttle;
 mod tts;
 mod wrapped_error;
 
+// Replace the cache with a sqlite database, using UPSERT...RETURNING for *all select queries*
+// in order to set a `last_accessed` field? Maybe. Maybe not neccessary though. Should we have
+// dependencies? Foreign keys? Each item can have any number of dependencies... not sure if
+// there's any great way to manage this comprehensively -- but there's no fucking need to!
+// Jeeze just write some damn code.
+
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> Result<(), eyre::Report> {
     if cfg!(debug_assertions) {

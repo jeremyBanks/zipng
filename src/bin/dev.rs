@@ -49,28 +49,29 @@ async fn main() -> Result<(), eyre::Report> {
             .with(ErrorLayer::default()),
     )?;
 
-    let mut connection = rusqlite::Connection::open_in_memory()?;
-    connection.init_blob_cache()?;
-    connection.init_query_cache()?;
+    let mut connection = rusqlite::Connection::open("data/test.sqlite")?;
+
+    connection.query_row(
+        r#"
+        pragma journal_mode=WAL
+    "#,
+        (),
+        |_| Ok(()),
+    )?;
+
+    connection.execute(
+        r#"
+        pragma auto_vacuum=full
+    "#,
+        (),
+    )?;
 
     unsafe {
         let _guard = rusqlite::LoadExtensionGuard::new(&connection)?;
         connection.load_extension("sqlite_zstd", None)?;
     }
-
-    connection.query_row(
-        r#"
-        pragma journal_mode = WAL
-    "#,
-        (), |_| Ok(())
-    )?;
-
-    connection.query_row(
-        r#"
-        pragma auto_vacuum = full
-    "#,
-        (), |_| Ok(())
-    )?;
+    connection.init_blob_cache()?;
+    connection.init_query_cache()?;
 
     connection.query_row(
         r#"
@@ -89,14 +90,16 @@ async fn main() -> Result<(), eyre::Report> {
         r#"
         select zstd_incremental_maintenance(null, 0.5)
     "#,
-        (), |_| Ok(())
+        (),
+        |_| Ok(()),
     )?;
 
     connection.query_row(
         r#"
         analyze
     "#,
-        (), |_| Ok(())
+        (),
+        |_| Ok(()),
     )?;
 
     println!("{:02X?}", blob_id(b""));

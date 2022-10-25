@@ -39,39 +39,61 @@ macro_rules! record {
     )+}
 }
 
-macro_rules! def {
-    {
-        $(
-            $(# $attr:tt)*
-            enum $enum_ident:ident $enum_block:tt
-        )+
-    } => {
-        $(
-            def! { @enum [$($attr)*] [$enum_ident] [$enum_block] }
-        )+
-    };
+macro_rules! fun {
+    (out $($output:tt)*) => { $($output)* };
 
-    { @enum [$($attrs:tt)+] [$ident:ident] [{
-        $(struct $)*
-    }] } => {
-        $(# $attrs)*
-        pub enum $ident $block
-    };
-
-    { @struct [$($attrs:tt)+] [$ident:ident] [$block:tt] } => {
-        $(# $attrs)*
-        pub struct $ident $block
+    ({$($tail:tt)*} $($head:tt)*) => {
+        fun! { $($head)* }
+        fun! { $($tail)* }
     };
 }
 
-def! {
-    #[derive(Debug, Clone, Serialize, Deserialize)]
-    enum Request {
-        struct HttpGet {
-            url: String,
-        }
-        struct WavsToOpus {
-            wavs: Vec<Vec<u8>>,
-        }
-    }
-}
+// macro_rules! def {
+//     {
+//         $(# $attr:tt)*
+//         enum $ident:ident $block:tt
+//     } => {
+//         def! { @enum [$($attr)*] [$ident] [$block] [] }
+//     };
+
+//     {
+//         $(# $attr:tt)*
+//         struct $ident:ident $block:tt
+//     } => {
+//         def! { @struct [$($attr)*] [$ident] [$block] [] }
+//     };
+
+//     { @enum [$($attrs:tt)+] [$ident:ident] [{
+//         $(
+//             $(# $attr:tt)*
+//             $(struct $struct_ident:ident $struct_block:block $)*
+//             $(enum $enum_ident:ident $enum_block:block $)*
+//         )*
+//     }] [$($out:tt)*] } => {
+//         $(# $attrs)*
+//         pub enum $ident {
+//             $($struct $block)*
+//         }
+
+//         $(def! { @struct [$($attrs)*] [$struct] [$block] })*
+//     };
+
+//     { @struct [$($attrs:tt)+] [$ident:ident] [$block:tt] [$($out:tt)*] } => {
+//         $(# $attrs)*
+//         pub struct $ident $block
+//     };
+// }
+
+// def! {
+//     #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Hash)]
+//     enum Request {
+//         #[derive(PartialOrd)]
+//         struct HttpGet {
+//             url: String,
+//         }
+
+//         struct WavsToOpus {
+//             wavs: Vec<Vec<u8>>,
+//         }
+//     }
+// }

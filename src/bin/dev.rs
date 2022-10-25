@@ -49,9 +49,40 @@ async fn main() -> Result<(), eyre::Report> {
             .with(ErrorLayer::default()),
     )?;
 
-    let mut cache = rusqlite::Connection::open_in_memory()?;
-    cache.init_blob_cache()?;
-    cache.init_query_cache()?;
+    let mut connection = rusqlite::Connection::open_in_memory()?;
+    connection.init_blob_cache()?;
+    connection.init_query_cache()?;
+
+    unsafe {
+        let _guard = rusqlite::LoadExtensionGuard::new(&connection)?;
+        connection.load_extension("sqlite_zstd", None)?;
+    }
+
+    connection.query_row(
+        r#"
+        select zstd_enable_transparent( ? )
+    "#,
+        &[r#"{
+        "table": "BlobStore",
+        "column": "bytes",
+        "compression_level": 22,
+        "dict_chooser": "if( length >= 128, 'BlobStore', null )"}"#],
+        |_| Ok(()),
+    )?;
+
+    connection.execute(
+        r#"
+        select zstd_incremental_maintenance(null, 0.5)
+    "#,
+        (),
+    )?;
+
+    connection.execute(
+        r#"
+        analyze
+    "#,
+        (),
+    )?;
 
     println!("{:02X?}", blob_id(b""));
 
@@ -144,7 +175,6 @@ impl BlobStore for rusqlite::Connection {
 
         self.execute_batch(
             r#"
-            insert into BlobStore( bytes ) values( NULL );
             insert into BlobStore( bytes ) values( x'' );
             insert into BlobStore( bytes ) values( x'10' );
         "#,

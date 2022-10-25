@@ -1,5 +1,7 @@
 *.crt
+*.dll
+*.exe
 *.key
+*.so
 /data
-/ff*
 /target*

@@ -60,6 +60,20 @@ async fn main() -> Result<(), eyre::Report> {
 
     connection.query_row(
         r#"
+        pragma journal_mode = WAL
+    "#,
+        (), |_| Ok(())
+    )?;
+
+    connection.query_row(
+        r#"
+        pragma auto_vacuum = full
+    "#,
+        (), |_| Ok(())
+    )?;
+
+    connection.query_row(
+        r#"
         select zstd_enable_transparent( ? )
     "#,
         &[r#"{
@@ -71,18 +85,18 @@ async fn main() -> Result<(), eyre::Report> {
         |_| Ok(()),
     )?;
 
-    connection.execute(
+    connection.query_row(
         r#"
         select zstd_incremental_maintenance(null, 0.5)
     "#,
-        (),
+        (), |_| Ok(())
     )?;
 
-    connection.execute(
+    connection.query_row(
         r#"
         analyze
     "#,
-        (),
+        (), |_| Ok(())
     )?;
 
     println!("{:02X?}", blob_id(b""));

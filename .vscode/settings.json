@@ -1,4 +1,3 @@
 {
-  "window.title": "🦀 ${activeEditorShort} ${dirty}",
-  "workbench.colorTheme": "1337"
+  "window.title": "🦀 ${activeEditorShort} ${dirty}"
 }

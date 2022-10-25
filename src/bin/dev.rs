@@ -51,10 +51,10 @@ async fn main() -> Result<(), eyre::Report> {
 
     let mut connection = rusqlite::Connection::open("data/test.sqlite")?;
 
-    // unsafe {
-    //     let _guard = rusqlite::LoadExtensionGuard::new(&connection)?;
-    //     connection.load_extension("sqlite_zstd", None)?;
-    // }
+    unsafe {
+        let _guard = rusqlite::LoadExtensionGuard::new(&connection)?;
+        connection.load_extension("sqlite_zstd", None)?;
+    }
 
     connection.query_row(
         r#"
@@ -81,26 +81,26 @@ async fn main() -> Result<(), eyre::Report> {
     connection.init_blob_cache()?;
     connection.init_query_cache()?;
 
-    // connection.query_row(
-    //     r#"
-    //     select zstd_enable_transparent( ? )
-    // "#,
-    //     &[r#"{
-    //     "table": "BlobStore",
-    //     "column": "bytes",
-    //     "compression_level": 22,
-    //     "dict_chooser": "'if( length >= 128, ''BlobStore'', null )'"
-    // }"#],
-    //     |_| Ok(()),
-    // )?;
+    connection.query_row(
+        r#"
+        select zstd_enable_transparent( ? )
+    "#,
+        &[r#"{
+        "table": "BlobStore",
+        "column": "bytes",
+        "compression_level": 22,
+        "dict_chooser": "'if( length >= 128, ''BlobStore'', null )'"
+    }"#],
+        |_| Ok(()),
+    )?;
 
-    // connection.query_row(
-    //     r#"
-    //     select zstd_incremental_maintenance(null, 0.5)
-    // "#,
-    //     (),
-    //     |_| Ok(()),
-    // )?;
+    connection.query_row(
+        r#"
+        select zstd_incremental_maintenance(null, 0.5)
+    "#,
+        (),
+        |_| Ok(()),
+    )?;
 
     connection.query_row(
         r#"
@@ -201,8 +201,9 @@ impl BlobStore for rusqlite::Connection {
 
         self.execute_batch(
             r#"
-            insert into BlobStore( bytes ) values( x'' );
-            insert into BlobStore( bytes ) values( x'10' );
+            insert or ignore into BlobStore( bytes ) values( x'' );
+            insert or ignore into BlobStore( bytes ) values( x'10' );
+            insert or ignore into BlobStore( bytes ) values( zeroblob( 1024 ) );
         "#,
         )?;
 

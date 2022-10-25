@@ -51,9 +51,14 @@ async fn main() -> Result<(), eyre::Report> {
 
     let mut connection = rusqlite::Connection::open("data/test.sqlite")?;
 
+    unsafe {
+        let _guard = rusqlite::LoadExtensionGuard::new(&connection)?;
+        connection.load_extension("sqlite_zstd", None)?;
+    }
+
     connection.query_row(
         r#"
-        pragma journal_mode=WAL
+        pragma journal_mode = WAL
     "#,
         (),
         |_| Ok(()),
@@ -61,15 +66,11 @@ async fn main() -> Result<(), eyre::Report> {
 
     connection.execute(
         r#"
-        pragma auto_vacuum=full
+        pragma auto_vacuum = full
     "#,
         (),
     )?;
 
-    unsafe {
-        let _guard = rusqlite::LoadExtensionGuard::new(&connection)?;
-        connection.load_extension("sqlite_zstd", None)?;
-    }
     connection.init_blob_cache()?;
     connection.init_query_cache()?;
 

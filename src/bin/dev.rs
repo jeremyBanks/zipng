@@ -66,7 +66,8 @@ async fn main() -> Result<(), eyre::Report> {
         "table": "BlobStore",
         "column": "bytes",
         "compression_level": 22,
-        "dict_chooser": "if( length >= 128, 'BlobStore', null )"}"#],
+        "dict_chooser": "'if( length >= 128, ''BlobStore'', null )'"
+    }"#],
         |_| Ok(()),
     )?;
 

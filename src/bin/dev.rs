@@ -21,26 +21,57 @@ macro_rules! union {
         }
     };
 }
+macro_rules! record {
+    ($($name:ident {
+        $($field:ident: $ty:ty),* $(,)?
+    })+) => {$(
+        #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+        pub struct $name {
+            $(pub $field: $ty),*
+        }
 
-alias! { Record = Serialize + Deserialize<'static> + Clone + Send + Debug + 'static }
-union! {
-    #![derive(Clone, Debug, Serialize, Deserialize)]
-    Request =
-        | HttpGet
-        | WavsToOpus
+        impl $name {
+            fn static_assert_record(record: $name) {
+                fn static_assert_record(_: impl Record) {}
+                static_assert_record(record);
+            }
+        }
+    )+}
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct HttpGet {
-    pub url: String,
+macro_rules! def {
+    {
+        $(
+            $(# $attr:tt)*
+            enum $enum_ident:ident $enum_block:tt
+        )+
+    } => {
+        $(
+            def! { @enum [$($attr)*] [$enum_ident] [$enum_block] }
+        )+
+    };
+
+    { @enum [$($attrs:tt)+] [$ident:ident] [{
+        $(struct $)*
+    }] } => {
+        $(# $attrs)*
+        pub enum $ident $block
+    };
+
+    { @struct [$($attrs:tt)+] [$ident:ident] [$block:tt] } => {
+        $(# $attrs)*
+        pub struct $ident $block
+    };
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct WavsToOpus {
-    pub wavs: Vec<Vec<u8>>,
+def! {
+    #[derive(Debug, Clone, Serialize, Deserialize)]
+    enum Request {
+        struct HttpGet {
+            url: String,
+        }
+        struct WavsToOpus {
+            wavs: Vec<Vec<u8>>,
+        }
+    }
 }
-
-pub struct Query<Record: self::Record> {
-    pub record: Record
-}
-

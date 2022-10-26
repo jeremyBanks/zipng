@@ -34,16 +34,42 @@ use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::EnvFilter;
 use typenum::U20;
 
-#[derive(Debug, Into, From, AsRef, AsMut)]
+#[derive(Debug, From, AsRef, AsMut)]
 pub struct Connection {
     connection: rusqlite::Connection,
     zstd_enabled: bool,
 }
 
+const APPLICATION_ID: i32 = 0x_F_1C_15_00;
+
 impl Connection {
-    pub fn new(connection: rusqlite::Connection) -> Self {
-        add_functions(&mut connection).unwrap();
-        fn add_functions(connection: &mut rusqlite::Connection) -> Result<(), rusqlite::Error> {
+    pub fn new(mut connection: rusqlite::Connection) -> Self {
+        fn initialize_connection(
+            connection: &mut rusqlite::Connection,
+        ) -> Result<(), rusqlite::Error> {
+            info!("Initializing connection...");
+            connection
+                .pragma_update(None, "foreign_keys", true)
+                .unwrap();
+            connection
+                .pragma_update(None, "synchronous", "normal")
+                .unwrap();
+            connection
+                .pragma_update(None, "temp_store", "memory")
+                .unwrap();
+            connection
+                .pragma_update(None, "secure_delete", true)
+                .unwrap();
+            connection.pragma_update(None, "cache_size", 1024).unwrap();
+
+            initialize_connection_functions(connection).unwrap();
+            initialize_connection_extensions(connection).unwrap();
+
+            Ok(())
+        }
+        fn initialize_connection_functions(
+            connection: &mut rusqlite::Connection,
+        ) -> Result<(), rusqlite::Error> {
             connection.create_scalar_function(
                 "blob_id",
                 1,
@@ -55,75 +81,165 @@ impl Connection {
                 "blake3",
                 1,
                 FunctionFlags::SQLITE_DETERMINISTIC,
-                |ctx| Ok(blake3::hash(ctx.get_raw(0).as_bytes()?).as_bytes()),
+                |ctx| Ok(blake3::hash(ctx.get_raw(0).as_bytes()?).as_bytes().to_vec()),
             )?;
 
             connection.create_scalar_function(
                 "sha1",
                 1,
                 FunctionFlags::SQLITE_DETERMINISTIC,
-                |ctx| Ok(sha1::Sha1::digest(ctx.get_raw(0).as_bytes()?).as_slice()),
+                |ctx| {
+                    Ok(sha1::Sha1::digest(ctx.get_raw(0).as_bytes()?)
+                        .as_slice()
+                        .to_vec())
+                },
             )?;
             Ok(())
         }
-
-
-        add_extensions(&mut connection).unwrap();
-        fn add_extensions(connection: &mut rusqlite::Connection) -> Result<(), rusqlite::Error> {
+        fn initialize_connection_extensions(
+            connection: &mut rusqlite::Connection,
+        ) -> Result<(), rusqlite::Error> {
             Ok(unsafe {
                 let guard = LoadExtensionGuard::new(&connection)?;
                 connection.load_extension("sqlite_zstd", None)?;
             })
         }
 
-        set_pragmas(&mut connection).unwrap();
-        fn set_pragmas(connection: &mut rusqlite::Connection) -> Result<(), rusqlite::Error> {
-            connection.pragma_update(None, "foreign_keys", true)?;
-            connection.pragma_update(None, "auto_vacuum", "full")?;
+        fn get_versions(
+            connection: &mut rusqlite::Connection,
+        ) -> Result<(i32, i32, i32), rusqlite::Error> {
+            connection.query_row(
+                "
+                select
+                    application_id ,
+                    user_version ,
+                    schema_version
+                from
+                    pragma_application_id join
+                    pragma_user_version join
+                    pragma_schema_version
+            ",
+                (),
+                |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)),
+            )
+        }
+
+        let (application_id, user_version, schema_version) = get_versions(&mut connection).unwrap();
+
+        if application_id == 0 {
+            info!("assuming database requires initialization because application_id is 0.");
+            if schema_version != 0 {
+                warn!("schema_version is already {schema_version}.");
+            }
+            if user_version != 0 {
+                warn!("user_version is already {user_version}.");
+            }
+            initialize_database(&mut connection).unwrap();
+        } else if application_id != APPLICATION_ID {
+            error!("database has an unexpected application_id: {application_id:08X}");
+        }
+        fn initialize_database(
+            connection: &mut rusqlite::Connection,
+        ) -> Result<(), rusqlite::Error> {
+            info!("Initializing database...");
             connection.pragma_update(None, "journal_mode", "wal")?;
-            connection.pragma_update(None, "synchronous", "normal")?;
-            connection.pragma_update(None, "temp_store", "memory")?;
             connection.pragma_update(None, "page_size", 64 * 1024)?;
-            connection.pragma_update(None, "cache_size", 64 * 1024 * 1024)?;
-            connection.pragma_update(None, "application_id", 0xF1C_15_F1C_u32)?;
-            connection.pragma_update(None, "user_version", 0xF1C15_001_u32)?;
+            connection.pragma_update(None, "auto_vacuum", 1)?;
+            connection.pragma_update(None, "user_version", 1)?;
+            connection.pragma_update(None, "application_id", APPLICATION_ID)?;
             Ok(())
         }
 
-        let zstd_enabled = unsafe {
-            let guard = LoadExtensionGuard::new(&connection);
-            guard.is_ok() && connection.load_extension("sqlite_zstd", None).is_ok()
-        };
+        initialize_connection(&mut connection).unwrap();
 
-        if false
-            == connection
-                .query_row(
-                    "SELECT count(*) FROM sqlite_master WHERE type='table' AND name='BlobStore'",
-                    (),
-                    |row| row.get(0),
-                )
-                .unwrap()
-        {}
+        loop {
+            let (application_id, user_version, schema_version) =
+                get_versions(&mut connection).unwrap();
+            match user_version {
+                1 => {
+                    info!("upgrading database from version 1 to version 2.");
 
-        if zstd_enabled {
-            connection
-                .query_row(
-                    "select zstd_enable_transparent( ? )",
-                    &[r#"{
-                "table": "BlobStore",
-                "column": "bytes",
-                "compression_level": 21,
-                "dict_chooser": "'BlobStore'"
-            }"#],
-                    |_| Ok(()),
-                )
-                .unwrap();
+                    connection
+                        .execute(
+                            r#"
+                        create table BlobStore(
+                            row_id integer primary key,
+                            bytes Blob not null,
+                            blob_id Blob
+                                unique
+                                generated always as( blob_id( bytes ) )
+                                stored
+                                check( length( blob_id ) = 20 ),
+                            blake3 Blob
+                                unique
+                                generated always as( blake3( bytes ) )
+                                stored
+                                check( length( blake3 ) = 32 ),
+                            length Integer
+                                generated always as( length( bytes ) )
+                                stored
+                                check( length < 67108864 )
+                        ) strict
+                    "#,
+                            (),
+                        )
+                        .unwrap();
+
+                    connection
+                        .execute_batch(
+                            r#"
+                        insert into BlobStore( bytes ) values( x'' );
+                        insert into BlobStore( bytes ) values( x'10' );
+                        insert into BlobStore( bytes ) values( zeroblob( 1024 ) );
+                        insert into BlobStore( bytes ) values( zeroblob( 1024 * 1024 ) );
+                    "#,
+                        )
+                        .unwrap();
+
+                    connection.execute(
+                        r#"
+                        create table if not exists QueryCache(
+                            request_blob_id Blob not null,
+                            response_blob_id Blob not null,
+                            timestamp Integer not null default( CURRENT_TIMESTAMP ),
+                            status Blob default( null ) check( status is null or length(status) <= 8 ),
+                            foreign key( request_blob_id ) references BlobStore( blob_id ),
+                            foreign key( response_blob_id ) references BlobStore( blob_id ),
+                            unique( request_blob_id, timestamp, status, response_blob_id )
+                        ) strict
+                    "#,
+                        (),
+                    ).unwrap();
+
+                    connection
+                        .execute("select zstd_enable_transparent( ? )", &[r#"{
+                            "table": "BlobStore",
+                            "column": "bytes",
+                            "compression_level": 21,
+                            "dict_chooser": "'BlobStore'"
+                        }"#])
+                        .ok();
+
+                    connection.pragma_update(None, "user_version", 2).unwrap();
+
+                    continue;
+                },
+                2 => {
+                    info!("database is at expected user_version 2.");
+                },
+                other => {
+                    panic!("database has an unexpected user_version: {other}");
+                },
+            }
+            break;
         }
 
-        Self {
-            connection,
-            zstd_enabled,
-        }
+        // Self {
+        //     connection,
+        //     zstd_enabled,
+        // }
+
+        todo!()
     }
 
     pub fn open_in_memory() -> Self {
@@ -146,8 +262,7 @@ impl Drop for Connection {
     }
 }
 
-#[tokio::main(flavor = "current_thread")]
-async fn main() -> Result<(), eyre::Report> {
+fn main() -> Result<(), eyre::Report> {
     if cfg!(debug_assertions) {
         if env::var("RUST_LOG").is_err() {
             env::set_var("RUST_LOG", f!("warn,{}=trace", env!("CARGO_CRATE_NAME")));

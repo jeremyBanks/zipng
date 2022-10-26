@@ -5,9 +5,17 @@ use std::env;
 use std::fmt::Debug;
 use std::format as f;
 
+use derive_more::AsMut;
+use derive_more::AsRef;
+use derive_more::Deref;
+use derive_more::From;
+use derive_more::Into;
 use digest::generic_array::GenericArray;
 use digest::Digest;
+use rusqlite::blob::Blob;
+use rusqlite::config::DbConfig::SQLITE_DBCONFIG_ENABLE_FKEY;
 use rusqlite::functions::FunctionFlags;
+use rusqlite::LoadExtensionGuard;
 use rusqlite::OptionalExtension;
 use serde::Deserialize;
 use serde::Serialize;
@@ -25,6 +33,118 @@ use tracing_subscriber::fmt::format::FmtSpan;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::EnvFilter;
 use typenum::U20;
+
+#[derive(Debug, Into, From, AsRef, AsMut)]
+pub struct Connection {
+    connection: rusqlite::Connection,
+    zstd_enabled: bool,
+}
+
+impl Connection {
+    pub fn new(connection: rusqlite::Connection) -> Self {
+        add_functions(&mut connection).unwrap();
+        fn add_functions(connection: &mut rusqlite::Connection) -> Result<(), rusqlite::Error> {
+            connection.create_scalar_function(
+                "blob_id",
+                1,
+                FunctionFlags::SQLITE_DETERMINISTIC,
+                |ctx| Ok(blob_id(ctx.get_raw(0).as_bytes()?)),
+            )?;
+
+            connection.create_scalar_function(
+                "blake3",
+                1,
+                FunctionFlags::SQLITE_DETERMINISTIC,
+                |ctx| Ok(blake3::hash(ctx.get_raw(0).as_bytes()?).as_bytes()),
+            )?;
+
+            connection.create_scalar_function(
+                "sha1",
+                1,
+                FunctionFlags::SQLITE_DETERMINISTIC,
+                |ctx| Ok(sha1::Sha1::digest(ctx.get_raw(0).as_bytes()?).as_slice()),
+            )?;
+            Ok(())
+        }
+
+
+        add_extensions(&mut connection).unwrap();
+        fn add_extensions(connection: &mut rusqlite::Connection) -> Result<(), rusqlite::Error> {
+            Ok(unsafe {
+                let guard = LoadExtensionGuard::new(&connection)?;
+                connection.load_extension("sqlite_zstd", None)?;
+            })
+        }
+
+        set_pragmas(&mut connection).unwrap();
+        fn set_pragmas(connection: &mut rusqlite::Connection) -> Result<(), rusqlite::Error> {
+            connection.pragma_update(None, "foreign_keys", true)?;
+            connection.pragma_update(None, "auto_vacuum", "full")?;
+            connection.pragma_update(None, "journal_mode", "wal")?;
+            connection.pragma_update(None, "synchronous", "normal")?;
+            connection.pragma_update(None, "temp_store", "memory")?;
+            connection.pragma_update(None, "page_size", 64 * 1024)?;
+            connection.pragma_update(None, "cache_size", 64 * 1024 * 1024)?;
+            connection.pragma_update(None, "application_id", 0xF1C_15_F1C_u32)?;
+            connection.pragma_update(None, "user_version", 0xF1C15_001_u32)?;
+            Ok(())
+        }
+
+        let zstd_enabled = unsafe {
+            let guard = LoadExtensionGuard::new(&connection);
+            guard.is_ok() && connection.load_extension("sqlite_zstd", None).is_ok()
+        };
+
+        if false
+            == connection
+                .query_row(
+                    "SELECT count(*) FROM sqlite_master WHERE type='table' AND name='BlobStore'",
+                    (),
+                    |row| row.get(0),
+                )
+                .unwrap()
+        {}
+
+        if zstd_enabled {
+            connection
+                .query_row(
+                    "select zstd_enable_transparent( ? )",
+                    &[r#"{
+                "table": "BlobStore",
+                "column": "bytes",
+                "compression_level": 21,
+                "dict_chooser": "'BlobStore'"
+            }"#],
+                    |_| Ok(()),
+                )
+                .unwrap();
+        }
+
+        Self {
+            connection,
+            zstd_enabled,
+        }
+    }
+
+    pub fn open_in_memory() -> Self {
+        Self::new(rusqlite::Connection::open_in_memory().unwrap())
+    }
+
+    pub fn open(path: &str) -> Result<Self, rusqlite::Error> {
+        Ok(Self::new(rusqlite::Connection::open(path)?))
+    }
+}
+
+impl Drop for Connection {
+    fn drop(&mut self) {
+        if self.zstd_enabled {
+            self.connection
+                .execute_batch("zstd_incremental_maintenance(null, 1)")
+                .unwrap();
+        }
+        self.connection.execute_batch("analyze").unwrap();
+    }
+}
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> Result<(), eyre::Report> {
@@ -49,66 +169,7 @@ async fn main() -> Result<(), eyre::Report> {
             .with(ErrorLayer::default()),
     )?;
 
-    let mut connection = rusqlite::Connection::open("data/test.sqlite")?;
-
-    unsafe {
-        let _guard = rusqlite::LoadExtensionGuard::new(&connection)?;
-        connection.load_extension("sqlite_zstd", None)?;
-    }
-
-    connection.query_row(
-        r#"
-        pragma journal_mode = WAL
-    "#,
-        (),
-        |_| Ok(()),
-    )?;
-
-    connection.execute(
-        r#"
-        pragma auto_vacuum = full
-    "#,
-        (),
-    )?;
-
-    connection.execute(
-        r#"
-        pragma foreign_keys = true
-    "#,
-        (),
-    )?;
-
-    connection.init_blob_cache()?;
-    connection.init_query_cache()?;
-
-    connection.query_row(
-        r#"
-        select zstd_enable_transparent( ? )
-    "#,
-        &[r#"{
-        "table": "BlobStore",
-        "column": "bytes",
-        "compression_level": 22,
-        "dict_chooser": "'if( length >= 128, ''BlobStore'', null )'"
-    }"#],
-        |_| Ok(()),
-    )?;
-
-    connection.query_row(
-        r#"
-        select zstd_incremental_maintenance(null, 0.5)
-    "#,
-        (),
-        |_| Ok(()),
-    )?;
-
-    connection.query_row(
-        r#"
-        analyze
-    "#,
-        (),
-        |_| Ok(()),
-    )?;
+    let mut connection = Connection::open("data/test.sqlite")?;
 
     println!("{:02X?}", blob_id(b""));
 
@@ -165,16 +226,6 @@ impl BlobStore for rusqlite::Connection {
     type BlobStoreError = rusqlite::Error;
 
     fn init_blob_cache(&mut self) -> Result<(), Self::BlobStoreError> {
-        self.create_scalar_function("blob_id", 1, FunctionFlags::SQLITE_DETERMINISTIC, |ctx| {
-            let bytes: Vec<u8> = ctx.get(0)?;
-            Ok(blob_id(&bytes))
-        })?;
-
-        self.create_scalar_function("blake3", 1, FunctionFlags::SQLITE_DETERMINISTIC, |ctx| {
-            let bytes: Vec<u8> = ctx.get(0)?;
-            Ok(blake3::hash(&bytes).as_bytes().to_vec())
-        })?;
-
         self.execute(
             r#"
             create table if not exists BlobStore(
@@ -204,6 +255,7 @@ impl BlobStore for rusqlite::Connection {
             insert or ignore into BlobStore( bytes ) values( x'' );
             insert or ignore into BlobStore( bytes ) values( x'10' );
             insert or ignore into BlobStore( bytes ) values( zeroblob( 1024 ) );
+            insert or ignore into BlobStore( bytes ) values( zeroblob( 1024 * 1024 ) );
         "#,
         )?;
 

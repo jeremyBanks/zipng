@@ -469,6 +469,7 @@ dependencies = [
  "blake3",
  "bstr",
  "color-eyre",
+ "derive_more",
  "digest",
  "duct",
  "error-stack",

@@ -151,61 +151,46 @@ impl Connection {
                     1 => {
                         info!("migration 1: adding BlobStore");
                         connection
-                            .execute(
+                            .execute_batch(
                                 r#"
                             create table BlobStore(
-                                row_id integer primary key,
-                                length Integer
-                                    generated always as( length( bytes ) )
-                                    -- XXX: this errors if the function doesn't exist
-                                    -- maybe instead we could use a trigger
-                                    -- that might also fix our compression bug
-                                    stored
-                                    check( length <= 67108864 ),
-                                blob_id Blob
-                                    generated always as( blob_id( bytes ) )
-                                    -- XXX: this errors if the function doesn't exist
-                                    -- maybe instead we could use a trigger
-                                    -- that might also fix our compression bug
-                                    stored
-                                    check( length( blob_id ) = 20 ),
-                                blake3 Blob
-                                    generated always as( blake3( bytes ) )
-                                    -- XXX: this errors if the function doesn't exist
-                                    -- maybe instead we could use a trigger
-                                    -- that might also fix our compression bug
-                                    stored
-                                    check( length( blake3 ) = 32 ),
-                                xxh3 Integer
-                                    generated always as( xxh3( bytes ) )
-                                    -- XXX: this errors if the function doesn't exist
-                                    -- maybe instead we could use a trigger
-                                    -- that might also fix our compression bug
-                                    stored
-                                    check( length( blake3 ) = 32 ),
                                 bytes Blob not null,
+                                row_id integer primary key,
+                                prefix Blob,
+                                length Integer,
+                                blob_id Blob,
+                                blake3 Blob,
+                                xxh3 Integer,
                                 unique( blob_id ),
                                 unique( blake3 ),
-                                unique( xxh3, row_id )
-                            ) strict
+                                unique( xxh3, row_id ),
+                                unique( prefix, row_id )
+                            ) strict;
+
+                            create trigger BlobStoreComputedColumns
+                                after insert on BlobStore begin
+                                    update BlobStore
+                                        set
+                                            length = length( new.bytes ),
+                                            blob_id = blob_id( new.bytes ),
+                                            blake3 = blake3( new.bytes ),
+                                            xxh3 = xxh3( new.bytes ),
+                                            prefix = substr( new.bytes, 1, 16 )
+                                        where row_id = new.row_id;
+                                end;
+
+                            select zstd_enable_transparent( '{
+                                "table": "BlobStore",
+                                "column": "bytes",
+                                "compression_level": 21,
+                                "dict_chooser": "''BlobStore''"
+                            }');
                         "#,
-                                (),
                             )
                             .unwrap();
                     },
                     2 => {
-                        info!("migration 2: enabling zstd transparent compression for BlobStore");
-                        connection
-                            .execute("select zstd_enable_transparent( ? )", &[r#"{
-                                "table": "BlobStore",
-                                "column": "bytes",
-                                "compression_level": 21,
-                                "dict_chooser": "'BlobStore'"
-                            }"#])
-                            .ok();
-                    },
-                    3 => {
-                        info!("migration 3: seeding BlobStore");
+                        info!("migration 2: seeding BlobStore");
                         connection
                             .execute_batch(r#"
                                     insert into BlobStore( bytes ) values( zeroblob(0) );
@@ -234,7 +219,7 @@ impl Connection {
                             )
                             .unwrap();
                     },
-                    4 => {
+                    3 => {
                         info!("migration 3: adding QueryCache");
                         connection.execute(
                             r#"
@@ -252,7 +237,7 @@ impl Connection {
                         ).unwrap();
                     },
 
-                    5 => break,
+                    4 => break,
 
                     other => panic!("database has an unexpected user_version: {other}"),
                 }
@@ -278,7 +263,9 @@ impl Connection {
         }
 
         {
-            let mut q = connection.prepare("select length from BlobStore").unwrap();
+            let mut q = connection
+                .prepare("select max(length) from BlobStore")
+                .unwrap();
             let result = q.query_row((), |row| Ok(format!("{:?}", row.get_ref(0))));
             dbg!(result);
         }

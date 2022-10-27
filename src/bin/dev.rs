@@ -4,6 +4,7 @@ use std::convert::Infallible;
 use std::env;
 use std::fmt;
 use std::fmt::Debug;
+use std::fmt::Display;
 use std::format as f;
 use std::hash::Hasher;
 use std::str;
@@ -43,7 +44,6 @@ use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::EnvFilter;
 use twox_hash::Xxh3Hash64;
 use typenum::U20;
-use std::fmt::Display;
 
 #[derive(Debug, From, AsRef, AsMut)]
 pub struct Connection {
@@ -199,8 +199,6 @@ fn main() -> Result<(), eyre::Report> {
 
     let mut connection = Connection::open("data/test.sqlite")?;
 
-    println!("{:02X?}", blob_id(b""));
-
     Ok(())
 }
 
@@ -220,18 +218,19 @@ pub fn blob(slice: impl AsRef<[u8]>) -> BlobRef {
 impl BlobRef {
     pub fn new(slice: impl AsRef<[u8]>) -> Self {
         let slice = slice.as_ref();
-        let length = slice.len();
-        let mut bytes = [0u8; 32];
-        if length >= 32 {
+        let slice_length = slice.len();
+        let mut bytes = [0u8; blake3::OUT_LEN];
+        if slice_length >= blake3::OUT_LEN {
             bytes.copy_from_slice(blake3::hash(slice).as_bytes());
         } else {
-            bytes[..length].copy_from_slice(slice);
+            bytes[..slice_length].copy_from_slice(slice);
         }
+        let length = slice_length.min(32);
         Self { length, bytes }
     }
 
     pub fn as_inline(&self) -> Option<&[u8]> {
-        if self.length < 32 {
+        if self.length < blake3::OUT_LEN {
             Some(self.as_ref())
         } else {
             None
@@ -248,7 +247,6 @@ impl BlobRef {
         } else {
             None
         }
-
     }
 }
 
@@ -295,7 +293,7 @@ fn test_blob_ref() {
         "[]" => r#"b"[]""#, r#""[]""#;
         "{}" => r#"b"{}""#, r#""{}""#;
         "alpine glacial foreland wurm" => "b\"alpine glacial foreland wurm\"", "\"alpine glacial foreland wurm\"";
-        "alfa bravo charlie delta echo foxtrot golf hotel india juliett kilo lima mike november oscar papa quebec romeo sierra tango uniform whiskey x-ray yankee zulu stop" => "0x00", "???";
+        "alfa bravo charlie delta echo foxtrot golf hotel india juliett kilo lima mike november oscar papa quebec romeo sierra tango uniform whiskey x-ray yankee zulu stop" => "0x62EB8E3ECF44B3E16B4ABDD5B67672BEDCD2B51826AC585F3B6D4AE988082DA4", "[98,235,142,62,207,68,179,225,107,74,189,213,182,118,114,190,220,210,181,24,38,172,88,95,59,109,74,233,136,8,45,164]";
     }
 }
 
@@ -322,7 +320,7 @@ impl<'input> Deserialize<'input> for BlobRef {
             }
 
             fn visit_bytes<E: serde::de::Error>(self, v: &[u8]) -> Result<Self::Value, E> {
-                let mut bytes = [0; 32];
+                let mut bytes = [0; blake3::OUT_LEN];
                 let length = v.len();
                 bytes[..length].copy_from_slice(v);
                 Ok(BlobRef { length, bytes })
@@ -333,31 +331,4 @@ impl<'input> Deserialize<'input> for BlobRef {
             }
         }
     }
-}
-
-/// BLAKE3 cryptographic hash
-fn blake3(bytes: &[u8]) -> [u8; 32] {
-    *blake3::hash(bytes).as_bytes()
-}
-
-/// Git's blob object SHA-1 pseudo-cryptographic hash
-fn blob_id(bytes: &[u8]) -> [u8; 20] {
-    sha1::Sha1::new()
-        .chain_update("blob")
-        .chain_update(" ")
-        .chain_update(bytes.len().to_string())
-        .chain_update([0x00])
-        .chain_update(&bytes)
-        .finalize()
-        .into()
-}
-
-/// XXH3's 64-bit non-cryptographic hash
-///
-/// We return as an i64 instead of u64 because that's what SQLite supports
-/// directly.
-fn xxh3(bytes: &[u8]) -> i64 {
-    let mut hasher = twox_hash::Xxh3Hash64::with_seed(0);
-    hasher.write(bytes);
-    hasher.finish() as i64
 }

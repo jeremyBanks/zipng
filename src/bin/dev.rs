@@ -157,18 +157,30 @@ impl Connection {
                                 row_id integer primary key,
                                 length Integer
                                     generated always as( length( bytes ) )
+                                    -- XXX: this errors if the function doesn't exist
+                                    -- maybe instead we could use a trigger
+                                    -- that might also fix our compression bug
                                     stored
                                     check( length <= 67108864 ),
                                 blob_id Blob
                                     generated always as( blob_id( bytes ) )
+                                    -- XXX: this errors if the function doesn't exist
+                                    -- maybe instead we could use a trigger
+                                    -- that might also fix our compression bug
                                     stored
                                     check( length( blob_id ) = 20 ),
                                 blake3 Blob
                                     generated always as( blake3( bytes ) )
+                                    -- XXX: this errors if the function doesn't exist
+                                    -- maybe instead we could use a trigger
+                                    -- that might also fix our compression bug
                                     stored
                                     check( length( blake3 ) = 32 ),
                                 xxh3 Integer
                                     generated always as( xxh3( bytes ) )
+                                    -- XXX: this errors if the function doesn't exist
+                                    -- maybe instead we could use a trigger
+                                    -- that might also fix our compression bug
                                     stored
                                     check( length( blake3 ) = 32 ),
                                 bytes Blob not null,

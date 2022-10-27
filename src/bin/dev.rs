@@ -4,6 +4,7 @@ use std::convert::Infallible;
 use std::env;
 use std::fmt::Debug;
 use std::format as f;
+use std::hash::Hasher;
 
 use derive_more::AsMut;
 use derive_more::AsRef;
@@ -32,12 +33,12 @@ use tracing_error::SpanTrace;
 use tracing_subscriber::fmt::format::FmtSpan;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::EnvFilter;
+use twox_hash::Xxh3Hash64;
 use typenum::U20;
 
 #[derive(Debug, From, AsRef, AsMut)]
 pub struct Connection {
     connection: rusqlite::Connection,
-    zstd_enabled: bool,
 }
 
 const APPLICATION_ID: i32 = 0x_F_1C_15_00;
@@ -48,22 +49,15 @@ impl Connection {
             connection: &mut rusqlite::Connection,
         ) -> Result<(), rusqlite::Error> {
             info!("Initializing connection...");
-            connection
-                .pragma_update(None, "foreign_keys", true)
-                .unwrap();
-            connection
-                .pragma_update(None, "synchronous", "normal")
-                .unwrap();
-            connection
-                .pragma_update(None, "temp_store", "memory")
-                .unwrap();
-            connection
-                .pragma_update(None, "secure_delete", true)
-                .unwrap();
-            connection.pragma_update(None, "cache_size", 1024).unwrap();
+            connection.pragma_update(None, "auto_vacuum", "full")?;
+            connection.pragma_update(None, "foreign_keys", true)?;
+            connection.pragma_update(None, "synchronous", "normal")?;
+            connection.pragma_update(None, "temp_store", "memory")?;
+            connection.pragma_update(None, "secure_delete", true)?;
+            connection.pragma_update(None, "cache_size", 1024)?;
 
-            initialize_connection_functions(connection).unwrap();
-            initialize_connection_extensions(connection).unwrap();
+            initialize_connection_functions(connection)?;
+            initialize_connection_extensions(connection)?;
 
             Ok(())
         }
@@ -81,18 +75,14 @@ impl Connection {
                 "blake3",
                 1,
                 FunctionFlags::SQLITE_DETERMINISTIC,
-                |ctx| Ok(blake3::hash(ctx.get_raw(0).as_bytes()?).as_bytes().to_vec()),
+                |ctx| Ok(blake3(ctx.get_raw(0).as_bytes()?)),
             )?;
 
             connection.create_scalar_function(
-                "sha1",
+                "xxh3",
                 1,
                 FunctionFlags::SQLITE_DETERMINISTIC,
-                |ctx| {
-                    Ok(sha1::Sha1::digest(ctx.get_raw(0).as_bytes()?)
-                        .as_slice()
-                        .to_vec())
-                },
+                |ctx| Ok(xxh3(ctx.get_raw(0).as_bytes()?)),
             )?;
             Ok(())
         }
@@ -144,7 +134,6 @@ impl Connection {
             info!("Initializing database...");
             connection.pragma_update(None, "journal_mode", "wal")?;
             connection.pragma_update(None, "page_size", 64 * 1024)?;
-            connection.pragma_update(None, "auto_vacuum", 1)?;
             connection.pragma_update(None, "user_version", 1)?;
             connection.pragma_update(None, "application_id", APPLICATION_ID)?;
             Ok(())
@@ -152,94 +141,137 @@ impl Connection {
 
         initialize_connection(&mut connection).unwrap();
 
-        loop {
-            let (application_id, user_version, schema_version) =
-                get_versions(&mut connection).unwrap();
-            match user_version {
-                1 => {
-                    info!("upgrading database from version 1 to version 2.");
+        migrate_database(&mut connection).unwrap();
 
-                    connection
-                        .execute(
+        fn migrate_database(connection: &mut rusqlite::Connection) -> Result<(), rusqlite::Error> {
+            loop {
+                let (application_id, user_version, schema_version) =
+                    get_versions(connection).unwrap();
+                match user_version {
+                    1 => {
+                        info!("migration 1: adding BlobStore");
+                        connection
+                            .execute(
+                                r#"
+                            create table BlobStore(
+                                row_id integer primary key,
+                                length Integer
+                                    generated always as( length( bytes ) )
+                                    stored
+                                    check( length <= 67108864 ),
+                                blob_id Blob
+                                    generated always as( blob_id( bytes ) )
+                                    stored
+                                    check( length( blob_id ) = 20 ),
+                                blake3 Blob
+                                    generated always as( blake3( bytes ) )
+                                    stored
+                                    check( length( blake3 ) = 32 ),
+                                xxh3 Integer
+                                    generated always as( xxh3( bytes ) )
+                                    stored
+                                    check( length( blake3 ) = 32 ),
+                                bytes Blob not null,
+                                unique( blob_id ),
+                                unique( blake3 ),
+                                unique( xxh3, row_id )
+                            ) strict
+                        "#,
+                                (),
+                            )
+                            .unwrap();
+                    },
+                    2 => {
+                        info!("migration 2: enabling zstd transparent compression for BlobStore");
+                        connection
+                            .execute("select zstd_enable_transparent( ? )", &[r#"{
+                                "table": "BlobStore",
+                                "column": "bytes",
+                                "compression_level": 21,
+                                "dict_chooser": "'BlobStore'"
+                            }"#])
+                            .ok();
+                    },
+                    3 => {
+                        info!("migration 3: seeding BlobStore");
+                        connection
+                            .execute_batch(r#"
+                                    insert into BlobStore( bytes ) values( zeroblob(0) );
+                                    insert into BlobStore( bytes ) values( zeroblob(1) );
+                                    insert into BlobStore( bytes ) values( zeroblob(2) );
+                                    insert into BlobStore( bytes ) values( zeroblob(4) );
+                                    insert into BlobStore( bytes ) values( zeroblob(8) );
+                                    insert into BlobStore( bytes ) values( zeroblob(16) );
+                                    insert into BlobStore( bytes ) values( zeroblob(32) );
+                                    insert into BlobStore( bytes ) values( zeroblob(64) );
+                                    insert into BlobStore( bytes ) values( cast( '{}' as blob ) );
+                                    insert into BlobStore( bytes ) values( cast( '[]' as blob ) );
+                                    insert into BlobStore( bytes ) values( cast( '\n' as blob ) );
+                                    insert into BlobStore( bytes ) values( cast( '\r\n' as blob ) );
+                                    insert into BlobStore( bytes ) values( cast( '0' as blob ) );
+                                    insert into BlobStore( bytes ) values( cast( '1' as blob ) );
+                                    insert into BlobStore( bytes ) values( cast( '0.0' as blob ) );
+                                    insert into BlobStore( bytes ) values( cast( '1.0' as blob ) );
+                                    insert into BlobStore( bytes ) values( cast( 'false' as blob ) );
+                                    insert into BlobStore( bytes ) values( cast( 'true' as blob ) );
+                                    insert into BlobStore( bytes ) values( zeroblob(1024) );
+                                    insert into BlobStore( bytes ) values( zeroblob(32 * 1024) );
+                                    insert into BlobStore( bytes ) values( zeroblob(1024 * 1024) );
+                                    insert into BlobStore( bytes ) values( zeroblob(32 * 1024 * 1024) );
+                                "#,
+                            )
+                            .unwrap();
+                    },
+                    4 => {
+                        info!("migration 3: adding QueryCache");
+                        connection.execute(
                             r#"
-                        create table BlobStore(
-                            row_id integer primary key,
-                            bytes Blob not null,
-                            blob_id Blob
-                                unique
-                                generated always as( blob_id( bytes ) )
-                                stored
-                                check( length( blob_id ) = 20 ),
-                            blake3 Blob
-                                unique
-                                generated always as( blake3( bytes ) )
-                                stored
-                                check( length( blake3 ) = 32 ),
-                            length Integer
-                                generated always as( length( bytes ) )
-                                stored
-                                check( length < 67108864 )
-                        ) strict
-                    "#,
+                            create table if not exists QueryCache(
+                                request_blob_id Blob not null,
+                                response_blob_id Blob not null,
+                                timestamp Integer not null default( CURRENT_TIMESTAMP ),
+                                status Blob default( null ) check( status is null or length(status) <= 8 ),
+                                foreign key( request_blob_id ) references BlobStore( blob_id ),
+                                foreign key( response_blob_id ) references BlobStore( blob_id ),
+                                unique( request_blob_id, timestamp, status, response_blob_id )
+                            ) strict
+                        "#,
                             (),
-                        )
-                        .unwrap();
+                        ).unwrap();
+                    },
 
-                    connection
-                        .execute_batch(
-                            r#"
-                        insert into BlobStore( bytes ) values( x'' );
-                        insert into BlobStore( bytes ) values( x'10' );
-                        insert into BlobStore( bytes ) values( zeroblob( 1024 ) );
-                        insert into BlobStore( bytes ) values( zeroblob( 1024 * 1024 ) );
-                    "#,
-                        )
-                        .unwrap();
+                    5 => break,
 
-                    connection.execute(
-                        r#"
-                        create table if not exists QueryCache(
-                            request_blob_id Blob not null,
-                            response_blob_id Blob not null,
-                            timestamp Integer not null default( CURRENT_TIMESTAMP ),
-                            status Blob default( null ) check( status is null or length(status) <= 8 ),
-                            foreign key( request_blob_id ) references BlobStore( blob_id ),
-                            foreign key( response_blob_id ) references BlobStore( blob_id ),
-                            unique( request_blob_id, timestamp, status, response_blob_id )
-                        ) strict
-                    "#,
-                        (),
-                    ).unwrap();
-
-                    connection
-                        .execute("select zstd_enable_transparent( ? )", &[r#"{
-                            "table": "BlobStore",
-                            "column": "bytes",
-                            "compression_level": 21,
-                            "dict_chooser": "'BlobStore'"
-                        }"#])
-                        .ok();
-
-                    connection.pragma_update(None, "user_version", 2).unwrap();
-
-                    continue;
-                },
-                2 => {
-                    info!("database is at expected user_version 2.");
-                },
-                other => {
-                    panic!("database has an unexpected user_version: {other}");
-                },
+                    other => panic!("database has an unexpected user_version: {other}"),
+                }
+                connection
+                    .pragma_update(None, "user_version", user_version + 1)
+                    .unwrap();
             }
-            break;
+            Ok(())
         }
 
-        // Self {
-        //     connection,
-        //     zstd_enabled,
-        // }
+        optimize_database(&mut connection).unwrap();
 
-        todo!()
+        fn optimize_database(connection: &mut rusqlite::Connection) -> Result<(), rusqlite::Error> {
+            info!("optimizing database");
+            connection.execute_batch(
+                r#"
+                    select zstd_incremental_maintenance(null, 0.9375);
+                    vacuum;
+                    analyze;
+                "#,
+            )?;
+            Ok(())
+        }
+
+        {
+            let mut q = connection.prepare("select length from BlobStore").unwrap();
+            let result = q.query_row((), |row| Ok(format!("{:?}", row.get_ref(0))));
+            dbg!(result);
+        }
+
+        Self { connection }
     }
 
     pub fn open_in_memory() -> Self {
@@ -248,17 +280,6 @@ impl Connection {
 
     pub fn open(path: &str) -> Result<Self, rusqlite::Error> {
         Ok(Self::new(rusqlite::Connection::open(path)?))
-    }
-}
-
-impl Drop for Connection {
-    fn drop(&mut self) {
-        if self.zstd_enabled {
-            self.connection
-                .execute_batch("zstd_incremental_maintenance(null, 1)")
-                .unwrap();
-        }
-        self.connection.execute_batch("analyze").unwrap();
     }
 }
 
@@ -291,10 +312,17 @@ fn main() -> Result<(), eyre::Report> {
     Ok(())
 }
 
-pub type GitId = [u8; 20];
+pub type BlobId = [u8; 20];
 pub type Blake3 = [u8; 32];
+pub type Xxh3 = i64;
 
-fn blob_id(bytes: &[u8]) -> GitId {
+/// BLAKE3 cryptographic hash
+fn blake3(bytes: &[u8]) -> [u8; 32] {
+    *blake3::hash(bytes).as_bytes()
+}
+
+/// Git's blob object SHA-1 pseudo-cryptographic hash
+fn blob_id(bytes: &[u8]) -> [u8; 20] {
     sha1::Sha1::new()
         .chain_update("blob")
         .chain_update(" ")
@@ -305,170 +333,12 @@ fn blob_id(bytes: &[u8]) -> GitId {
         .into()
 }
 
-trait QueryCache: BlobStore {
-    type QueryCacheError;
-    fn init_query_cache(&mut self) -> Result<(), Self::QueryCacheError> {
-        Ok(())
-    }
-}
-
-trait BlobStore {
-    type BlobStoreError;
-    fn init_blob_cache(&mut self) -> Result<(), Self::BlobStoreError> {
-        Ok(())
-    }
-    fn has_blob(&self, blob_id: GitId) -> Result<bool, Self::BlobStoreError> {
-        Ok(self.get_blob(blob_id)?.is_none())
-    }
-    fn insert_blob(&mut self, bytes: &[u8]) -> Result<(), Self::BlobStoreError> {
-        let blob_id = blob_id(&bytes);
-        if !self.has_blob(blob_id)? {
-            let blake3: [u8; 32] = *blake3::hash(bytes).as_bytes();
-            self.insert_blob_with(blob_id, blake3, bytes)?;
-        }
-        Ok(())
-    }
-    fn get_blob(&self, blob_id: GitId) -> Result<Option<Vec<u8>>, Self::BlobStoreError>;
-    fn insert_blob_with(
-        &mut self,
-        blob_id: GitId,
-        blake3: Blake3,
-        bytes: &[u8],
-    ) -> Result<(), Self::BlobStoreError>;
-}
-
-impl BlobStore for rusqlite::Connection {
-    type BlobStoreError = rusqlite::Error;
-
-    fn init_blob_cache(&mut self) -> Result<(), Self::BlobStoreError> {
-        self.execute(
-            r#"
-            create table if not exists BlobStore(
-                row_id integer primary key,
-                bytes Blob not null,
-                blob_id Blob
-                    unique
-                    generated always as( blob_id( bytes ) )
-                    stored
-                    check( length( blob_id ) = 20 ),
-                blake3 Blob
-                    unique
-                    generated always as( blake3( bytes ) )
-                    stored
-                    check( length( blake3 ) = 32 ),
-                length Integer
-                    generated always as( length( bytes ) )
-                    stored
-                    check( length < 67108864 )
-            ) strict
-        "#,
-            (),
-        )?;
-
-        self.execute_batch(
-            r#"
-            insert or ignore into BlobStore( bytes ) values( x'' );
-            insert or ignore into BlobStore( bytes ) values( x'10' );
-            insert or ignore into BlobStore( bytes ) values( zeroblob( 1024 ) );
-            insert or ignore into BlobStore( bytes ) values( zeroblob( 1024 * 1024 ) );
-        "#,
-        )?;
-
-        Ok(())
-    }
-
-    fn get_blob(&self, blob_id: GitId) -> Result<Option<Vec<u8>>, Self::BlobStoreError> {
-        self.query_row(
-            "select bytes from BlobStore where blob_id = ?",
-            &[&blob_id],
-            |row| row.get(0),
-        )
-        .optional()
-    }
-
-    fn insert_blob_with(
-        &mut self,
-        blob_id: GitId,
-        blake3: Blake3,
-        bytes: &[u8],
-    ) -> Result<(), Self::BlobStoreError> {
-        todo!()
-    }
-}
-
-impl QueryCache for rusqlite::Connection {
-    type QueryCacheError = rusqlite::Error;
-
-    fn init_query_cache(&mut self) -> Result<(), Self::QueryCacheError> {
-        self.execute(
-            r#"
-            create table if not exists QueryCache(
-                request_blob_id Blob not null,
-                response_blob_id Blob not null,
-                timestamp Integer not null default( CURRENT_TIMESTAMP ),
-                status Blob default( null ) check( status is null or length(status) <= 8 ),
-                foreign key( request_blob_id ) references BlobStore( blob_id ),
-                foreign key( response_blob_id ) references BlobStore( blob_id ),
-                unique( request_blob_id, timestamp, status, response_blob_id )
-            ) strict
-        "#,
-            (),
-        )?;
-        Ok(())
-    }
-}
-
-#[derive(Debug, Deserialize, Serialize, Default, Clone)]
-pub struct HashMapCache {
-    pub map: HashMap<GitId, Vec<u8>>,
-}
-
-impl BlobStore for HashMapCache {
-    type BlobStoreError = Infallible;
-
-    fn has_blob(&self, blob_id: GitId) -> Result<bool, Self::BlobStoreError> {
-        Ok(self.map.contains_key(&blob_id))
-    }
-
-    fn get_blob(&self, blob_id: GitId) -> Result<Option<Vec<u8>>, Self::BlobStoreError> {
-        Ok(self.map.get(&blob_id).cloned())
-    }
-
-    fn insert_blob_with(
-        &mut self,
-        blob_id: GitId,
-        blake3: Blake3,
-        bytes: &[u8],
-    ) -> Result<(), Self::BlobStoreError> {
-        self.map.insert(blob_id, bytes.to_vec());
-        Ok(())
-    }
-}
-
-#[derive(Debug, Deserialize, Serialize, Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd)]
-pub struct NoCache;
-
-impl BlobStore for NoCache {
-    type BlobStoreError = Infallible;
-
-    fn has_blob(&self, _blob_id: GitId) -> Result<bool, Self::BlobStoreError> {
-        Ok(false)
-    }
-
-    fn get_blob(&self, _blob_id: GitId) -> Result<Option<Vec<u8>>, Self::BlobStoreError> {
-        Ok(None)
-    }
-
-    fn insert_blob_with(
-        &mut self,
-        _blob_id: GitId,
-        _blake3: Blake3,
-        _bytes: &[u8],
-    ) -> Result<(), Self::BlobStoreError> {
-        Ok(())
-    }
-}
-
-impl QueryCache for NoCache {
-    type QueryCacheError = Infallible;
+/// XXH3's 64-bit non-cryptographic hash
+///
+/// We return as an i64 instead of u64 because that's what SQLite supports
+/// directly.
+fn xxh3(bytes: &[u8]) -> i64 {
+    let mut hasher = twox_hash::Xxh3Hash64::with_seed(0);
+    hasher.write(bytes);
+    hasher.finish() as i64
 }

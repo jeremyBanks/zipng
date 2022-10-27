@@ -2,10 +2,15 @@
 use std::collections::HashMap;
 use std::convert::Infallible;
 use std::env;
+use std::fmt;
 use std::fmt::Debug;
 use std::format as f;
 use std::hash::Hasher;
+use std::str;
 
+use arrayvec::ArrayVec;
+use bstr::BStr;
+use bstr::BString;
 use derive_more::AsMut;
 use derive_more::AsRef;
 use derive_more::Deref;
@@ -14,12 +19,15 @@ use derive_more::Into;
 use digest::generic_array::GenericArray;
 use digest::Digest;
 use rusqlite::blob::Blob;
-use rusqlite::config::DbConfig::SQLITE_DBCONFIG_ENABLE_FKEY;
 use rusqlite::functions::FunctionFlags;
 use rusqlite::LoadExtensionGuard;
 use rusqlite::OptionalExtension;
+use rusqlite_migration::Migrations;
+use rusqlite_migration::M;
 use serde::Deserialize;
+use serde::Deserializer;
 use serde::Serialize;
+use serde::Serializer;
 use sha1;
 use tracing::debug;
 use tracing::error;
@@ -35,232 +43,117 @@ use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::EnvFilter;
 use twox_hash::Xxh3Hash64;
 use typenum::U20;
+use std::fmt::Display;
 
 #[derive(Debug, From, AsRef, AsMut)]
 pub struct Connection {
     connection: rusqlite::Connection,
 }
 
-const APPLICATION_ID: i32 = 0x_F_1C_15_00;
+const APPLICATION_ID: u32 = 0x_F_1C_15_00;
 
 impl Connection {
-    pub fn new(mut connection: rusqlite::Connection) -> Self {
-        fn initialize_connection(
-            connection: &mut rusqlite::Connection,
-        ) -> Result<(), rusqlite::Error> {
-            info!("Initializing connection...");
+    pub fn new(mut connection: rusqlite::Connection) -> Result<Self, rusqlite::Error> {
+        info!("Initializing connection...");
+
+        info!("Loading sqlite_zstd extension...");
+        unsafe {
+            let guard = LoadExtensionGuard::new(&connection)?;
+            connection.load_extension("sqlite_zstd", None)?;
+        };
+
+        let (application_id, user_version, schema_version) = connection.query_row(
+            "select
+                application_id ,
+                user_version ,
+                schema_version
+            from
+                pragma_application_id join
+                pragma_user_version join
+                pragma_schema_version",
+            (),
+            |row| {
+                Ok((
+                    row.get_ref(0)?.as_i64()? as u32,
+                    row.get_ref(1)?.as_i64()? as u32,
+                    row.get_ref(2)?.as_i64()? as u32,
+                ))
+            },
+        )?;
+
+        trace!(
+            application_id = application_id,
+            user_version = user_version,
+            schema_version = schema_version
+        );
+
+        if application_id == 0 || application_id != APPLICATION_ID {
+            if application_id == 0 {
+                info!("initializing application_id to {APPLICATION_ID:08X}");
+                connection.pragma_update(None, "application_id", APPLICATION_ID)?;
+            }
+
+            connection.pragma_update(None, "page_size", 64 * 1024)?;
+            connection.pragma_update(None, "cache_size", -1 * 64 * 1024 * 1024)?;
             connection.pragma_update(None, "auto_vacuum", "full")?;
             connection.pragma_update(None, "foreign_keys", true)?;
             connection.pragma_update(None, "synchronous", "normal")?;
             connection.pragma_update(None, "temp_store", "memory")?;
             connection.pragma_update(None, "secure_delete", true)?;
-            connection.pragma_update(None, "cache_size", 1024)?;
-
-            initialize_connection_functions(connection)?;
-            initialize_connection_extensions(connection)?;
-
-            Ok(())
-        }
-        fn initialize_connection_functions(
-            connection: &mut rusqlite::Connection,
-        ) -> Result<(), rusqlite::Error> {
-            connection.create_scalar_function(
-                "blob_id",
-                1,
-                FunctionFlags::SQLITE_DETERMINISTIC,
-                |ctx| Ok(blob_id(ctx.get_raw(0).as_bytes()?)),
-            )?;
-
-            connection.create_scalar_function(
-                "blake3",
-                1,
-                FunctionFlags::SQLITE_DETERMINISTIC,
-                |ctx| Ok(blake3(ctx.get_raw(0).as_bytes()?)),
-            )?;
-
-            connection.create_scalar_function(
-                "xxh3",
-                1,
-                FunctionFlags::SQLITE_DETERMINISTIC,
-                |ctx| Ok(xxh3(ctx.get_raw(0).as_bytes()?)),
-            )?;
-            Ok(())
-        }
-        fn initialize_connection_extensions(
-            connection: &mut rusqlite::Connection,
-        ) -> Result<(), rusqlite::Error> {
-            Ok(unsafe {
-                let guard = LoadExtensionGuard::new(&connection)?;
-                connection.load_extension("sqlite_zstd", None)?;
-            })
-        }
-
-        fn get_versions(
-            connection: &mut rusqlite::Connection,
-        ) -> Result<(i32, i32, i32), rusqlite::Error> {
-            connection.query_row(
-                "
-                select
-                    application_id ,
-                    user_version ,
-                    schema_version
-                from
-                    pragma_application_id join
-                    pragma_user_version join
-                    pragma_schema_version
-            ",
-                (),
-                |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)),
-            )
-        }
-
-        let (application_id, user_version, schema_version) = get_versions(&mut connection).unwrap();
-
-        if application_id == 0 {
-            info!("assuming database requires initialization because application_id is 0.");
-            if schema_version != 0 {
-                warn!("schema_version is already {schema_version}.");
-            }
-            if user_version != 0 {
-                warn!("user_version is already {user_version}.");
-            }
-            initialize_database(&mut connection).unwrap();
-        } else if application_id != APPLICATION_ID {
-            error!("database has an unexpected application_id: {application_id:08X}");
-        }
-        fn initialize_database(
-            connection: &mut rusqlite::Connection,
-        ) -> Result<(), rusqlite::Error> {
-            info!("Initializing database...");
             connection.pragma_update(None, "journal_mode", "wal")?;
-            connection.pragma_update(None, "page_size", 64 * 1024)?;
-            connection.pragma_update(None, "user_version", 1)?;
-            connection.pragma_update(None, "application_id", APPLICATION_ID)?;
-            Ok(())
-        }
 
-        initialize_connection(&mut connection).unwrap();
-
-        migrate_database(&mut connection).unwrap();
-
-        fn migrate_database(connection: &mut rusqlite::Connection) -> Result<(), rusqlite::Error> {
-            loop {
-                let (application_id, user_version, schema_version) =
-                    get_versions(connection).unwrap();
-                match user_version {
-                    1 => {
-                        info!("migration 1: adding BlobStore");
-                        connection
-                            .execute_batch(
-                                r#"
-                            create table BlobStore(
-                                bytes Blob not null,
-                                row_id integer primary key,
-                                prefix Blob,
-                                length Integer,
-                                blob_id Blob,
-                                blake3 Blob,
-                                xxh3 Integer,
-                                unique( blob_id ),
-                                unique( blake3 ),
-                                unique( xxh3, row_id ),
-                                unique( prefix, row_id )
-                            ) strict;
-
-                            create trigger BlobStoreComputedColumns
-                                after insert on BlobStore begin
-                                    update BlobStore
-                                        set
-                                            length = length( new.bytes ),
-                                            blob_id = blob_id( new.bytes ),
-                                            blake3 = blake3( new.bytes ),
-                                            xxh3 = xxh3( new.bytes ),
-                                            prefix = substr( new.bytes, 1, 16 )
-                                        where row_id = new.row_id;
-                                end;
-
-                            select zstd_enable_transparent( '{
-                                "table": "BlobStore",
-                                "column": "bytes",
-                                "compression_level": 21,
-                                "dict_chooser": "''BlobStore''"
-                            }');
-                        "#,
-                            )
-                            .unwrap();
-                    },
-                    2 => {
-                        info!("migration 2: seeding BlobStore");
-                        connection
-                            .execute_batch(r#"
-                                    insert into BlobStore( bytes ) values( zeroblob(0) );
-                                    insert into BlobStore( bytes ) values( zeroblob(1) );
-                                    insert into BlobStore( bytes ) values( zeroblob(2) );
-                                    insert into BlobStore( bytes ) values( zeroblob(4) );
-                                    insert into BlobStore( bytes ) values( zeroblob(8) );
-                                    insert into BlobStore( bytes ) values( zeroblob(16) );
-                                    insert into BlobStore( bytes ) values( zeroblob(32) );
-                                    insert into BlobStore( bytes ) values( zeroblob(64) );
-                                    insert into BlobStore( bytes ) values( cast( '{}' as blob ) );
-                                    insert into BlobStore( bytes ) values( cast( '[]' as blob ) );
-                                    insert into BlobStore( bytes ) values( cast( '\n' as blob ) );
-                                    insert into BlobStore( bytes ) values( cast( '\r\n' as blob ) );
-                                    insert into BlobStore( bytes ) values( cast( '0' as blob ) );
-                                    insert into BlobStore( bytes ) values( cast( '1' as blob ) );
-                                    insert into BlobStore( bytes ) values( cast( '0.0' as blob ) );
-                                    insert into BlobStore( bytes ) values( cast( '1.0' as blob ) );
-                                    insert into BlobStore( bytes ) values( cast( 'false' as blob ) );
-                                    insert into BlobStore( bytes ) values( cast( 'true' as blob ) );
-                                    insert into BlobStore( bytes ) values( zeroblob(1024) );
-                                    insert into BlobStore( bytes ) values( zeroblob(32 * 1024) );
-                                    insert into BlobStore( bytes ) values( zeroblob(1024 * 1024) );
-                                    insert into BlobStore( bytes ) values( zeroblob(32 * 1024 * 1024) );
-                                "#,
-                            )
-                            .unwrap();
-                    },
-                    3 => {
-                        info!("migration 3: adding QueryCache");
-                        connection.execute(
-                            r#"
-                            create table if not exists QueryCache(
-                                request_blob_id Blob not null,
-                                response_blob_id Blob not null,
-                                timestamp Integer not null default( CURRENT_TIMESTAMP ),
-                                status Blob default( null ) check( status is null or length(status) <= 8 ),
-                                foreign key( request_blob_id ) references BlobStore( blob_id ),
-                                foreign key( response_blob_id ) references BlobStore( blob_id ),
-                                unique( request_blob_id, timestamp, status, response_blob_id )
-                            ) strict
-                        "#,
-                            (),
-                        ).unwrap();
-                    },
-
-                    4 => break,
-
-                    other => panic!("database has an unexpected user_version: {other}"),
-                }
-                connection
-                    .pragma_update(None, "user_version", user_version + 1)
-                    .unwrap();
-            }
-            Ok(())
-        }
-
-        optimize_database(&mut connection).unwrap();
-
-        fn optimize_database(connection: &mut rusqlite::Connection) -> Result<(), rusqlite::Error> {
-            info!("optimizing database");
-            connection.execute_batch(
-                r#"
-                    select zstd_incremental_maintenance(null, 0.9375);
-                    vacuum;
-                    analyze;
+            Migrations::new(vec![
+                M::up(
+                    r#"
+                    create table BlobStore(
+                        blake3 Blob primary key,
+                        bytes Blob not null
+                    ) strict;
                 "#,
-            )?;
-            Ok(())
+                ),
+                M::up(
+                    r#"
+                    commit; -- rusqlite_migrations compatibility hack
+                    select zstd_enable_transparent( '{
+                        "table": "BlobStore",
+                        "column": "bytes",
+                        "compression_level": 21,
+                        "dict_chooser": "''BlobStore''"
+                    }');
+                    begin transaction; -- rusqlite_migrations compatibility hack
+                "#,
+                ),
+                M::up(
+                    r#"
+                    create table if not exists QueryCache(
+                        request_blob_id Blob not null,
+                        response_blob_id Blob not null,
+                        timestamp Integer not null default( CURRENT_TIMESTAMP ),
+                        status Blob default( null ) check( status is null or length(status) <= 8 ),
+                        foreign key( request_blob_id ) references BlobStore( blob_id ),
+                        foreign key( response_blob_id ) references BlobStore( blob_id ),
+                        unique( request_blob_id, timestamp, status, response_blob_id )
+                    ) strict;
+                "#,
+                ),
+            ])
+            .to_latest(&mut connection)
+            .unwrap();
+        } else {
+            error!(
+                "database has an unexpected application_id: {application_id:08X}. skipping \
+                 migrations and pragmas."
+            );
         }
+
+        info!("optimizing database");
+        connection.execute_batch(
+            r#"
+                select zstd_incremental_maintenance(null, 0.9375);
+                vacuum;
+                analyze;
+            "#,
+        )?;
 
         {
             let mut q = connection
@@ -270,15 +163,15 @@ impl Connection {
             dbg!(result);
         }
 
-        Self { connection }
+        Ok(Self { connection })
     }
 
-    pub fn open_in_memory() -> Self {
-        Self::new(rusqlite::Connection::open_in_memory().unwrap())
+    pub fn open_in_memory() -> Result<Self, rusqlite::Error> {
+        Self::new(rusqlite::Connection::open_in_memory()?)
     }
 
     pub fn open(path: &str) -> Result<Self, rusqlite::Error> {
-        Ok(Self::new(rusqlite::Connection::open(path)?))
+        Self::new(rusqlite::Connection::open(path)?)
     }
 }
 
@@ -311,9 +204,136 @@ fn main() -> Result<(), eyre::Report> {
     Ok(())
 }
 
-pub type BlobId = [u8; 20];
-pub type Blake3 = [u8; 32];
-pub type Xxh3 = i64;
+/// A reference to a Blob. If the blob is at least 32 bytes in length,
+/// this is the 32-byte blake3 hash of that blob. If it is less than 32
+/// bytes in length, the value is left intact.
+#[derive(Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct BlobRef {
+    length: usize,
+    bytes: [u8; 32],
+}
+
+pub fn blob(slice: impl AsRef<[u8]>) -> BlobRef {
+    BlobRef::new(slice)
+}
+
+impl BlobRef {
+    pub fn new(slice: impl AsRef<[u8]>) -> Self {
+        let slice = slice.as_ref();
+        let length = slice.len();
+        let mut bytes = [0u8; 32];
+        if length >= 32 {
+            bytes.copy_from_slice(blake3::hash(slice).as_bytes());
+        } else {
+            bytes[..length].copy_from_slice(slice);
+        }
+        Self { length, bytes }
+    }
+
+    pub fn as_inline(&self) -> Option<&[u8]> {
+        if self.length < 32 {
+            Some(self.as_ref())
+        } else {
+            None
+        }
+    }
+
+    pub fn as_inline_ascii(&self) -> Option<&str> {
+        let bytes = self.as_inline()?;
+        if bytes
+            .iter()
+            .all(|b| matches!(b, b'\n' | b'\r' | b'\t' | b' '..=b'~'))
+        {
+            Some(str::from_utf8(bytes).unwrap())
+        } else {
+            None
+        }
+
+    }
+}
+
+impl AsRef<[u8]> for BlobRef {
+    fn as_ref(&self) -> &[u8] {
+        &self.bytes[..self.length]
+    }
+}
+
+impl Debug for BlobRef {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
+        Ok(if let Some(ascii) = self.as_inline_ascii() {
+            write!(f, "b{ascii:?}")?;
+        } else {
+            write!(f, "0x")?;
+            for byte in self.as_ref() {
+                write!(f, "{:02X}", byte)?;
+            }
+        })
+    }
+}
+
+impl Display for BlobRef {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
+        Debug::fmt(self, f)
+    }
+}
+
+#[test]
+fn test_blob_ref() {
+    macro_rules! cases {
+        ($($input:expr => $to_string:expr, $to_json:expr);+ $(;)?) => {
+            $(
+                assert_eq!($to_string, blob($input).to_string());
+                assert_eq!($to_json, ::serde_json::to_string(&blob($input)).unwrap());
+            )+
+        };
+    };
+    cases! {
+        "" => r#"b"""#, r#""""#;
+        [] => r#"b"""#, r#""""#;
+        [0] => "0x00", "[0]";
+        [1, 2, 3] => "0x010203", "[1,2,3]";
+        "[]" => r#"b"[]""#, r#""[]""#;
+        "{}" => r#"b"{}""#, r#""{}""#;
+        "alpine glacial foreland wurm" => "b\"alpine glacial foreland wurm\"", "\"alpine glacial foreland wurm\"";
+        "alfa bravo charlie delta echo foxtrot golf hotel india juliett kilo lima mike november oscar papa quebec romeo sierra tango uniform whiskey x-ray yankee zulu stop" => "0x00", "???";
+    }
+}
+
+impl Serialize for BlobRef {
+    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        if let Some(ascii) = self.as_inline_ascii() {
+            serializer.serialize_str(ascii)
+        } else {
+            serializer.serialize_bytes(self.as_ref())
+        }
+    }
+}
+
+impl<'input> Deserialize<'input> for BlobRef {
+    fn deserialize<D: Deserializer<'input>>(deserializer: D) -> Result<Self, D::Error> {
+        return deserializer.deserialize_bytes(Visitor);
+
+        struct Visitor;
+        impl<'input> serde::de::Visitor<'input> for Visitor {
+            type Value = BlobRef;
+
+            fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+                formatter.write_str("up to 32 bytes, or up to 31 ascii characters")
+            }
+
+            fn visit_bytes<E: serde::de::Error>(self, v: &[u8]) -> Result<Self::Value, E> {
+                let mut bytes = [0; 32];
+                let length = v.len();
+                bytes[..length].copy_from_slice(v);
+                Ok(BlobRef { length, bytes })
+            }
+
+            fn visit_str<E: serde::de::Error>(self, v: &str) -> Result<Self::Value, E> {
+                self.visit_bytes(v.as_bytes())
+            }
+        }
+    }
+}
 
 /// BLAKE3 cryptographic hash
 fn blake3(bytes: &[u8]) -> [u8; 32] {

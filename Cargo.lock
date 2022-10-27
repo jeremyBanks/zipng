@@ -76,6 +76,9 @@ name = "arrayvec"
 version = "0.7.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8da52d66c7071e2e3fa2a1e5c6d088fec47b593032b254f5e980de8ea54454d6"
+dependencies = [
+ "serde",
+]
 
 [[package]]
 name = "async-compression"
@@ -466,6 +469,7 @@ name = "fiction"
 version = "0.0.0-dev"
 dependencies = [
  "ammonia",
+ "arrayvec",
  "blake3",
  "bstr",
  "color-eyre",
@@ -482,10 +486,13 @@ dependencies = [
  "regex",
  "reqwest",
  "rusqlite",
+ "rusqlite_migration",
  "salsa",
  "scraper",
  "serde",
+ "serde_bytes",
  "serde_json",
+ "serde_rusqlite",
  "sha1",
  "sha2",
  "static_assertions",
@@ -1609,6 +1616,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "rusqlite_migration"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "eda44233be97aea786691f9f6f7ef230bcf905061f4012e90f4f39e6dcf31163"
+dependencies = [
+ "log",
+ "rusqlite",
+]
+
+[[package]]
 name = "rustc-demangle"
 version = "0.1.21"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1755,6 +1772,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "serde_bytes"
+version = "0.11.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cfc50e8183eeeb6178dcb167ae34a8051d63535023ae38b5d8d12beae193d37b"
+dependencies = [
+ "serde",
+]
+
+[[package]]
 name = "serde_derive"
 version = "1.0.145"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1773,6 +1799,16 @@ checksum = "e55a28e3aaef9d5ce0506d0a14dbba8054ddc7e499ef522dd8b26859ec9d4a44"
 dependencies = [
  "itoa 1.0.3",
  "ryu",
+ "serde",
+]
+
+[[package]]
+name = "serde_rusqlite"
+version = "0.31.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "538b51f10ee271375cbd9caa04fa6e3e50af431a21db97caae48da92a074244a"
+dependencies = [
+ "rusqlite",
  "serde",
 ]
 

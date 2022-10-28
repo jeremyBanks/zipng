@@ -256,78 +256,70 @@ impl AsRef<[u8]> for BlobRef {
     }
 }
 
-impl Debug for BlobRef {
+impl Display for BlobRef {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
-        Ok(if let Some(ascii) = self.as_inline_ascii() {
-            write!(f, "b{ascii:?}")?;
-        } else {
-            write!(f, "0x")?;
+        Ok(if let Some(inline) = self.as_inline_ascii() {
             for byte in self.as_ref() {
-                write!(f, "{:02X}", byte)?;
+                f.write_char(char::from(*byte));
+            }
+        } else {
+            for byte in self.as_ref() {
+                write!(f, "{byte:02X}")?;
             }
         })
     }
 }
 
-impl Display for BlobRef {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
-        Debug::fmt(self, f)
+impl FromStr for BlobRef {
+    type Err = eyre::Report;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(match s.len() {
+            0..=31 => BlobRef::new(s.as_bytes()),
+            blake3::OUT_LEN => BlobRef::new(&hex::decode(s)?),
+            len => bail!("impossible blob length {len:?}"),
+        })
     }
 }
 
-#[test]
-fn test_blob_ref() {
-    macro_rules! cases {
-        ($($input:expr => $to_string:expr, $to_json:expr);+ $(;)?) => {
-            $(
-                assert_eq!($to_string, blob($input).to_string());
-                assert_eq!($to_json, ::serde_json::to_string(&blob($input)).unwrap());
-            )+
-        };
-    };
-    cases! {
-        "" => r#"b"""#, r#""""#;
-        [] => r#"b"""#, r#""""#;
-        [0] => "0x00", "[0]";
-        [1, 2, 3] => "0x010203", "[1,2,3]";
-        "[]" => r#"b"[]""#, r#""[]""#;
-        "{}" => r#"b"{}""#, r#""{}""#;
-        "alpine glacial foreland wurm" => "b\"alpine glacial foreland wurm\"", "\"alpine glacial foreland wurm\"";
-        "alfa bravo charlie delta echo foxtrot golf hotel india juliett kilo lima mike november oscar papa quebec romeo sierra tango uniform whiskey x-ray yankee zulu stop" => "0x62EB8E3ECF44B3E16B4ABDD5B67672BEDCD2B51826AC585F3B6D4AE988082DA4", "[98,235,142,62,207,68,179,225,107,74,189,213,182,118,114,190,220,210,181,24,38,172,88,95,59,109,74,233,136,8,45,164]";
+impl Debug for BlobRef {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
+        Ok(Debug::fmt(&Display::fmt(self, f)?, f)?)
     }
 }
 
 impl Serialize for BlobRef {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-        if let Some(ascii) = self.as_inline_ascii() {
-            serializer.serialize_str(ascii)
-        } else {
-            serializer.serialize_bytes(self.as_ref())
-        }
+        serializer.serialize_str(&self.to_string())
     }
 }
 
+use std::fmt::Write;
+use std::str::FromStr;
+
+use eyre::bail;
+
 impl<'input> Deserialize<'input> for BlobRef {
     fn deserialize<D: Deserializer<'input>>(deserializer: D) -> Result<Self, D::Error> {
-        return deserializer.deserialize_bytes(Visitor);
+        return deserializer.deserialize_str(Visitor);
 
         struct Visitor;
         impl<'input> serde::de::Visitor<'input> for Visitor {
             type Value = BlobRef;
 
             fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
-                formatter.write_str("up to 32 bytes, or up to 31 ascii characters")
-            }
-
-            fn visit_bytes<E: serde::de::Error>(self, v: &[u8]) -> Result<Self::Value, E> {
-                let mut bytes = [0; blake3::OUT_LEN];
-                let length = v.len();
-                bytes[..length].copy_from_slice(v);
-                Ok(BlobRef { length, bytes })
+                formatter.write_str(
+                    "a string up to 31 characters up to \\xFF, or 64 hex digits, or up to 32  \
+                     bytes",
+                )
             }
 
             fn visit_str<E: serde::de::Error>(self, v: &str) -> Result<Self::Value, E> {
-                self.visit_bytes(v.as_bytes())
+                v.parse().map_err(serde::de::Error::custom)
+            }
+
+            fn visit_bytes<E: serde::de::Error>(self, v: &[u8]) -> Result<Self::Value, E> {
+                Ok(BlobRef::new(v))
             }
         }
     }

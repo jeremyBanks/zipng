@@ -15,6 +15,7 @@ duct = "0.13.5"
 error-stack = { version = "0.2.1", features = ["spantrace", "eyre", "std", "anyhow"] }
 eyre = "0.6.8"
 futures = "0.3.24"
+hex = "0.4.3"
 http = "0.2.8"
 miette = { version = "5.3.0", features = ["fancy"] }
 once-cell-regex = "0.2.1"

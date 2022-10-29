@@ -131,15 +131,15 @@ impl Serialize for BlobId {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         return serializer.serialize_tuple(2).and_then(|mut s| {
             s.serialize_element(&self.length)?;
-            s.serialize_element(&SerializeElement(self.length, self.inline()))?;
+            s.serialize_element(&SerializeInlineBytes(self))?;
             s.end()
         });
 
-        struct SerializeElement<'a>(u32, &'a [u8]);
-        impl Serialize for SerializeElement<'_> {
+        struct SerializeInlineBytes<'a>(&'a BlobId);
+        impl Serialize for SerializeInlineBytes<'_> {
             fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-                serializer.serialize_tuple(self.0 as usize).and_then(|mut s| {
-                    for &b in self.1 {
+                serializer.serialize_tuple(self.0.len()).and_then(|mut s| {
+                    for &b in self.0.inline() {
                         s.serialize_element(&b)?;
                     }
                     s.end()

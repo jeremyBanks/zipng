@@ -80,6 +80,7 @@ mod throttle;
 mod tts;
 mod wrapped_error;
 mod blob_ref;
+mod generic;
 
 // Replace the cache with a sqlite database, using UPSERT...RETURNING for *all
 // select queries* in order to set a `last_accessed` field? Maybe. Maybe not

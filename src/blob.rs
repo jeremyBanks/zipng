@@ -44,186 +44,97 @@ use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::EnvFilter;
 use typenum::U20;
 
+use crate::generic::default;
+
+/// A blob ID is a value of 1 to 32 bytes representing a byte string
+/// of arbitrary length.
+///
+/// It starts with an unsigned varint indicating the size.
+///
+/// If the size is small enough for the value itself to fit into the
+/// remaining bytes, we do so. Otherwise, we the remaining bytes contain
+/// as many bytes as possible from the beginning of the BLAKE3 digest of
+/// the value.
+///
+/// For serialization, since the length is up-front we only need to
+/// transmit as many bytes as neccessary for inline values. In particular,
+/// note that an empty byte string is represented by a single zero byte.
+/// If a fixed-length value is neccessary, the ID must be padded with trailing
+/// zero bytes.
 #[derive(Default, Clone, Copy, Eq, PartialOrd, PartialEq, Ord, Hash)]
 pub struct BlobId {
-    inline: [u8; BlobId::INLINE],
-    length: u32,
+    buffer: [u8; 32],
+}
+
+impl BlobId {
+    pub fn new(slice: &[u8]) -> BlobId {
+        let mut buffer = [0u8; 32];
+        let mut remaining = &mut buffer[..];
+        let split = leb128::write::unsigned(&mut remaining, slice.len() as u64).unwrap();
+
+        if slice.len() < remaining.len() {
+            remaining[..slice.len()].copy_from_slice(slice);
+        } else {
+            let digest = blake3::hash(slice);
+            remaining.copy_from_slice(&digest.as_bytes()[..remaining.len()]);
+        }
+        BlobId { buffer }
+    }
+
+    pub fn len(&self) -> usize {
+        let mut view = &self.buffer[..];
+        leb128::read::unsigned(&mut view).unwrap() as usize
+    }
+
+    fn len_len(&self) -> usize {
+        // ... this is always going to be 1 for inline values
+        let mut view = &self.buffer[..];
+        leb128::read::unsigned(&mut view).unwrap();
+        self.buffer.len() - view.len()
+    }
+
+    pub fn to_bytes(&self) -> &[u8] {
+        let len = self.len();
+        if len < self.buffer.len() - self.len_len() {
+            &self.buffer[..self.len_len() + len]
+        } else {
+            &self.buffer[..]
+        }
+    }
+
+    pub fn from_reader(reader: impl std::io::Read) -> std::io::Result<BlobId> {
+        todo!()
+    }
+
+    pub fn from_bytes(bytes: &[u8]) -> BlobId {
+        let mut view = &bytes[..];
+        let len = leb128::read::unsigned(&mut view).unwrap() as usize;
+        let len_len = bytes.len() - view.len();
+        let mut buffer = [0u8; 32];
+        if len_len + len < 32 {
+            buffer[..len_len + len].copy_from_slice(bytes);
+        } else {
+            buffer.copy_from_slice(bytes);
+        }
+        BlobId { buffer }
+
+    }
 }
 
 impl Debug for BlobId {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        if let Some(inline) = self.as_inline() {
-            write!(f, "{:?}", BStr::new(inline))
-        } else {
-            write!(f, "0x{}", hex::encode_upper(self.to_serialized_bytes()))
+        let len = self.len();
+        if len == 0 {
+            return write!(f, "0x00");
         }
-    }
-}
-
-impl BlobId {
-    pub(crate) const INLINE: usize = 28;
-
-    pub fn new(length: usize, inline: [u8; BlobId::INLINE]) -> BlobId {
-        let length32 = length.try_into().unwrap();
-        if length < BlobId::INLINE {
-            if inline[length..].iter().any(|&b| b != 0x00) {
-                panic!("inline padding must be zeroed");
-            }
-        }
-        BlobId {
-            length: length32,
-            inline,
-        }
-    }
-
-    pub fn len(&self) -> usize {
-        self.length as usize
-    }
-
-    fn inline(&self) -> &[u8] {
-        &self.inline[..self.len().min(BlobId::INLINE)]
-    }
-
-    pub fn is_inline(&self) -> bool {
-        self.len() <= BlobId::INLINE
-    }
-
-    pub fn as_inline(&self) -> Option<&[u8]> {
-        if self.is_inline() {
-            Some(&self.inline[..self.len()])
-        } else {
-            None
-        }
-    }
-
-    pub fn is_hash(&self) -> bool {
-        self.len() > BlobId::INLINE
-    }
-
-    pub fn as_hash(&self) -> Option<&[u8; BlobId::INLINE]> {
-        if self.is_hash() {
-            Some(&self.inline)
-        } else {
-            None
-        }
-    }
-
-    pub fn for_bytes(slice: impl AsRef<[u8]>) -> BlobId {
-        let slice = slice.as_ref();
-        let length = slice.len();
-        let mut inline = [0x00; BlobId::INLINE];
-        if length > BlobId::INLINE {
-            let hash = blake3::hash(slice);
-            inline.copy_from_slice(&hash.as_bytes()[..BlobId::INLINE]);
-        } else {
-            inline[..length].copy_from_slice(slice);
-        }
-        BlobId::new(length, inline)
-    }
-
-    pub fn to_serialized_bytes(&self) -> heapless::Vec<u8, 32> {
-        postcard::to_vec(&self).expect("infallible")
-    }
-
-    pub fn from_serialized_bytes(slice: impl AsRef<[u8]>) -> Result<BlobId, postcard::Error> {
-        postcard::from_bytes(slice.as_ref())
-    }
-
-    pub fn to_serialized_text(&self) -> String {
-        serde_json::to_string(&self).expect("infallible")
-    }
-
-    pub fn from_serialized_text(slice: impl AsRef<[u8]>) -> Result<BlobId, serde_json::Error> {
-        serde_json::from_slice(slice.as_ref())
-    }
-}
-
-impl Serialize for BlobId {
-    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-        return serializer.serialize_tuple(2).and_then(|mut s| {
-            s.serialize_element(&self.length)?;
-            s.serialize_element(&SerializeInlineBytes(self))?;
-            s.end()
-        });
-
-        struct SerializeInlineBytes<'a>(&'a BlobId);
-        impl Serialize for SerializeInlineBytes<'_> {
-            fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-                serializer
-                    .serialize_tuple(self.0.len().min(BlobId::INLINE))
-                    .and_then(|mut s| {
-                        for &b in self.0.inline() {
-                            s.serialize_element(&b)?;
-                        }
-                        s.end()
-                    })
-            }
-        }
-    }
-}
-
-impl<'input> Deserialize<'input> for BlobId {
-    fn deserialize<D: Deserializer<'input>>(deserializer: D) -> Result<Self, D::Error> {
-        return deserializer.deserialize_tuple(2, BlobIdVisitor);
-
-        struct BlobIdVisitor;
-        impl<'input> Visitor<'input> for BlobIdVisitor {
-            type Value = BlobId;
-
-            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-                formatter.write_str("a tuple of (u32, (u8, u8...))")
-            }
-
-            fn visit_seq<A: SeqAccess<'input>>(self, mut seq: A) -> Result<Self::Value, A::Error> {
-                let length = seq
-                    .next_element()?
-                    .ok_or_else(|| de::Error::invalid_length(2, &self))?;
-
-                macro_rules! fml {
-                    () => {
-                        fml![
-                            0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
-                            16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28
-                        ]
-                    };
-                    [$($i:expr),+] => {$(
-                    if length.min(BlobId::INLINE) == $i {
-                        let inline: BlobIdInlineDeserializer<$i> = seq
-                        .next_element()?
-                        .ok_or_else(|| de::Error::invalid_length(length, &self))?;
-                        inline.0
-                    } else
-                )+ { unreachable!() }} }
-
-                Ok(BlobId::new(length, fml!()))
-            }
-        }
-
-        struct BlobIdInlineDeserializer<const LENGTH: usize>([u8; BlobId::INLINE]);
-        impl<'input, const LENGTH: usize> Deserialize<'input> for BlobIdInlineDeserializer<LENGTH> {
-            fn deserialize<D: Deserializer<'input>>(deserializer: D) -> Result<Self, D::Error> {
-                deserializer.deserialize_tuple(LENGTH, BlobIdInlineVisitor::<LENGTH>)
-            }
-        }
-
-        struct BlobIdInlineVisitor<const LENGTH: usize>;
-        impl<'input, const LENGTH: usize> Visitor<'input> for BlobIdInlineVisitor<LENGTH> {
-            type Value = BlobIdInlineDeserializer<LENGTH>;
-
-            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-                write!(formatter, "a tuple of {LENGTH} bytes")
-            }
-
-            fn visit_seq<A: SeqAccess<'input>>(self, mut seq: A) -> Result<Self::Value, A::Error> {
-                let mut inline = [0x00; BlobId::INLINE];
-                for i in 0..LENGTH {
-                    inline[i] = seq
-                        .next_element()?
-                        .ok_or_else(|| de::Error::invalid_length(LENGTH, &self))?;
-                }
-                Ok(BlobIdInlineDeserializer(inline))
-            }
-        }
+        let len_len = self.len_len();
+        let (before, after) = self.buffer.split_at(len_len);
+        write!(
+            f,
+            "0x{}_{}",
+            hex::encode_upper(before),
+            hex::encode_upper(after)
+        )
     }
 }
 
@@ -359,7 +270,7 @@ mod test {
     #[test]
     fn test_blob_id_debug() {
         for (bytes, debug, _serialized_bytes, _serialized_text) in samples() {
-            let blob_id = BlobId::for_bytes(bytes);
+            let blob_id = BlobId::new(bytes);
             assert_eq!(format!("{blob_id:?}"), debug);
         }
     }
@@ -367,9 +278,9 @@ mod test {
     #[test]
     fn test_blob_id_serialize() {
         for (bytes, _debug, serialized_bytes, _serialized_text) in samples() {
-            let blob_id = BlobId::for_bytes(bytes);
-            let serialized = blob_id.to_serialized_bytes();
-            let deserialized = BlobId::from_serialized_bytes(&serialized).unwrap();
+            let blob_id = BlobId::new(bytes);
+            let serialized = postcard::to_allocvec(&blob_id).unwrap();
+            let deserialized = postcard::from_bytes(&serialized).unwrap();
             assert_eq!(blob_id, deserialized);
             assert_eq!(serialized_bytes, serialized);
         }
@@ -378,9 +289,9 @@ mod test {
     #[test]
     fn test_blob_id_serialize_as_text() {
         for (bytes, _debug, _serialized_bytes, serialized_text) in samples() {
-            let blob_id = BlobId::for_bytes(bytes);
-            let serialized = blob_id.to_serialized_text();
-            let deserialized = BlobId::from_serialized_text(&serialized).unwrap();
+            let blob_id = BlobId::new(bytes);
+            let serialized = serde_json::to_string(&blob_id).unwrap();
+            let deserialized: BlobId = serde_json::from_str(&serialized).unwrap();
             assert_eq!(blob_id, deserialized);
             assert_eq!(serialized_text, serialized);
         }

@@ -49,7 +49,7 @@ use crate::generic::default;
 /// A blob ID is a value of 1 to 32 bytes representing a byte string
 /// of arbitrary length.
 ///
-/// It starts with an unsigned varint indicating the size.
+/// It starts with an unsigned varint indicating the byte length.
 ///
 /// If the size is small enough for the value itself to fit into the
 /// remaining bytes, we do so. Otherwise, we the remaining bytes contain
@@ -63,16 +63,18 @@ use crate::generic::default;
 /// zero bytes.
 #[derive(Default, Clone, Copy, Eq, PartialOrd, PartialEq, Ord, Hash)]
 pub struct BlobId {
-    buffer: [u8; 32],
+    buffer: [u8; BlobId::BUFFER],
 }
 
 impl BlobId {
+    pub const BUFFER: usize = 32;
+
     pub fn new(slice: &[u8]) -> BlobId {
-        let mut buffer = [0u8; 32];
+        let mut buffer = [0u8; BlobId::BUFFER];
         let mut remaining = &mut buffer[..];
         let split = leb128::write::unsigned(&mut remaining, slice.len() as u64).unwrap();
 
-        if slice.len() < remaining.len() {
+        if slice.len() <= remaining.len() {
             remaining[..slice.len()].copy_from_slice(slice);
         } else {
             let digest = blake3::hash(slice);
@@ -87,7 +89,6 @@ impl BlobId {
     }
 
     fn len_len(&self) -> usize {
-        // ... this is always going to be 1 for inline values
         let mut view = &self.buffer[..];
         leb128::read::unsigned(&mut view).unwrap();
         self.buffer.len() - view.len()
@@ -96,28 +97,79 @@ impl BlobId {
     pub fn to_bytes(&self) -> &[u8] {
         let len = self.len();
         if len < self.buffer.len() - self.len_len() {
-            &self.buffer[..self.len_len() + len]
+            &self.buffer[..(self.len_len() + len).max(BlobId::BUFFER)]
         } else {
             &self.buffer[..]
         }
-    }
-
-    pub fn from_reader(reader: impl std::io::Read) -> std::io::Result<BlobId> {
-        todo!()
     }
 
     pub fn from_bytes(bytes: &[u8]) -> BlobId {
         let mut view = &bytes[..];
         let len = leb128::read::unsigned(&mut view).unwrap() as usize;
         let len_len = bytes.len() - view.len();
-        let mut buffer = [0u8; 32];
-        if len_len + len < 32 {
+        let mut buffer = [0u8; BlobId::BUFFER];
+        if len_len + len < BlobId::BUFFER {
             buffer[..len_len + len].copy_from_slice(bytes);
         } else {
             buffer.copy_from_slice(bytes);
         }
         BlobId { buffer }
+    }
+}
 
+impl Serialize for BlobId {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let buffer_len = 1 + BlobId::BUFFER - self.len_len();
+        let mut tuple = serializer.serialize_tuple(buffer_len)?;
+        tuple.serialize_element(&self.len())?;
+        for byte in &self.buffer[self.len_len()..(self.len_len() + self.len()).min(BlobId::BUFFER)]
+        {
+            tuple.serialize_element(byte)?;
+        }
+        tuple.end()
+    }
+}
+
+impl<'de> Deserialize<'de> for BlobId {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        struct BlobIdVisitor;
+
+        impl<'de> Visitor<'de> for BlobIdVisitor {
+            type Value = BlobId;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                formatter.write_str("a byte array of length 1 to 32")
+            }
+
+            fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
+            where
+                A: SeqAccess<'de>,
+            {
+                let length: u64 = seq
+                    .next_element()?
+                    .ok_or_else(|| de::Error::invalid_length(0, &"missing length prefix"))?;
+
+                let mut buffer = [0u8; BlobId::BUFFER];
+                let mut remaining = &mut buffer[..];
+                let split = leb128::write::unsigned(&mut remaining, length).unwrap();
+
+                for (i, b) in remaining.iter_mut().enumerate().take(length as usize) {
+                    *b = seq
+                        .next_element()?
+                        .ok_or_else(|| de::Error::invalid_length(split + i, &"body too short"))?;
+                }
+
+                Ok(BlobId { buffer })
+            }
+        }
+
+        deserializer.deserialize_tuple(BlobId::BUFFER, BlobIdVisitor)
     }
 }
 
@@ -133,7 +185,7 @@ impl Debug for BlobId {
             f,
             "0x{}_{}",
             hex::encode_upper(before),
-            hex::encode_upper(after)
+            hex::encode_upper(&after[..len.min(after.len())])
         )
     }
 }
@@ -164,105 +216,186 @@ mod test {
          culpa qui officia deserunt mollit anim id est laborum ";
     fn samples() -> Vec<(&'static [u8], &'static str, &'static [u8], &'static str)> {
         vec![
-            (&SOME_BYTES[..0], r#""""#, &[0], "[0,[]]"),
-            (&SOME_BYTES[..1], r#""\x01""#, &[1, 1], "[1,[1]]"),
+            (&SOME_BYTES[..0], "0x00", &[0], "[0]"),
+            (&SOME_BYTES[..1], "0x01_01", &[1, 1], "[1,1]"),
+            (&SOME_BYTES[..2], "0x02_0102", &[2, 1, 2], "[2,1,2]"),
             (
                 &SOME_BYTES[..16],
-                r#""\x01\x02\x04\x08\x10 @\x80\x01\x03\x07\x0f\u{1f}?\x7f\xFF""#,
+                "0x10_01020408102040800103070F1F3F7FFF",
                 &[
                     16, 1, 2, 4, 8, 16, 32, 64, 128, 1, 3, 7, 15, 31, 63, 127, 255,
                 ],
-                "[16,[1,2,4,8,16,32,64,128,1,3,7,15,31,63,127,255]]",
+                "[16,1,2,4,8,16,32,64,128,1,3,7,15,31,63,127,255]",
             ),
             (
                 &SOME_BYTES[..27],
-                r#""\x01\x02\x04\x08\x10 @\x80\x01\x03\x07\x0f\u{1f}?\x7f\xFF\xFE\xFC\xF8\xF0\xE0\xC0\x80\0\x01\x03\x07""#,
+                "0x1B_01020408102040800103070F1F3F7FFFFEFCF8F0E0C08000010307",
                 &[
                     27, 1, 2, 4, 8, 16, 32, 64, 128, 1, 3, 7, 15, 31, 63, 127, 255, 254, 252, 248,
                     240, 224, 192, 128, 0, 1, 3, 7,
                 ],
-                "[27,[1,2,4,8,16,32,64,128,1,3,7,15,31,63,127,255,254,252,248,240,224,192,128,0,1,\
-                 3,7]]",
+                "[27,1,2,4,8,16,32,64,128,1,3,7,15,31,63,127,255,254,252,248,240,224,192,128,0,1,\
+                 3,7]",
             ),
             (
                 &SOME_BYTES[..28],
-                r#""\x01\x02\x04\x08\x10 @\x80\x01\x03\x07\x0f\u{1f}?\x7f\xFF\xFE\xFC\xF8\xF0\xE0\xC0\x80\0\x01\x03\x07\x0f""#,
+                "0x1C_01020408102040800103070F1F3F7FFFFEFCF8F0E0C080000103070F",
                 &[
                     28, 1, 2, 4, 8, 16, 32, 64, 128, 1, 3, 7, 15, 31, 63, 127, 255, 254, 252, 248,
                     240, 224, 192, 128, 0, 1, 3, 7, 15,
                 ],
-                "[28,[1,2,4,8,16,32,64,128,1,3,7,15,31,63,127,255,254,252,248,240,224,192,128,0,1,\
-                 3,7,15]]",
+                "[28,1,2,4,8,16,32,64,128,1,3,7,15,31,63,127,255,254,252,248,240,224,192,128,0,1,\
+                 3,7,15]",
             ),
             (
                 &SOME_BYTES[..29],
-                "0x1DF3712C209DADDA7326F423FE6D2C45F34C3814D24174DA3B16BE52F9",
+                "0x1D_01020408102040800103070F1F3F7FFFFEFCF8F0E0C080000103070F1F",
                 &[
-                    29, 243, 113, 44, 32, 157, 173, 218, 115, 38, 244, 35, 254, 109, 44, 69, 243,
-                    76, 56, 20, 210, 65, 116, 218, 59, 22, 190, 82, 249,
+                    29, 1, 2, 4, 8, 16, 32, 64, 128, 1, 3, 7, 15, 31, 63, 127, 255, 254, 252, 248,
+                    240, 224, 192, 128, 0, 1, 3, 7, 15, 31,
                 ],
-                "[29,[243,113,44,32,157,173,218,115,38,244,35,254,109,44,69,243,76,56,20,210,65,\
-                 116,218,59,22,190,82,249]]",
+                "[29,1,2,4,8,16,32,64,128,1,3,7,15,31,63,127,255,254,252,248,240,224,192,128,0,1,\
+                 3,7,15,31]",
+            ),
+            (
+                &SOME_BYTES[..30],
+                "0x1E_01020408102040800103070F1F3F7FFFFEFCF8F0E0C080000103070F1F3F",
+                &[
+                    30, 1, 2, 4, 8, 16, 32, 64, 128, 1, 3, 7, 15, 31, 63, 127, 255, 254, 252, 248,
+                    240, 224, 192, 128, 0, 1, 3, 7, 15, 31, 63,
+                ],
+                "[30,1,2,4,8,16,32,64,128,1,3,7,15,31,63,127,255,254,252,248,240,224,192,128,0,1,\
+                 3,7,15,31,63]",
+            ),
+            (
+                &SOME_BYTES[..31],
+                "0x1F_01020408102040800103070F1F3F7FFFFEFCF8F0E0C080000103070F1F3F7F",
+                &[
+                    31, 1, 2, 4, 8, 16, 32, 64, 128, 1, 3, 7, 15, 31, 63, 127, 255, 254, 252, 248,
+                    240, 224, 192, 128, 0, 1, 3, 7, 15, 31, 63, 127,
+                ],
+                "[31,1,2,4,8,16,32,64,128,1,3,7,15,31,63,127,255,254,252,248,240,224,192,128,0,1,\
+                 3,7,15,31,63,127]",
+            ),
+            (
+                &SOME_BYTES[..32],
+                "0x20_49659399D7B5F6677FA21F90557C80448E89BFBC169147E0571C3C7A674907",
+                &[
+                    32, 73, 101, 147, 153, 215, 181, 246, 103, 127, 162, 31, 144, 85, 124, 128, 68,
+                    142, 137, 191, 188, 22, 145, 71, 224, 87, 28, 60, 122, 103, 73, 7,
+                ],
+                "[32,73,101,147,153,215,181,246,103,127,162,31,144,85,124,128,68,142,137,191,188,\
+                 22,145,71,224,87,28,60,122,103,73,7]",
+            ),
+            (
+                &SOME_BYTES[..33],
+                "0x21_D5549F25DD3D1837A51C437C61156B8B34CFD49EDF1933F5006E27FBB572E6",
+                &[
+                    33, 213, 84, 159, 37, 221, 61, 24, 55, 165, 28, 67, 124, 97, 21, 107, 139, 52,
+                    207, 212, 158, 223, 25, 51, 245, 0, 110, 39, 251, 181, 114, 230,
+                ],
+                "[33,213,84,159,37,221,61,24,55,165,28,67,124,97,21,107,139,52,207,212,158,223,25,\
+                 51,245,0,110,39,251,181,114,230]",
             ),
             (
                 &SOME_BYTES[..],
-                "0x78BABA5B349C4B20B1582859B0BAB5D209C67FAFBF744D2CEA80EA8407",
+                "0x78_BABA5B349C4B20B1582859B0BAB5D209C67FAFBF744D2CEA80EA84076A6BC3",
                 &[
                     120, 186, 186, 91, 52, 156, 75, 32, 177, 88, 40, 89, 176, 186, 181, 210, 9,
-                    198, 127, 175, 191, 116, 77, 44, 234, 128, 234, 132, 7,
+                    198, 127, 175, 191, 116, 77, 44, 234, 128, 234, 132, 7, 106, 107, 195,
                 ],
-                "[120,[186,186,91,52,156,75,32,177,88,40,89,176,186,181,210,9,198,127,175,191,116,\
-                 77,44,234,128,234,132,7]]",
+                "[120,186,186,91,52,156,75,32,177,88,40,89,176,186,181,210,9,198,127,175,191,116,\
+                 77,44,234,128,234,132,7,106,107,195]",
             ),
-            (SOME_WORDS[..0].as_bytes(), r#""""#, &[0], "[0,[]]"),
-            (SOME_WORDS[..1].as_bytes(), r#""a""#, &[1, 97], "[1,[97]]"),
+            (SOME_WORDS[..0].as_bytes(), "0x00", &[0], "[0]"),
+            (SOME_WORDS[..1].as_bytes(), "0x01_61", &[1, 97], "[1,97]"),
             (
                 SOME_WORDS[..16].as_bytes(),
-                r#""alfa bravo charl""#,
+                "0x10_616C666120627261766F20636861726C",
                 &[
                     16, 97, 108, 102, 97, 32, 98, 114, 97, 118, 111, 32, 99, 104, 97, 114, 108,
                 ],
-                "[16,[97,108,102,97,32,98,114,97,118,111,32,99,104,97,114,108]]",
+                "[16,97,108,102,97,32,98,114,97,118,111,32,99,104,97,114,108]",
             ),
             (
                 SOME_WORDS[..27].as_bytes(),
-                r#""alfa bravo charlie delta ec""#,
+                "0x1B_616C666120627261766F20636861726C69652064656C7461206563",
                 &[
                     27, 97, 108, 102, 97, 32, 98, 114, 97, 118, 111, 32, 99, 104, 97, 114, 108,
                     105, 101, 32, 100, 101, 108, 116, 97, 32, 101, 99,
                 ],
-                "[27,[97,108,102,97,32,98,114,97,118,111,32,99,104,97,114,108,105,101,32,100,101,\
-                 108,116,97,32,101,99]]",
+                "[27,97,108,102,97,32,98,114,97,118,111,32,99,104,97,114,108,105,101,32,100,101,\
+                 108,116,97,32,101,99]",
             ),
             (
                 SOME_WORDS[..28].as_bytes(),
-                r#""alfa bravo charlie delta ech""#,
+                "0x1C_616C666120627261766F20636861726C69652064656C746120656368",
                 &[
                     28, 97, 108, 102, 97, 32, 98, 114, 97, 118, 111, 32, 99, 104, 97, 114, 108,
                     105, 101, 32, 100, 101, 108, 116, 97, 32, 101, 99, 104,
                 ],
-                "[28,[97,108,102,97,32,98,114,97,118,111,32,99,104,97,114,108,105,101,32,100,101,\
-                 108,116,97,32,101,99,104]]",
+                "[28,97,108,102,97,32,98,114,97,118,111,32,99,104,97,114,108,105,101,32,100,101,\
+                 108,116,97,32,101,99,104]",
             ),
             (
                 SOME_WORDS[..29].as_bytes(),
-                "0x1D670342D28AEC4885E85E9A623B2B0A2A1380B2E66568492EED95B170",
+                "0x1D_616C666120627261766F20636861726C69652064656C7461206563686F",
                 &[
-                    29, 103, 3, 66, 210, 138, 236, 72, 133, 232, 94, 154, 98, 59, 43, 10, 42, 19,
-                    128, 178, 230, 101, 104, 73, 46, 237, 149, 177, 112,
+                    29, 97, 108, 102, 97, 32, 98, 114, 97, 118, 111, 32, 99, 104, 97, 114, 108,
+                    105, 101, 32, 100, 101, 108, 116, 97, 32, 101, 99, 104, 111,
                 ],
-                "[29,[103,3,66,210,138,236,72,133,232,94,154,98,59,43,10,42,19,128,178,230,101,\
-                 104,73,46,237,149,177,112]]",
+                "[29,97,108,102,97,32,98,114,97,118,111,32,99,104,97,114,108,105,101,32,100,101,\
+                 108,116,97,32,101,99,104,111]",
+            ),
+            (
+                SOME_WORDS[..30].as_bytes(),
+                "0x1E_616C666120627261766F20636861726C69652064656C7461206563686F20",
+                &[
+                    30, 97, 108, 102, 97, 32, 98, 114, 97, 118, 111, 32, 99, 104, 97, 114, 108,
+                    105, 101, 32, 100, 101, 108, 116, 97, 32, 101, 99, 104, 111, 32,
+                ],
+                "[30,97,108,102,97,32,98,114,97,118,111,32,99,104,97,114,108,105,101,32,100,101,\
+                 108,116,97,32,101,99,104,111,32]",
+            ),
+            (
+                SOME_WORDS[..31].as_bytes(),
+                "0x1F_616C666120627261766F20636861726C69652064656C7461206563686F2066",
+                &[
+                    31, 97, 108, 102, 97, 32, 98, 114, 97, 118, 111, 32, 99, 104, 97, 114, 108,
+                    105, 101, 32, 100, 101, 108, 116, 97, 32, 101, 99, 104, 111, 32, 102,
+                ],
+                "[31,97,108,102,97,32,98,114,97,118,111,32,99,104,97,114,108,105,101,32,100,101,\
+                 108,116,97,32,101,99,104,111,32,102]",
+            ),
+            (
+                SOME_WORDS[..32].as_bytes(),
+                "0x20_A27844C8191F52E18BEDA28DB8A6D33CB7938949E8115B937EF0AE30527715",
+                &[
+                    32, 162, 120, 68, 200, 25, 31, 82, 225, 139, 237, 162, 141, 184, 166, 211, 60,
+                    183, 147, 137, 73, 232, 17, 91, 147, 126, 240, 174, 48, 82, 119, 21,
+                ],
+                "[32,162,120,68,200,25,31,82,225,139,237,162,141,184,166,211,60,183,147,137,73,\
+                 232,17,91,147,126,240,174,48,82,119,21]",
+            ),
+            (
+                SOME_WORDS[..33].as_bytes(),
+                "0x21_97485EF44E4280EE7C6746A60C0BE09EBD80EA91E95FA1C0CA7304B1372273",
+                &[
+                    33, 151, 72, 94, 244, 78, 66, 128, 238, 124, 103, 70, 166, 12, 11, 224, 158,
+                    189, 128, 234, 145, 233, 95, 161, 192, 202, 115, 4, 177, 55, 34, 115,
+                ],
+                "[33,151,72,94,244,78,66,128,238,124,103,70,166,12,11,224,158,189,128,234,145,233,\
+                 95,161,192,202,115,4,177,55,34,115]",
             ),
             (
                 SOME_WORDS[..].as_bytes(),
-                "0x9405C1C46B79DCBFF80865BF1DEBFE5306C0CD49C01392CAD7458136FBB2",
+                "0x9405_C1C46B79DCBFF80865BF1DEBFE5306C0CD49C01392CAD7458136FBB2A99E",
                 &[
                     148, 5, 193, 196, 107, 121, 220, 191, 248, 8, 101, 191, 29, 235, 254, 83, 6,
-                    192, 205, 73, 192, 19, 146, 202, 215, 69, 129, 54, 251, 178,
+                    192, 205, 73, 192, 19, 146, 202, 215, 69, 129, 54, 251, 178, 169, 158,
                 ],
-                "[660,[193,196,107,121,220,191,248,8,101,191,29,235,254,83,6,192,205,73,192,19,\
-                 146,202,215,69,129,54,251,178]]",
+                "[148,5,193,196,107,121,220,191,248,8,101,191,29,235,254,83,6,192,205,73,192,19,\
+                 146,202,215,69,129,54,251,178,169,158]",
             ),
         ]
     }
@@ -280,9 +413,9 @@ mod test {
         for (bytes, _debug, serialized_bytes, _serialized_text) in samples() {
             let blob_id = BlobId::new(bytes);
             let serialized = postcard::to_allocvec(&blob_id).unwrap();
+            assert_eq!(serialized_bytes, serialized);
             let deserialized = postcard::from_bytes(&serialized).unwrap();
             assert_eq!(blob_id, deserialized);
-            assert_eq!(serialized_bytes, serialized);
         }
     }
 
@@ -291,9 +424,9 @@ mod test {
         for (bytes, _debug, _serialized_bytes, serialized_text) in samples() {
             let blob_id = BlobId::new(bytes);
             let serialized = serde_json::to_string(&blob_id).unwrap();
+            assert_eq!(serialized_text, serialized);
             let deserialized: BlobId = serde_json::from_str(&serialized).unwrap();
             assert_eq!(blob_id, deserialized);
-            assert_eq!(serialized_text, serialized);
         }
     }
 }

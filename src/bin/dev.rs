@@ -29,7 +29,6 @@ use serde::Deserialize;
 use serde::Deserializer;
 use serde::Serialize;
 use serde::Serializer;
-use sha1;
 use tracing::debug;
 use tracing::error;
 use tracing::info;

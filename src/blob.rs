@@ -7,7 +7,9 @@ use std::fmt::Debug;
 use std::fmt::Display;
 use std::format as f;
 use std::hash::Hasher;
+use std::ops::Deref;
 use std::str;
+use std::sync::Arc;
 
 use arrayvec::ArrayVec;
 use bstr::BStr;
@@ -45,6 +47,55 @@ use tracing_subscriber::EnvFilter;
 use typenum::U20;
 
 use crate::generic::default;
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub struct Blob {
+    bytes: Arc<[u8]>,
+    id: BlobId,
+}
+
+impl Blob {
+    pub fn new(bytes: impl Into<Arc<[u8]>>) -> Self {
+        let bytes = bytes.into();
+        let id = BlobId::new(&bytes);
+        Self { id, bytes }
+    }
+
+    pub fn id(&self) -> BlobId {
+        self.id
+    }
+
+    pub fn bytes(&self) -> &[u8] {
+        &self.bytes
+    }
+}
+
+impl<T> From<T> for Blob where T: Into<Arc<[u8]>>,
+{
+    fn from(bytes: T) -> Self {
+        Self::new(bytes)
+    }
+}
+
+impl FromIterator<u8> for Blob {
+    fn from_iter<T: IntoIterator<Item = u8>>(iter: T) -> Self {
+        Self::new(iter.into_iter().collect::<Vec<_>>())
+    }
+}
+
+impl<'a> FromIterator<&'a u8> for Blob {
+    fn from_iter<T: IntoIterator<Item = &'a u8>>(iter: T) -> Self {
+        Self::new(iter.into_iter().copied().collect::<Vec<_>>())
+    }
+}
+
+impl Deref for Blob {
+    type Target = [u8];
+
+    fn deref(&self) -> &Self::Target {
+        &self.bytes
+    }
+}
 
 /// A blob ID is a value of 1 to 32 bytes representing a byte string
 /// of arbitrary length.
@@ -122,6 +173,10 @@ impl Serialize for BlobId {
     where
         S: Serializer,
     {
+        // serializer.is_human_readable();
+        // <-- this is how we make sure both JSON and Postcard are sane
+        // use the to_string hex-like encoding, add a FromStr impl
+        // and use that for deserialization.
         let buffer_len = 1 + BlobId::BUFFER - self.len_len();
         let mut tuple = serializer.serialize_tuple(buffer_len)?;
         tuple.serialize_element(&self.len())?;

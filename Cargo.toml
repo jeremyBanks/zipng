@@ -4,6 +4,7 @@ version = "0.0.0-dev"
 edition = "2021"
 
 [dependencies]
+ambassador = "0.3.5"
 ammonia = "3.2.1"
 arrayvec = { version = "0.7.2", features = ["serde"] }
 blake3 = { version = "1.3.1", features = ["traits-preview"] }

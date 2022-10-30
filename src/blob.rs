@@ -47,11 +47,22 @@ use tracing_subscriber::EnvFilter;
 use typenum::U20;
 
 use crate::generic::default;
+use crate::generic::Ellipses;
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[derive(Clone, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize)]
 pub struct Blob {
     bytes: Arc<[u8]>,
     id: BlobId,
+}
+
+impl Debug for Blob {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Blob")
+            .field("id", &self.id())
+            .field("bytes", &Ellipses)
+            .field("len()", &self.len())
+            .finish()
+    }
 }
 
 impl Blob {
@@ -65,12 +76,18 @@ impl Blob {
         self.id
     }
 
+    pub fn len(&self) -> usize {
+        self.bytes.len()
+    }
+
     pub fn bytes(&self) -> &[u8] {
         &self.bytes
     }
 }
 
-impl<T> From<T> for Blob where T: Into<Arc<[u8]>>,
+impl<T> From<T> for Blob
+where
+    T: Into<Arc<[u8]>>,
 {
     fn from(bytes: T) -> Self {
         Self::new(bytes)
@@ -182,7 +199,7 @@ impl Serialize for BlobId {
         tuple.serialize_element(&self.len())?;
         for byte in &self.buffer[self.len_len()..(self.len_len() + self.len()).min(BlobId::BUFFER)]
         {
-            tuple.serialize_element(byte)?;
+            tuple.serialize_element(&*byte)?;
         }
         tuple.end()
     }
@@ -269,11 +286,35 @@ mod test {
          commodo consequat duis aute irure dolor in reprehenderit in voluptate velit esse cillum \
          dolore eu fugiat nulla pariatur excepteur sint occaecat cupidatat non proident sunt in \
          culpa qui officia deserunt mollit anim id est laborum ";
-    fn samples() -> Vec<(&'static [u8], &'static str, &'static [u8], &'static str)> {
+    fn samples() -> Vec<(
+        &'static [u8],
+        &'static str,
+        &'static [u8],
+        &'static str,
+        &'static str,
+    )> {
         vec![
-            (&SOME_BYTES[..0], "0x00", &[0], "[0]"),
-            (&SOME_BYTES[..1], "0x01_01", &[1, 1], "[1,1]"),
-            (&SOME_BYTES[..2], "0x02_0102", &[2, 1, 2], "[2,1,2]"),
+            (
+                &SOME_BYTES[..0],
+                "0x00",
+                &[0],
+                "[0]",
+                "Blob { id: 0x00, bytes: …, len(): 0 }",
+            ),
+            (
+                &SOME_BYTES[..1],
+                "0x01_01",
+                &[1, 1],
+                "[1,1]",
+                "Blob { id: 0x01_01, bytes: …, len(): 1 }",
+            ),
+            (
+                &SOME_BYTES[..2],
+                "0x02_0102",
+                &[2, 1, 2],
+                "[2,1,2]",
+                "Blob { id: 0x02_0102, bytes: …, len(): 2 }",
+            ),
             (
                 &SOME_BYTES[..16],
                 "0x10_01020408102040800103070F1F3F7FFF",
@@ -281,6 +322,7 @@ mod test {
                     16, 1, 2, 4, 8, 16, 32, 64, 128, 1, 3, 7, 15, 31, 63, 127, 255,
                 ],
                 "[16,1,2,4,8,16,32,64,128,1,3,7,15,31,63,127,255]",
+                "Blob { id: 0x10_01020408102040800103070F1F3F7FFF, bytes: …, len(): 16 }",
             ),
             (
                 &SOME_BYTES[..27],
@@ -291,6 +333,8 @@ mod test {
                 ],
                 "[27,1,2,4,8,16,32,64,128,1,3,7,15,31,63,127,255,254,252,248,240,224,192,128,0,1,\
                  3,7]",
+                "Blob { id: 0x1B_01020408102040800103070F1F3F7FFFFEFCF8F0E0C08000010307, bytes: \
+                 …, len(): 27 }",
             ),
             (
                 &SOME_BYTES[..28],
@@ -301,6 +345,8 @@ mod test {
                 ],
                 "[28,1,2,4,8,16,32,64,128,1,3,7,15,31,63,127,255,254,252,248,240,224,192,128,0,1,\
                  3,7,15]",
+                "Blob { id: 0x1C_01020408102040800103070F1F3F7FFFFEFCF8F0E0C080000103070F, bytes: \
+                 …, len(): 28 }",
             ),
             (
                 &SOME_BYTES[..29],
@@ -311,6 +357,8 @@ mod test {
                 ],
                 "[29,1,2,4,8,16,32,64,128,1,3,7,15,31,63,127,255,254,252,248,240,224,192,128,0,1,\
                  3,7,15,31]",
+                "Blob { id: 0x1D_01020408102040800103070F1F3F7FFFFEFCF8F0E0C080000103070F1F, \
+                 bytes: …, len(): 29 }",
             ),
             (
                 &SOME_BYTES[..30],
@@ -321,6 +369,8 @@ mod test {
                 ],
                 "[30,1,2,4,8,16,32,64,128,1,3,7,15,31,63,127,255,254,252,248,240,224,192,128,0,1,\
                  3,7,15,31,63]",
+                "Blob { id: 0x1E_01020408102040800103070F1F3F7FFFFEFCF8F0E0C080000103070F1F3F, \
+                 bytes: …, len(): 30 }",
             ),
             (
                 &SOME_BYTES[..31],
@@ -331,6 +381,8 @@ mod test {
                 ],
                 "[31,1,2,4,8,16,32,64,128,1,3,7,15,31,63,127,255,254,252,248,240,224,192,128,0,1,\
                  3,7,15,31,63,127]",
+                "Blob { id: 0x1F_01020408102040800103070F1F3F7FFFFEFCF8F0E0C080000103070F1F3F7F, \
+                 bytes: …, len(): 31 }",
             ),
             (
                 &SOME_BYTES[..32],
@@ -341,6 +393,8 @@ mod test {
                 ],
                 "[32,73,101,147,153,215,181,246,103,127,162,31,144,85,124,128,68,142,137,191,188,\
                  22,145,71,224,87,28,60,122,103,73,7]",
+                "Blob { id: 0x20_49659399D7B5F6677FA21F90557C80448E89BFBC169147E0571C3C7A674907, \
+                 bytes: …, len(): 32 }",
             ),
             (
                 &SOME_BYTES[..33],
@@ -351,6 +405,8 @@ mod test {
                 ],
                 "[33,213,84,159,37,221,61,24,55,165,28,67,124,97,21,107,139,52,207,212,158,223,25,\
                  51,245,0,110,39,251,181,114,230]",
+                "Blob { id: 0x21_D5549F25DD3D1837A51C437C61156B8B34CFD49EDF1933F5006E27FBB572E6, \
+                 bytes: …, len(): 33 }",
             ),
             (
                 &SOME_BYTES[..],
@@ -361,9 +417,17 @@ mod test {
                 ],
                 "[120,186,186,91,52,156,75,32,177,88,40,89,176,186,181,210,9,198,127,175,191,116,\
                  77,44,234,128,234,132,7,106,107,195]",
+                "Blob { id: 0x78_BABA5B349C4B20B1582859B0BAB5D209C67FAFBF744D2CEA80EA84076A6BC3, \
+                 bytes: …, len(): 120 }",
             ),
-            (SOME_WORDS[..0].as_bytes(), "0x00", &[0], "[0]"),
-            (SOME_WORDS[..1].as_bytes(), "0x01_61", &[1, 97], "[1,97]"),
+            (SOME_WORDS[..0].as_bytes(), "0x00", &[0], "[0]", ""),
+            (
+                SOME_WORDS[..1].as_bytes(),
+                "0x01_61",
+                &[1, 97],
+                "[1,97]",
+                "",
+            ),
             (
                 SOME_WORDS[..16].as_bytes(),
                 "0x10_616C666120627261766F20636861726C",
@@ -371,6 +435,7 @@ mod test {
                     16, 97, 108, 102, 97, 32, 98, 114, 97, 118, 111, 32, 99, 104, 97, 114, 108,
                 ],
                 "[16,97,108,102,97,32,98,114,97,118,111,32,99,104,97,114,108]",
+                "",
             ),
             (
                 SOME_WORDS[..27].as_bytes(),
@@ -381,6 +446,7 @@ mod test {
                 ],
                 "[27,97,108,102,97,32,98,114,97,118,111,32,99,104,97,114,108,105,101,32,100,101,\
                  108,116,97,32,101,99]",
+                "",
             ),
             (
                 SOME_WORDS[..28].as_bytes(),
@@ -391,6 +457,7 @@ mod test {
                 ],
                 "[28,97,108,102,97,32,98,114,97,118,111,32,99,104,97,114,108,105,101,32,100,101,\
                  108,116,97,32,101,99,104]",
+                "",
             ),
             (
                 SOME_WORDS[..29].as_bytes(),
@@ -401,6 +468,7 @@ mod test {
                 ],
                 "[29,97,108,102,97,32,98,114,97,118,111,32,99,104,97,114,108,105,101,32,100,101,\
                  108,116,97,32,101,99,104,111]",
+                "",
             ),
             (
                 SOME_WORDS[..30].as_bytes(),
@@ -411,6 +479,7 @@ mod test {
                 ],
                 "[30,97,108,102,97,32,98,114,97,118,111,32,99,104,97,114,108,105,101,32,100,101,\
                  108,116,97,32,101,99,104,111,32]",
+                "",
             ),
             (
                 SOME_WORDS[..31].as_bytes(),
@@ -421,6 +490,7 @@ mod test {
                 ],
                 "[31,97,108,102,97,32,98,114,97,118,111,32,99,104,97,114,108,105,101,32,100,101,\
                  108,116,97,32,101,99,104,111,32,102]",
+                "",
             ),
             (
                 SOME_WORDS[..32].as_bytes(),
@@ -431,6 +501,7 @@ mod test {
                 ],
                 "[32,162,120,68,200,25,31,82,225,139,237,162,141,184,166,211,60,183,147,137,73,\
                  232,17,91,147,126,240,174,48,82,119,21]",
+                "",
             ),
             (
                 SOME_WORDS[..33].as_bytes(),
@@ -441,6 +512,7 @@ mod test {
                 ],
                 "[33,151,72,94,244,78,66,128,238,124,103,70,166,12,11,224,158,189,128,234,145,233,\
                  95,161,192,202,115,4,177,55,34,115]",
+                "",
             ),
             (
                 SOME_WORDS[..].as_bytes(),
@@ -449,15 +521,16 @@ mod test {
                     148, 5, 193, 196, 107, 121, 220, 191, 248, 8, 101, 191, 29, 235, 254, 83, 6,
                     192, 205, 73, 192, 19, 146, 202, 215, 69, 129, 54, 251, 178, 169, 158,
                 ],
-                "[148,5,193,196,107,121,220,191,248,8,101,191,29,235,254,83,6,192,205,73,192,19,\
-                 146,202,215,69,129,54,251,178,169,158]",
+                "[660,193,196,107,121,220,191,248,8,101,191,29,235,254,83,6,192,205,73,192,19,146,\
+                 202,215,69,129,54,251,178,169,158]",
+                "",
             ),
         ]
     }
 
     #[test]
     fn test_blob_id_debug() {
-        for (bytes, debug, _serialized_bytes, _serialized_text) in samples() {
+        for (bytes, debug, ..) in samples() {
             let blob_id = BlobId::new(bytes);
             assert_eq!(format!("{blob_id:?}"), debug);
         }
@@ -465,7 +538,7 @@ mod test {
 
     #[test]
     fn test_blob_id_serialize() {
-        for (bytes, _debug, serialized_bytes, _serialized_text) in samples() {
+        for (bytes, _, serialized_bytes, ..) in samples() {
             let blob_id = BlobId::new(bytes);
             let serialized = postcard::to_allocvec(&blob_id).unwrap();
             assert_eq!(serialized_bytes, serialized);
@@ -476,12 +549,20 @@ mod test {
 
     #[test]
     fn test_blob_id_serialize_as_text() {
-        for (bytes, _debug, _serialized_bytes, serialized_text) in samples() {
+        for (bytes, _, _, serialized_text, ..) in samples() {
             let blob_id = BlobId::new(bytes);
             let serialized = serde_json::to_string(&blob_id).unwrap();
             assert_eq!(serialized_text, serialized);
             let deserialized: BlobId = serde_json::from_str(&serialized).unwrap();
             assert_eq!(blob_id, deserialized);
+        }
+    }
+
+    #[test]
+    fn test_blob_debug() {
+        for (bytes, _, _, _, blob_debug) in samples() {
+            let blob = Blob::new(bytes);
+            assert_eq!(format!("{blob:?}"), blob_debug);
         }
     }
 }

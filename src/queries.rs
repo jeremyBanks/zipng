@@ -31,6 +31,8 @@ pub mod traits {
 }
 use traits as t;
 
+use crate::blob::Blob;
+
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 #[repr(u16)]
 pub enum Request {
@@ -70,9 +72,19 @@ pub struct BlobRequest {
     id: BlobId,
 }
 
+impl t::Request for BlobRequest {
+    type Response = BlobResponse;
+
+    fn query(&self, context: &mut Context) -> Self::Response {
+        BlobResponse {
+            data: context.get_blob(self.id),
+        }
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub struct BlobResponse {
-    data: Option<Arc<[u8]>>,
+    data: Option<Blob>,
 }
 
 impl t::Response for BlobResponse {
@@ -86,10 +98,29 @@ pub struct FetchRequest {
     url: String,
 }
 
+impl t::Request for FetchRequest {
+    type Response = FetchResponse;
+
+    fn query(&self, context: &mut Context) -> Self::Response {
+        todo!()
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub struct FetchResponse {
     status: u16,
     body: Arc<[u8]>,
+}
+
+impl t::Response for FetchResponse {
+    fn max_age_seconds(&self) -> u32 {
+        match self.status {
+            200 | 301 | 308 => Self::A_WHILE,
+            302 | 303 | 307 | 400 | 405 => Self::FOR_NOW,
+            406..=599 => Self::BRIEFLY,
+            _ => Self::NO_SAVE,
+        }
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -100,11 +131,11 @@ impl Context {
         Self {}
     }
 
-    pub fn get_blob(&self, id: BlobId) -> Vec<u8> {
-        todo!()
+    pub fn get_blob(&self, id: BlobId) -> Option<Blob> {
+        None
     }
 
-    pub fn insert_blob(&mut self, data: Vec<u8>) -> BlobId {
-        todo!()
+    pub fn insert_blob(&mut self, data: impl Into<Blob>) -> BlobId {
+        data.into().id()
     }
 }

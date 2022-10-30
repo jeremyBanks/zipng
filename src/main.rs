@@ -1,5 +1,9 @@
-#![cfg_attr(debug_assertions, allow(unused))]
-#![warn(unused_crate_dependencies)]
+#![forbid(unsafe_op_in_unsafe_fn)]
+#![warn(unused_crate_dependencies, unsafe_code)]
+#![cfg_attr(
+    all(debug_assertions, any(not(test), feature = "phony")),
+    allow(unused, unused_crate_dependencies)
+)]
 
 use std::borrow::Cow;
 use std::borrow::Cow::Borrowed;

@@ -43,3 +43,6 @@ twox-hash = "1.6.3"
 typenum = "1.15.0"
 which = { version = "4.3.0", features = ["regex"] }
 windows = { version = "0.39.0", features = ["Foundation", "Foundation_Collections", "Media_Core", "Media_SpeechSynthesis", "Storage_Streams"] }
+
+[features]
+phony = []

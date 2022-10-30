@@ -1,4 +1,3 @@
-#![cfg_attr(debug_assertions, allow(unused))]
 use std::collections::HashMap;
 use std::convert::Infallible;
 use std::env;
@@ -45,17 +44,18 @@ use twox_hash::Xxh3Hash64;
 use typenum::U20;
 
 #[derive(Debug, From, AsRef, AsMut)]
-pub struct Connection {
+pub struct Storage {
     connection: rusqlite::Connection,
 }
 
 const APPLICATION_ID: u32 = 0x_F_1C_15_00;
 
-impl Connection {
+impl Storage {
     pub fn new(mut connection: rusqlite::Connection) -> Result<Self, rusqlite::Error> {
         info!("Initializing connection...");
 
         info!("Loading sqlite_zstd extension...");
+
         unsafe {
             let guard = LoadExtensionGuard::new(&connection)?;
             connection.load_extension("sqlite_zstd", None)?;
@@ -196,7 +196,7 @@ fn main() -> Result<(), eyre::Report> {
             .with(ErrorLayer::default()),
     )?;
 
-    let mut connection = Connection::open("data/test.sqlite")?;
+    let mut connection = Storage::open("data/test.sqlite")?;
 
     Ok(())
 }

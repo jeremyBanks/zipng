@@ -25,13 +25,4 @@ pub struct HttpGetResponse {
     body: Blob,
 }
 
-impl Response for HttpGetResponse {
-    fn max_age_seconds(&self) -> u32 {
-        match self.status {
-            200 | 301 | 308 => Self::A_WHILE,
-            302 | 303 | 307 | 400 | 405 => Self::FOR_NOW,
-            406..=599 => Self::BRIEFLY,
-            _ => Self::NO_SAVE,
-        }
-    }
-}
+impl Response for HttpGetResponse {}

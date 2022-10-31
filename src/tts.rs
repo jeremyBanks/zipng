@@ -1,5 +1,4 @@
 #![cfg(windows)]
-#![cfg_attr(debug_assertions, allow(unused))]
 use std::any::type_name;
 use std::any::Any;
 use std::any::TypeId;
@@ -46,9 +45,17 @@ pub async fn speak_as(
 
     let voices = Vec::from_iter(SpeechSynthesizer::AllVoices()?)
         .into_iter()
-        .map(|voice| voice.DisplayName().unwrap_or_default().to_string())
+        .map(|voice| {
+            format!(
+                "{}  {}  {}  {}",
+                voice.DisplayName().unwrap(),
+                voice.Id().unwrap(),
+                voice.Description().unwrap(),
+                voice.Language().unwrap()
+            )
+        })
         .collect::<Vec<_>>()
-        .join(", ");
+        .join("\n  ");
 
     let voice = synth.Voice().wrap()?;
     let options = synth.Options().wrap()?;
@@ -60,6 +67,11 @@ pub async fn speak_as(
     log!(
         "         Voice: {:>19}",
         voice.DisplayName().wrap()?.to_string()
+    );
+    log!("                {:>19}", voice.Id().wrap()?.to_string());
+    log!(
+        "                {:>19}",
+        voice.Language().wrap()?.to_string()
     );
     println!("Voices: {voices}");
     log!("         Pitch: {:>19.2}", options.AudioPitch().wrap()?);

@@ -96,6 +96,18 @@ where
     }
 }
 
+impl From<&Blob> for BlobId {
+    fn from(blob: &Blob) -> Self {
+        blob.id
+    }
+}
+
+impl From<Blob> for BlobId {
+    fn from(blob: Blob) -> Self {
+        blob.id
+    }
+}
+
 impl FromIterator<u8> for Blob {
     fn from_iter<T: IntoIterator<Item = u8>>(iter: T) -> Self {
         Self::new(iter.into_iter().collect::<Vec<_>>())

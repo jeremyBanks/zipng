@@ -1,3 +1,3 @@
-fn main() -> impl std::process::Termination {
-    fiction::main()
+pub fn main() -> impl std::process::Termination {
+    ::fiction::main()
 }

@@ -6,6 +6,12 @@ use super::traits::Response;
 use super::Context;
 use crate::blob::Blob;
 
+impl super::Request {
+    pub fn http_get(url: String) -> Self {
+        Self::HttpGet(HttpGetRequest { url })
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub struct HttpGetRequest {
     url: String,

@@ -10,6 +10,7 @@ use crate::blob::BlobId;
 
 mod http;
 pub mod traits;
+mod voice_samples;
 
 use derive_more::From;
 use derive_more::TryInto;
@@ -19,17 +20,21 @@ use self::http::HttpGetResponse;
 use crate::blob::Blob;
 use crate::context::Context;
 use crate::storage::Storage;
+use self::voice_samples::VoiceSamplesRequest;
+use self::voice_samples::VoiceSamplesResponse;
 
 #[derive(Debug, Serialize, Deserialize, Clone, From, TryInto)]
 #[repr(u8)]
 pub enum Request {
     HttpGet(HttpGetRequest) = 0x0F,
+    VoiceSamples(VoiceSamplesRequest) = 0x1C
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, From, TryInto)]
 #[repr(u8)]
 pub enum Response {
     HttpGet(HttpGetResponse) = 0x0F,
+    VoiceSamples(VoiceSamplesResponse) = 0x1C
 }
 
 impl traits::Request for Request {
@@ -38,6 +43,7 @@ impl traits::Request for Request {
     fn query(&self, context: &mut Context) -> Self::Response {
         match self {
             Request::HttpGet(request) => Response::HttpGet(request.query(context)),
+            Request::VoiceSamples(request) => Response::VoiceSamples(request.query(context)),
         }
     }
 }

@@ -37,6 +37,7 @@ use error_stack::ResultExt as _;
 use once_cell::sync::Lazy;
 use once_cell::sync::OnceCell;
 use regex::Regex;
+use sapi_lite::tokio::BuilderExt;
 use scraper::Html;
 use scraper::Selector;
 use serde::de::DeserializeOwned;
@@ -89,8 +90,22 @@ mod queries;
 mod throttle;
 mod tts;
 mod wrapped_error;
-#[tokio::main(flavor = "current_thread")]
-pub async fn main() -> impl std::process::Termination {
+
+pub fn main() -> impl std::process::Termination {
+    // enable_sapi below only applies to other threads,
+    // not the current thread we're using here!
+    sapi_lite::initialize().unwrap();
+    let result = tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .enable_sapi()
+        .build()
+        .unwrap()
+        .block_on(async { async_main().await });
+    sapi_lite::finalize();
+    result
+}
+
+async fn async_main() -> impl std::process::Termination {
     if cfg!(debug_assertions) {
         if env::var("RUST_LOG").is_err() {
             env::set_var("RUST_LOG", f!("warn,{}=trace", env!("CARGO_CRATE_NAME")));

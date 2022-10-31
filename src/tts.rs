@@ -20,6 +20,8 @@ use windows::Storage::Streams::IBuffer;
 
 use super::*;
 
+// Let's try to get sentence/word boundaries so we can slice them up!
+
 pub async fn speak(text: &str) -> Result<Vec<u8>, eyre::Report> {
     speak_as(text, None).await
 }

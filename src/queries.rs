@@ -17,24 +17,24 @@ use derive_more::TryInto;
 
 use self::http::HttpGetRequest;
 use self::http::HttpGetResponse;
+use self::voice_samples::VoiceSamplesRequest;
+use self::voice_samples::VoiceSamplesResponse;
 use crate::blob::Blob;
 use crate::context::Context;
 use crate::storage::Storage;
-use self::voice_samples::VoiceSamplesRequest;
-use self::voice_samples::VoiceSamplesResponse;
 
 #[derive(Debug, Serialize, Deserialize, Clone, From, TryInto)]
 #[repr(u8)]
 pub enum Request {
     HttpGet(HttpGetRequest) = 0x0F,
-    VoiceSamples(VoiceSamplesRequest) = 0x1C
+    VoiceSamples(VoiceSamplesRequest) = 0x1C,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, From, TryInto)]
 #[repr(u8)]
 pub enum Response {
     HttpGet(HttpGetResponse) = 0x0F,
-    VoiceSamples(VoiceSamplesResponse) = 0x1C
+    VoiceSamples(VoiceSamplesResponse) = 0x1C,
 }
 
 impl traits::Request for Request {

@@ -12,6 +12,7 @@ use windows::core::InParam;
 use windows::core::Interface;
 use windows::core::HSTRING;
 use windows::w;
+// use windows::Speech
 use windows::Media::SpeechSynthesis::SpeechSynthesizer;
 use windows::Media::SpeechSynthesis::VoiceInformation;
 use windows::Storage::Streams::Buffer;
@@ -30,7 +31,13 @@ pub async fn speak_as(
     text: &str,
     voice_name: impl Into<Option<&str>>,
 ) -> Result<Vec<u8>, eyre::Report> {
+    dbg(sapi_lite::tts::installed_voices(None, None));
+
+    panic!("WIP");
+
     let synth = SpeechSynthesizer::new().wrap()?;
+
+    std::thread::sleep(std::time::Duration::from_millis(2000));
 
     if let Some(voice_name) = voice_name.into() {
         let voice = SpeechSynthesizer::AllVoices()?
@@ -49,15 +56,18 @@ pub async fn speak_as(
         .into_iter()
         .map(|voice| {
             format!(
-                "{}  {}  {}  {}",
+                "\n  {}\n  {}\n  {}\n  {}",
                 voice.DisplayName().unwrap(),
                 voice.Id().unwrap(),
                 voice.Description().unwrap(),
-                voice.Language().unwrap()
+                voice.Language().unwrap(),
             )
         })
         .collect::<Vec<_>>()
-        .join("\n  ");
+        .join("\n\n  ");
+
+    log!("voices: {}", voices);
+    std::process::exit(0);
 
     let voice = synth.Voice().wrap()?;
     let options = synth.Options().wrap()?;
@@ -90,7 +100,7 @@ pub async fn speak_as(
     log!(
         "         Words: {:>19}",
         options.IncludeWordBoundaryMetadata().wrap()?.to_string()
-    );
+    ); // <--- USE THIS YO
     log!(
         "         Stops: {:>19}",
         options

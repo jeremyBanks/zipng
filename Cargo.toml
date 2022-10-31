@@ -28,6 +28,7 @@ regex = "1.6.0"
 reqwest = { version = "0.11.11", features = ["cookies", "gzip", "deflate", "multipart", "json"] }
 rusqlite = { version = "0.28.0", features = ["bundled", "functions", "serde_json", "blob", "time", "url", "vtab", "column_decltype", "series", "window", "load_extension", "backup"] }
 rusqlite_migration = "1.0.0"
+sapi-lite = { version = "0.1.1", features = ["tokio-tts", "tokio-rt"] }
 scraper = "0.13.0"
 serde = { version = "1.0.144", features = ["derive", "rc"] }
 serde_json = "1.0.85"
@@ -42,7 +43,7 @@ tracing-subscriber = { version = "0.3.15", features = [ "std", "env-filter" ] }
 twox-hash = "1.6.3"
 typenum = "1.15.0"
 which = { version = "4.3.0", features = ["regex"] }
-windows = { version = "0.39.0", features = ["Foundation", "Foundation_Collections", "Media_Core", "Media_SpeechSynthesis", "Storage_Streams"] }
+windows = { version = "0.39.0", features = ["Foundation", "Foundation_Collections", "Media_Core", "Media_SpeechSynthesis", "Storage_Streams", "Win32_Media_Speech", "Win32_Foundation", "Win32_System_Com", "Win32_System_Ole", "Win32_Media", "Win32_Media_Multimedia"] }
 
 [features]
 phony = []

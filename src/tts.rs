@@ -12,7 +12,6 @@ use windows::core::InParam;
 use windows::core::Interface;
 use windows::core::HSTRING;
 use windows::w;
-// use windows::Speech
 use windows::Media::SpeechSynthesis::SpeechSynthesizer;
 use windows::Media::SpeechSynthesis::VoiceInformation;
 use windows::Storage::Streams::Buffer;
@@ -27,21 +26,6 @@ pub async fn speak(text: &str) -> Result<Vec<u8>, eyre::Report> {
     speak_as(text, None).await
 }
 
-#[test]
-fn test_speak() {
-    sapi_lite::initialize().unwrap();
-    let synth = sapi_lite::tts::SyncSynthesizer::new().unwrap();
-    for voice in sapi_lite::tts::installed_voices(None, None).unwrap() {
-        println!("voices: {}", voice.name().unwrap().to_string_lossy());
-        let speech = sapi_lite::tts::SpeechBuilder::new()
-            .start_voice(&voice)
-            .say("Hello, world!")
-            .build();
-        synth.speak(speech, None).unwrap()
-    }
-    sapi_lite::finalize();
-    panic!();
-}
 
 pub async fn speak_as(
     text: &str,

@@ -8,42 +8,14 @@ use serde::Serialize;
 
 use crate::blob::BlobId;
 
-mod http;
-mod text_to_speech;
 pub mod traits;
 
 use derive_more::From;
 use derive_more::TryInto;
 
-use self::http::HttpGetRequest;
-use self::http::HttpGetResponse;
-use self::text_to_speech::TextToSpeechRequest;
-use self::text_to_speech::TextToSpeechResponse;
 use crate::blob::Blob;
 use crate::context::Context;
 use crate::storage::Storage;
-
-pub struct All;
-pub struct Latest;
-pub struct None;
-
-const _X: &str = "
-
-
-    Fiction {
-        title,
-        canonical_url,
-        author_name,
-        author_url,
-
-        Chapters [{
-
-        }]
-    }
-
-    We want to create an epub with associated audio files.
-
-";
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[repr(u8)]

@@ -9,7 +9,10 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use once_cell::sync::Lazy;
+use tracing::instrument;
 use which::which;
+
+use crate::generic::panic;
 
 fn tempdir() -> Result<impl AsRef<std::path::Path>, std::io::Error> {
     let dir = PathBuf::from("target").join("ffmpegging");
@@ -40,7 +43,8 @@ where
     duct::cmd(&*FFMPEG, args)
 }
 
-pub fn wavs_to_opus(wavs: Vec<Vec<u8>>) -> Result<Vec<u8>, eyre::Report> {
+#[instrument]
+pub fn wavs_to_opus(wavs: Vec<Vec<u8>>) -> Result<Vec<u8>, panic> {
     let dir = tempdir()?;
     #[cfg(debug_assertions)]
     let dir = Box::leak(Box::new(dir));

@@ -43,6 +43,8 @@ use tracing_subscriber::EnvFilter;
 use twox_hash::Xxh3Hash64;
 use typenum::U20;
 
+use crate::generic::panic;
+
 #[derive(Debug, From, AsRef, AsMut)]
 pub struct Storage {
     connection: rusqlite::Connection,
@@ -159,7 +161,7 @@ impl Storage {
                 .prepare("select max(length) from BlobStore")
                 .unwrap();
             let result = q.query_row((), |row| Ok(format!("{:?}", row.get_ref(0))));
-            dbg!(result);
+            dbg!(result?);
         }
 
         Ok(Self { connection })
@@ -172,31 +174,4 @@ impl Storage {
     pub fn open(path: &str) -> Result<Self, rusqlite::Error> {
         Self::new(rusqlite::Connection::open(path)?)
     }
-}
-
-fn main() -> Result<(), eyre::Report> {
-    if cfg!(debug_assertions) {
-        if env::var("RUST_LOG").is_err() {
-            env::set_var("RUST_LOG", f!("warn,{}=trace", env!("CARGO_CRATE_NAME")));
-        }
-    } else {
-        if env::var("RUST_LOG").is_err() {
-            env::set_var("RUST_LOG", f!("error,{}=warn", env!("CARGO_CRATE_NAME")));
-        }
-    }
-
-    color_eyre::install()?;
-
-    tracing::subscriber::set_global_default(
-        tracing_subscriber::fmt()
-            .with_env_filter(EnvFilter::from_default_env())
-            .pretty()
-            .with_span_events(FmtSpan::CLOSE)
-            .finish()
-            .with(ErrorLayer::default()),
-    )?;
-
-    let mut connection = Storage::open("data/test.sqlite")?;
-
-    Ok(())
 }

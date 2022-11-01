@@ -13,8 +13,8 @@ impl<T> Load for T where
 #[instrument(level = "trace", skip_all)]
 pub async fn load<Output: Load>(
     path: Option<&Path>,
-    fetch: impl FnOnce() -> tokio::task::JoinHandle<Result<Output, eyre::Report>>,
-) -> Result<Output, eyre::Report> {
+    fetch: impl FnOnce() -> tokio::task::JoinHandle<Result<Output, panic>>,
+) -> Result<Output, panic> {
     if let Some(path) = path {
         trace!("Loading {path:?}");
         match fs::read(path).await {
@@ -61,7 +61,7 @@ macro_rules! load {
             Some(path),
             $($move)? || tokio::spawn(async $($move)? { Ok({ $($body)* }) }),
         ).await?;
-        Ok::<_, eyre::Report>(output)
+        Ok::<_, panic>(output)
     }
 };
 
@@ -71,7 +71,7 @@ macro_rules! load {
             None,
             $($move)? || tokio::spawn(async $($move)? { Ok({ $($body)* }) }),
         ).await?;
-        Ok::<_, eyre::Report>(output)
+        Ok::<_, panic>(output)
     }
 };
 }

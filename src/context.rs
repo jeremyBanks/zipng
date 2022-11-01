@@ -1,15 +1,12 @@
-use std::error::Error;
 use std::sync::Arc;
 
-use derive_more::Deref;
-use derive_more::DerefMut;
-use derive_more::From;
 use miette::Diagnostic;
 use thiserror::Error;
 
 use crate::blob::Blob;
 use crate::blob::BlobId;
 use crate::generic::never;
+use crate::generic::panic;
 use crate::queries::Request;
 use crate::queries::Response;
 use crate::storage::Storage;
@@ -19,77 +16,51 @@ pub struct Context {
     storage: Option<Arc<Storage>>,
 }
 
-#[derive(Debug, Default, Error, Diagnostic)]
-#[error("missing required capability")]
-pub struct Incapable;
-
-#[derive(Debug, Deref, DerefMut)]
-pub struct WriteCapable<'context>(&'context mut Context);
-
-impl<'context> WriteCapable<'context> {
-    pub fn write_blob(&mut self, blob: Blob) -> Result<BlobId, impl Error> {
-        todo!()
-    }
-
-    pub fn insert_response(
-        &mut self,
-        request: Request,
-        response: Response,
-    ) -> Result<(), impl Error> {
-        todo!()
-    }
-}
-
-#[derive(Debug, Deref, DerefMut)]
-pub struct WebCapable<'context>(&'context mut Context);
-
-impl<'context> WebCapable<'context> {
-    pub fn get(&mut self, url: String) -> Result<never, never> {
-        todo!()
-    }
-}
-
-#[derive(Debug, Deref, DerefMut)]
-pub struct TextToSpeechCapable<'context>(&'context mut Context);
-
-impl<'context> TextToSpeechCapable<'context> {
-    pub fn get(&mut self, url: String) -> Result<never, never> {
-        todo!()
-    }
-}
-
 impl Context {
     pub fn new(storage: impl Into<Option<Arc<Storage>>>) -> Context {
         let storage = storage.into();
         Context { storage }
     }
 
-    pub fn write(&mut self) -> Result<WriteCapable, Incapable> {
-        if true {
-            Ok(WriteCapable(self))
-        } else {
-            Err(Incapable)
-        }
+    pub fn query(&mut self, request: Request) -> Result<Response, panic> {
+        todo!()
     }
 
-    pub fn get_blob(&self, id: BlobId) -> Option<Blob> {
-        None
+    pub fn get_blob(&self, id: impl Into<BlobId>) -> Option<Blob> {
+        todo!()
     }
 
-    fn insert_blob(&self, data: impl Into<Blob>) {}
-
-    pub fn get_responses(&self, request: Request) -> impl Iterator<Item = Response> {
-        None
+    pub fn insert_blob(&self, data: impl Into<Blob>) -> never {
+        todo!()
     }
 
-    fn insert_response(&self, request: Request, response: Response) {}
+    pub fn get_responses(&self, request: Request) -> never {
+        todo!()
+    }
+
+    pub fn insert_response(&self, request: Request, response: Response) {}
+    fn insert_response_blob(&self, request: impl Into<BlobId>, response: impl Into<BlobId>) {}
 }
-
-// wait these should just be a blobid map you idiot
 
 #[derive(Debug, Clone)]
 pub struct ResponseRecord {
     pub response: Response,
+    /// the first time a request-response pair is inserted, this is set
     pub timestamp_inserted: u32,
+    /// re-inserting the same request-response pair will update this
     pub timestamp_revalidated: u32,
 }
+
+pub trait Capabilities {
+    fn can_write(&self) -> bool {
+        true
+    }
+    fn can_use_text_to_speech(&self) -> bool {
+        true
+    }
+    fn can_use_internet(&self) -> bool {
+        true
+    }
+}
+
+impl Capabilities for &mut Context {}

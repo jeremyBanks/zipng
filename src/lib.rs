@@ -40,6 +40,7 @@ use error_stack::IntoReport as _;
 use error_stack::IntoReportCompat as _;
 use error_stack::Report as _;
 use error_stack::ResultExt as _;
+use generic::panic;
 use once_cell::sync::Lazy;
 use once_cell::sync::OnceCell;
 use regex::Regex;
@@ -97,7 +98,7 @@ mod throttle;
 mod tts;
 mod wrapped_error;
 
-pub fn main() -> impl std::process::Termination {
+pub fn main() -> Result<(), panic> {
     // enable_sapi below only applies to other threads,
     // not the current thread we're using here!
     sapi_lite::initialize().unwrap();
@@ -111,7 +112,8 @@ pub fn main() -> impl std::process::Termination {
     result
 }
 
-async fn async_main() -> impl std::process::Termination {
+#[instrument]
+async fn async_main() -> Result<(), panic> {
     if cfg!(debug_assertions) {
         if env::var("RUST_LOG").is_err() {
             env::set_var("RUST_LOG", f!("warn,{}=trace", env!("CARGO_CRATE_NAME")));
@@ -122,7 +124,8 @@ async fn async_main() -> impl std::process::Termination {
         }
     }
 
-    color_eyre::install().wrap()?;
+    miette::set_panic_hook();
+    color_eyre::install()?;
 
     tracing::subscriber::set_global_default(
         tracing_subscriber::fmt()
@@ -142,6 +145,14 @@ async fn async_main() -> impl std::process::Termination {
         // 35858, 36950, 41251, 45534, 47997, 48012, 48274, 48948, 49033, 51404, 51925, 58362,
         // 59240,
     ];
+
+    #[instrument]
+    async fn foo() -> Result<(), panic> {
+        tokio::fs::read("oi3hoigl3n2ogj2/g4/g43g4g/3/g/34/g34").await?;
+        Ok(())
+    }
+
+    foo().await?;
 
     tokio::fs::remove_file("data/spines/index.json").await.ok();
     let index = load!("data/spines/index", async move || {
@@ -173,7 +184,7 @@ async fn async_main() -> impl std::process::Termination {
         .await?,
     ])?;
 
-    Ok::<(), eyre::Report>(())
+    Ok::<(), panic>(())
 }
 
 fn digest(bytes: &[u8]) -> String {
@@ -197,7 +208,7 @@ mod web {
     }
 
     #[instrument(level = "trace", skip_all)]
-    pub async fn get(url: impl AsRef<str>) -> Result<Page, eyre::Report> {
+    pub async fn get(url: impl AsRef<str>) -> Result<Page, panic> {
         let url = url.as_ref().to_string();
         let digest = digest(url.as_bytes());
         load!("target/web/{digest}", async move || {
@@ -236,7 +247,7 @@ mod royalroad {
     static THROTTLE: Lazy<Throttle> = Lazy::new(|| throttle("RoyalRoad", 128));
 
     #[instrument(level = "trace")]
-    pub async fn spine(id: u64) -> Result<Spine, eyre::Report> {
+    pub async fn spine(id: u64) -> Result<Spine, panic> {
         let id10 = fic_id10(id);
         let spine = load!("target/spines/{id10}", async move || {
             THROTTLE.tick().await;
@@ -348,7 +359,7 @@ mod royalroad {
     }
 
     #[instrument(level = "trace")]
-    pub async fn fic(id: u64) -> Result<Fic, eyre::Report> {
+    pub async fn fic(id: u64) -> Result<Fic, panic> {
         let id10 = fic_id10(id);
 
         let fic = load!("target/fics/{id10}", async move || {
@@ -418,10 +429,7 @@ mod royalroad {
         Ok(fic)
     }
 
-    pub async fn fic_chapter(
-        spine: &Spine,
-        chapter: &SpineChapter,
-    ) -> Result<FicChapter, eyre::Report> {
+    pub async fn fic_chapter(spine: &Spine, chapter: &SpineChapter) -> Result<FicChapter, panic> {
         let spine = spine.clone();
         let chapter = chapter.clone();
         let fic_id = spine.id;

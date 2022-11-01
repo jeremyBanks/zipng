@@ -2,7 +2,13 @@
 #![warn(unused_crate_dependencies, unsafe_code)]
 #![cfg_attr(
     all(debug_assertions, any(not(test), feature = "phony")),
-    allow(unused, unused_crate_dependencies)
+    allow(
+        unused_imports,
+        dead_code,
+        unreachable_code,
+        unused_variables,
+        unused_crate_dependencies
+    )
 )]
 
 mod context;

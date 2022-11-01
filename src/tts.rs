@@ -12,6 +12,9 @@ use windows::core::InParam;
 use windows::core::Interface;
 use windows::core::HSTRING;
 use windows::w;
+use windows::Foundation::AsyncOperationCompletedHandler;
+use windows::Foundation::AsyncOperationProgressHandler;
+use windows::Foundation::AsyncOperationWithProgressCompletedHandler;
 use windows::Media::SpeechSynthesis::SpeechSynthesizer;
 use windows::Media::SpeechSynthesis::VoiceInformation;
 use windows::Storage::Streams::Buffer;
@@ -26,6 +29,97 @@ pub async fn speak(text: &str) -> Result<Vec<u8>, eyre::Report> {
     speak_as(text, None).await
 }
 
+#[test]
+fn test_word_boundaries() -> Result<(), eyre::Report> {
+    tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+        .unwrap()
+        .block_on(async {
+            let text = HSTRING::from(r#"<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="string">What the hell is even going on here?</speak>"#);
+            let synth = SpeechSynthesizer::new().unwrap();
+            let options = synth
+            .Options()
+            .unwrap();
+            options
+                .SetIncludeWordBoundaryMetadata(true)
+                .unwrap();
+
+                options    .SetIncludeSentenceBoundaryMetadata(true)
+                .unwrap();
+
+            let stream = synth
+                .SynthesizeTextToStreamAsync(&text)
+                .unwrap()
+                .await
+                .unwrap();
+            let buffer = Buffer::Create(64 * 1024 * 1024)
+                .unwrap()
+                .cast::<IBuffer>()
+                .unwrap();
+
+
+            let operation = stream
+                .CloneStream()
+                .unwrap()
+                .ReadAsync(
+                    InParam::from(Some(&buffer)),
+                    buffer.Capacity().unwrap(),
+                    Default::default(),
+                )
+                .unwrap();
+
+
+
+                operation.SetProgress(&AsyncOperationProgressHandler::new(|a, b| {
+                    println!("progress, {b}");
+                    Ok(())
+                })).unwrap();
+
+                operation.SetCompleted(&AsyncOperationWithProgressCompletedHandler::new(|a, b| {
+                    let a = a.as_ref().unwrap();
+                    let id = a.Id().unwrap();
+                    println!("Completed!, {id} {b:?}");
+                    Ok(())
+                })).unwrap();
+
+            let operation = operation
+                .await
+                .unwrap();
+
+            let content_type = stream.ContentType().unwrap();
+
+            log!("        Length: {:>18}B", buffer.Length().unwrap());
+            log!("          Type: {:>19}", content_type.to_string());
+
+            stream.Seek(0);
+
+            for m in stream.TimedMetadataTracks().unwrap() {
+                println!("metadata.id    = {:?}", m.Id().unwrap());
+                println!("metadata.kind  = {:?}", m.TrackKind().unwrap());
+                println!("metadata.label = {:?}", m.Label().unwrap());
+                println!("metadata.name  = {:?}", m.Name().unwrap());
+                for cue in m.Cues().unwrap() {
+                    println!("cue.id         = {:?}", cue.Id());
+                    println!("cue.start_time = {:?}", cue.StartTime());
+                    println!("cue.duration   = {:?}", cue.Duration());
+                }
+            }
+
+            for m in stream.Markers().unwrap() {
+                println!("marker.text = {:?}", m.Text());
+                println!("marker.time = {:?}", m.Time());
+            }
+
+            let mut bytes = vec![0u8; buffer.Length().unwrap() as usize];
+            DataReader::FromBuffer(InParam::from(Some(&buffer)))
+                .unwrap()
+                .ReadBytes(&mut bytes)
+                .unwrap();
+        });
+
+    Err(eyre::eyre!("test"))
+}
 
 pub async fn speak_as(
     text: &str,

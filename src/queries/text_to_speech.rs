@@ -12,16 +12,16 @@ use crate::blob::Blob;
 use crate::blob::BlobId;
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
-pub struct VoiceSamplesRequest;
+pub struct TextToSpeechRequest;
 
 impl super::Request {
     pub fn voice_samples() -> Self {
-        Self::VoiceSamples(VoiceSamplesRequest)
+        Self::TextToSpeech(TextToSpeechRequest)
     }
 }
 
-impl Request for VoiceSamplesRequest {
-    type Response = VoiceSamplesResponse;
+impl Request for TextToSpeechRequest {
+    type Response = TextToSpeechResponse;
 
     fn query(&self, context: &mut Context) -> Self::Response {
         // get all known TTS voices, then for each, generate a sample
@@ -29,24 +29,24 @@ impl Request for VoiceSamplesRequest {
 
         let name = "Microsoft Bob - Canadian English";
 
-        VoiceSamplesResponse {
+        TextToSpeechResponse {
             samples: BTreeMap::new(),
         }
     }
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
-pub struct VoiceSamplesResponse {
-    samples: BTreeMap<String, VoiceSamplesUtterance>,
+pub struct TextToSpeechResponse {
+    samples: BTreeMap<String, TextToSpeechUtterance>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
-pub struct VoiceSamplesUtterance {
+pub struct TextToSpeechUtterance {
     text: String,
     blob: BlobId,
 }
 
-impl Response for VoiceSamplesResponse {}
+impl Response for TextToSpeechResponse {}
 
 static SAMPLE_VOCABULARY: &str = {
     "\

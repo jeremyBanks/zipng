@@ -12,6 +12,9 @@ where
     T::default()
 }
 
+#[allow(non_camel_case_types)]
+pub type never = core::convert::Infallible;
+
 #[derive(Serialize, Deserialize, Clone, PartialEq, Eq, Hash, PartialOrd, Ord, Copy, Default)]
 pub(crate) struct Ellipses;
 

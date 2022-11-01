@@ -9,32 +9,115 @@ use serde::Serialize;
 use crate::blob::BlobId;
 
 mod http;
+mod text_to_speech;
 pub mod traits;
-mod voice_samples;
 
 use derive_more::From;
 use derive_more::TryInto;
 
 use self::http::HttpGetRequest;
 use self::http::HttpGetResponse;
-use self::voice_samples::VoiceSamplesRequest;
-use self::voice_samples::VoiceSamplesResponse;
+use self::text_to_speech::TextToSpeechRequest;
+use self::text_to_speech::TextToSpeechResponse;
 use crate::blob::Blob;
 use crate::context::Context;
 use crate::storage::Storage;
 
-#[derive(Debug, Serialize, Deserialize, Clone, From, TryInto)]
+pub struct All;
+pub struct Latest;
+pub struct None;
+
+const _X: &str = "
+
+
+    Fiction {
+        title,
+        canonical_url,
+        author_name,
+        author_url,
+
+        Chapters [{
+
+        }]
+    }
+
+    We want to create an epub with associated audio files.
+
+";
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[repr(u8)]
 pub enum Request {
-    HttpGet(HttpGetRequest) = 0x0F,
-    VoiceSamples(VoiceSamplesRequest) = 0x1C,
+    /// Converts plain text to speech as a WebM audio file.
+    TextToSpeech {
+        text: BlobId,
+        voice_name: Option<BlobId>,
+        voice_language: Option<BlobId>,
+    } = 21,
+
+    /// Returns a list of the currently supported text-to-speech voices
+    /// on this system.
+    TextToSpeechVoices = 22,
+
+    /// Concatenate multiple audio/video files into a single WebM/MKV file.
+    ConcatenateMedia { media_files: Vec<BlobId> } = 23,
+
+    /// An HTTP GET request to a URL.
+    HttpGet { url: BlobId } = 24,
+
+    /// Returns the internet-archived HTTP response for the given URL,
+    /// as close to the indicated timestamp as possible.
+    ArchiveGet { url: BlobId, timestamp: Option<u64> } = 25,
+
+    /// Returns a list of archive timestamps for a given URL.
+    ArchiveGetTimestamps { url: BlobId } = 26,
+
+    /// Returns a full audio book as a WebM audio file with chapters
+    /// markers and embedded text tracks, for a fiction on RoyalRoad.
+    RoyalRoadAudioBook { fiction_id: u64 } = 27,
+
+    /// Returns a full ePub reflowing audio ebook for a fiction on RoyalRoad.
+    /// The outer ePub zip file will not use compression.
+    RoyalRoadAudioEbook {
+        fiction_id: u64,
+        voice_name: Option<BlobId>,
+        voice_language: Option<BlobId>,
+    } = 28,
+
+    /// The full contents of a fiction from RoyalRoad.
+    RoyalRoadFiction { fiction_id: u64 } = 29,
+
+    /// The "spine" metadata for a fiction from RoyalRoad.
+    RoyalRoadFictionSpine { fiction_id: u64 } = 30,
+
+    /// The contents of a chapter from a fiction on RoyalRoad.
+    RoyalRoadFictionChapter { fiction_id: u64, chapter_id: u64 } = 31,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, From, TryInto)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[repr(u8)]
 pub enum Response {
-    HttpGet(HttpGetResponse) = 0x0F,
-    VoiceSamples(VoiceSamplesResponse) = 0x1C,
+    TextToSpeech = 21,
+
+    TextToSpeechVoices = 22,
+
+    ConcatenateMedia = 23,
+
+    HttpGet = 24,
+
+    ArchiveGet = 25,
+
+    ArchiveGetTimestamps = 26,
+
+    RoyalRoadAudioBook = 27,
+
+    RoyalRoadAudioEbook = 28,
+
+    RoyalRoadFiction = 29,
+
+    RoyalRoadFictionSpine = 30,
+
+    RoyalRoadFictionChapter = 31,
 }
 
 impl traits::Request for Request {
@@ -42,8 +125,9 @@ impl traits::Request for Request {
 
     fn query(&self, context: &mut Context) -> Self::Response {
         match self {
-            Request::HttpGet(request) => Response::HttpGet(request.query(context)),
-            Request::VoiceSamples(request) => Response::VoiceSamples(request.query(context)),
+            _ => todo!()
+            // Request::HttpGet(request) => Response::HttpGet(request.query(context)),
+            // Request::TextToSpeech(request) => Response::TextToSpeech(request.query(context)),
         }
     }
 }

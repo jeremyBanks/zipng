@@ -17,7 +17,7 @@ pub async fn speak(text: &str) -> Result<Vec<u8>, panic> {
 }
 
 pub async fn speak_as(text: &str, voice_name: impl Into<Option<&str>>) -> Result<Vec<u8>, panic> {
-    let synth = SpeechSynthesizer::new().wrap()?;
+    let synth = SpeechSynthesizer::new()?;
 
     std::thread::sleep(std::time::Duration::from_millis(2000));
 
@@ -51,77 +51,49 @@ pub async fn speak_as(text: &str, voice_name: impl Into<Option<&str>>) -> Result
     log!("voices: {}", voices);
     std::process::exit(0);
 
-    let voice = synth.Voice().wrap()?;
-    let options = synth.Options().wrap()?;
+    let voice = synth.Voice()?;
+    let options = synth.Options()?;
 
-    log!(
-        "      Language: {:>19}",
-        voice.Language().wrap()?.to_string()
-    );
-    log!(
-        "         Voice: {:>19}",
-        voice.DisplayName().wrap()?.to_string()
-    );
-    log!("                {:>19}", voice.Id().wrap()?.to_string());
-    log!(
-        "                {:>19}",
-        voice.Language().wrap()?.to_string()
-    );
+    log!("      Language: {:>19}", voice.Language()?.to_string());
+    log!("         Voice: {:>19}", voice.DisplayName()?.to_string());
+    log!("                {:>19}", voice.Id()?.to_string());
+    log!("                {:>19}", voice.Language()?.to_string());
     println!("Voices: {voices}");
-    log!("         Pitch: {:>19.2}", options.AudioPitch().wrap()?);
-    log!("        Volume: {:>19.2}", options.AudioVolume().wrap()?);
-    log!("         Speed: {:>19.2}", options.SpeakingRate().wrap()?);
-    log!(
-        "          Rest: {:>16?}",
-        options.PunctuationSilence().wrap()?.0
-    );
-    log!(
-        "           End: {:>16?}",
-        options.AppendedSilence().wrap()?.0
-    );
+    log!("         Pitch: {:>19.2}", options.AudioPitch()?);
+    log!("        Volume: {:>19.2}", options.AudioVolume()?);
+    log!("         Speed: {:>19.2}", options.SpeakingRate()?);
+    log!("          Rest: {:>16?}", options.PunctuationSilence()?.0);
+    log!("           End: {:>16?}", options.AppendedSilence()?.0);
     log!(
         "         Words: {:>19}",
-        options.IncludeWordBoundaryMetadata().wrap()?.to_string()
+        options.IncludeWordBoundaryMetadata()?.to_string()
     ); // <--- USE THIS YO
     log!(
         "         Stops: {:>19}",
-        options
-            .IncludeSentenceBoundaryMetadata()
-            .wrap()?
-            .to_string()
+        options.IncludeSentenceBoundaryMetadata()?.to_string()
     );
 
     let stream = synth
-        .SynthesizeTextToStreamAsync(&HSTRING::from(text))
-        .wrap()?
-        .await
-        .wrap()?;
+        .SynthesizeTextToStreamAsync(&HSTRING::from(text))?
+        .await?;
 
-    let buffer = Buffer::Create(64 * 1024 * 1024)
-        .wrap()?
-        .cast::<IBuffer>()
-        .wrap()?;
+    let buffer = Buffer::Create(64 * 1024 * 1024)?.cast::<IBuffer>()?;
 
     stream
         .ReadAsync(
             InParam::from(Some(&buffer)),
             buffer.Capacity().unwrap(),
             Default::default(),
-        )
-        .wrap()?
-        .await
-        .wrap()?;
+        )?
+        .await?;
 
-    let content_type = stream.ContentType().wrap()?;
+    let content_type = stream.ContentType()?;
 
-    log!("        Length: {:>18}B", buffer.Length().wrap()?);
+    log!("        Length: {:>18}B", buffer.Length()?);
     log!("          Type: {:>19}", content_type.to_string());
 
-    let mut bytes = vec![0u8; buffer.Length().wrap()? as usize];
-    DataReader::FromBuffer(InParam::from(Some(&buffer)))
-        .wrap()?
-        .ReadBytes(&mut bytes)
-        .wrap()?;
+    let mut bytes = vec![0u8; buffer.Length()? as usize];
+    DataReader::FromBuffer(InParam::from(Some(&buffer)))?.ReadBytes(&mut bytes)?;
 
     Ok(bytes)
 }

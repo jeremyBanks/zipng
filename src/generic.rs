@@ -1,4 +1,3 @@
-use std::any::Any;
 use std::fmt;
 use std::fmt::Debug;
 use std::fmt::Display;
@@ -25,7 +24,7 @@ pub enum panic {}
 #[track_caller]
 pub fn panic<Err>(error: Err) -> panic
 where
-    Err: Any + Send + Debug,
+    Err: Debug,
 {
     panic!("{error:#?}")
 }
@@ -38,7 +37,7 @@ impl Termination for panic {
 
 impl<Err> From<Err> for panic
 where
-    Err: Any + Send + Debug,
+    Err: Debug,
 {
     #[track_caller]
     fn from(error: Err) -> Self {

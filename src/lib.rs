@@ -28,6 +28,7 @@ use serde::de::DeserializeOwned;
 use serde::Deserialize;
 use serde::Serialize;
 use serde_json::json;
+use thiserror as _;
 use time::error::InvalidFormatDescription;
 use time::format_description;
 use time::PrimitiveDateTime;
@@ -52,7 +53,6 @@ use crate::load::load;
 use crate::throttle::throttle;
 use crate::throttle::Throttle;
 use crate::tts::speak_as;
-use crate::wrapped_error::DebugResultExt;
 
 mod blob;
 mod ffmpeg;
@@ -61,7 +61,6 @@ mod load;
 mod queries;
 mod throttle;
 mod tts;
-mod wrapped_error;
 
 pub fn main() -> Result<(), panic> {
     // enable_sapi below only applies to other threads,
@@ -98,8 +97,7 @@ async fn async_main() -> Result<(), panic> {
             .with_span_events(FmtSpan::CLOSE)
             .finish()
             .with(ErrorLayer::default()),
-    )
-    .wrap()?;
+    )?;
 
     // assortment of fics with varying lengths from the most popular list
     let ryl_fic_ids = [
@@ -169,15 +167,15 @@ mod web {
 
             info!("Fetching {url}");
             let request = reqwest::get(url.to_string());
-            let response = request.await.wrap()?.error_for_status()?;
+            let response = request.await?.error_for_status()?;
             let content_type =
                 if let Some(header) = response.headers().get(http::header::CONTENT_TYPE) {
-                    Some(header.to_str().wrap()?.to_string())
+                    Some(header.to_str()?.to_string())
                 } else {
                     None
                 };
             let url_final = response.url().to_string();
-            let body = response.bytes().await.wrap()?.to_vec();
+            let body = response.bytes().await?.to_vec();
             let body = String::from_utf8_lossy(&body).to_string();
             Page {
                 body,
@@ -240,17 +238,11 @@ mod royalroad {
                 )
             });
 
-            for chapter in document.select(&Selector::parse("table#chapters tbody tr").wrap()?) {
+            for chapter in document.select(&Selector::parse("table#chapters tbody tr")?) {
                 let html = chapter.html();
 
-                let chapter_link = chapter
-                    .select(&Selector::parse("a").wrap()?)
-                    .next()
-                    .unwrap();
-                let chapter_time = chapter
-                    .select(&Selector::parse("time").wrap()?)
-                    .next()
-                    .unwrap();
+                let chapter_link = chapter.select(&Selector::parse("a")?).next().unwrap();
+                let chapter_time = chapter.select(&Selector::parse("time")?).next().unwrap();
 
                 let timestamp: i64 = chapter_time
                     .value()
@@ -285,7 +277,7 @@ mod royalroad {
                     .last()
                     .unwrap()
                     .split("/");
-                let id = id_slug.next().unwrap().parse().wrap()?;
+                let id = id_slug.next().unwrap().parse()?;
 
                 chapters.insert(SpineChapter {
                     id,
@@ -396,7 +388,7 @@ mod royalroad {
             let document = Html::parse_document(html.as_ref());
 
             let html_original = document
-                .select(&Selector::parse("div.chapter-inner").wrap()?)
+                .select(&Selector::parse("div.chapter-inner")?)
                 .next()
                 .expect("missing expected div.chapter-inner in document")
                 .html();

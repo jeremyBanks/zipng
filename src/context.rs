@@ -3,7 +3,6 @@ use std::sync::Arc;
 use crate::blob::Blob;
 use crate::blob::BlobId;
 use crate::generic::never;
-use crate::generic::panic;
 use crate::queries::Request;
 use crate::queries::Response;
 use crate::storage::Storage;
@@ -19,19 +18,19 @@ impl Context {
         Context { storage }
     }
 
-    pub fn query(&mut self, request: Request) -> Result<Response, panic> {
+    pub fn query(&mut self, request: Request) -> Result<Response, never> {
         todo!()
     }
 
-    pub fn get_blob(&self, id: impl Into<BlobId>) -> Option<Blob> {
+    pub fn get_blob(&self, id: impl Into<BlobId>) -> Result<Option<Blob>, never> {
         todo!()
     }
 
-    pub fn insert_blob(&self, data: impl Into<Blob>) -> never {
+    pub fn insert_blob(&self, data: impl Into<Blob>) -> Result<BlobId, never> {
         todo!()
     }
 
-    pub fn get_responses(&self, request: Request) -> never {
+    pub fn get_responses(&self, request: Request) -> Result<never, never> {
         todo!()
     }
 
@@ -42,22 +41,6 @@ impl Context {
 #[derive(Debug, Clone)]
 pub struct ResponseRecord {
     pub response: Response,
-    /// the first time a request-response pair is inserted, this is set
-    pub timestamp_inserted: u32,
-    /// re-inserting the same request-response pair will update this
-    pub timestamp_revalidated: u32,
+    pub inserted_at: u32,
+    pub validated_at: u32,
 }
-
-pub trait Capabilities {
-    fn can_write(&self) -> bool {
-        true
-    }
-    fn can_use_text_to_speech(&self) -> bool {
-        true
-    }
-    fn can_use_internet(&self) -> bool {
-        true
-    }
-}
-
-impl Capabilities for &mut Context {}

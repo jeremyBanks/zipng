@@ -1,100 +1,121 @@
 use serde::Deserialize;
 use serde::Serialize;
 
-use crate::blob::BlobId;
+mod concatenate_bytes;
+mod concatenate_media;
+mod http_get;
+mod noop;
+mod royalroad_chapter;
+mod royalroad_fiction;
+mod royalroad_spine;
+mod text_to_speech;
+mod text_to_speech_voices;
 
-pub mod traits;
-
+use derive_more::From;
+use derive_more::TryInto;
+use paste::paste;
 use tracing::instrument;
 
 use crate::context::Context;
+use crate::generic::never;
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
-#[repr(u8)]
+macro_rules! request_and_response {
+    ($(
+        $name:ident = $tag:literal;
+    )*) => { paste! {
+
+#[derive(Debug, Serialize, Deserialize, Clone, TryInto, From)]
+#[repr(u32)]
 pub enum Request {
-    /// Converts plain text to speech as a WebM audio file.
-    TextToSpeech {
-        text: BlobId,
-        voice_name: Option<BlobId>,
-        voice_language: Option<BlobId>,
-    } = 21,
-
-    /// Returns a list of the currently supported text-to-speech voices
-    /// on this system.
-    TextToSpeechVoices = 22,
-
-    /// Concatenate multiple audio/video files into a single WebM/MKV file.
-    ConcatenateMedia { media_files: Vec<BlobId> } = 23,
-
-    /// An HTTP GET request to a URL.
-    HttpGet { url: BlobId } = 24,
-
-    /// Returns the internet-archived HTTP response for the given URL,
-    /// as close to the indicated timestamp as possible.
-    ArchiveGet { url: BlobId, timestamp: Option<u64> } = 25,
-
-    /// Returns a list of archive timestamps for a given URL.
-    ArchiveGetTimestamps { url: BlobId } = 26,
-
-    /// Returns a full audio book as a WebM audio file with chapters
-    /// markers and embedded text tracks, for a fiction on RoyalRoad.
-    RoyalRoadAudioBook { fiction_id: u64 } = 27,
-
-    /// Returns a full ePub reflowing audio ebook for a fiction on RoyalRoad.
-    /// The outer ePub zip file will not use compression.
-    RoyalRoadAudioEbook {
-        fiction_id: u64,
-        voice_name: Option<BlobId>,
-        voice_language: Option<BlobId>,
-    } = 28,
-
-    /// The full contents of a fiction from RoyalRoad.
-    RoyalRoadFiction { fiction_id: u64 } = 29,
-
-    /// The "spine" metadata for a fiction from RoyalRoad.
-    RoyalRoadFictionSpine { fiction_id: u64 } = 30,
-
-    /// The contents of a chapter from a fiction on RoyalRoad.
-    RoyalRoadFictionChapter { fiction_id: u64, chapter_id: u64 } = 31,
+    $(
+        [<$name:camel>]([<$name:snake>]::Request) = $tag,
+    )*
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
-#[repr(u8)]
+#[derive(Debug, Serialize, Deserialize, Clone, TryInto, From)]
+#[repr(u32)]
 pub enum Response {
-    TextToSpeech = 21,
-
-    TextToSpeechVoices = 22,
-
-    ConcatenateMedia = 23,
-
-    HttpGet = 24,
-
-    ArchiveGet = 25,
-
-    ArchiveGetTimestamps = 26,
-
-    RoyalRoadAudioBook = 27,
-
-    RoyalRoadAudioEbook = 28,
-
-    RoyalRoadFiction = 29,
-
-    RoyalRoadFictionSpine = 30,
-
-    RoyalRoadFictionChapter = 31,
+    $(
+        [<$name:camel>]([<$name:snake>]::Response) = $tag,
+    )*
 }
 
 impl traits::Request for Request {
     type Response = Response;
 
     #[instrument]
-    fn query(&self, context: &mut Context) -> Self::Response {
-        match self {
-            _ => todo!()
-            // Request::HttpGet(request) => Response::HttpGet(request.query(context)),
-            // Request::TextToSpeech(request) => Response::TextToSpeech(request.query(context)),
-        }
+    fn query(&self, context: &mut Context) -> Result<Self::Response, never> {
+        Ok(match self {
+            $(
+                Request::[<$name:camel>](request) => Response::[<$name:camel>](request.query(context)?),
+            )*
+        })
     }
 }
 
-impl traits::Response for Response {}
+impl traits::Response for Response {
+    type Request = Request;
+}
+
+$(
+    impl traits::Request for [<$name:snake>]::Request {
+        type Response = [<$name:snake>]::Response;
+
+        #[instrument]
+        fn query(&self, context: &mut Context) -> Result<Self::Response, never> {
+            [<$name:snake>]::query(self, context)
+        }
+    }
+
+    impl traits::Response for [<$name:snake>]::Response {
+        type Request = [<$name:snake>]::Request;
+    }
+)*
+
+} }
+}
+
+request_and_response! {
+    noop = 0;
+    concatenate_bytes = 0o004;
+    http_get = 0o010;
+    concatenate_media = 0o014;
+    text_to_speech = 0o020;
+    text_to_speech_voices = 0o024;
+    royalroad_fiction = 0o030;
+    royalroad_spine = 0o034;
+    royalroad_chapter = 0o040;
+}
+
+impl Default for Request {
+    fn default() -> Self {
+        Self::Noop(Default::default())
+    }
+}
+
+impl Default for Response {
+    fn default() -> Self {
+        Self::Noop(Default::default())
+    }
+}
+
+use std::fmt::Debug;
+
+use serde::de::DeserializeOwned;
+pub mod traits {
+    use super::*;
+
+    pub trait Request:
+        Debug + Default + Serialize + DeserializeOwned + 'static + Into<super::Request>
+    {
+        type Response: Response<Request = Self>;
+
+        fn query(&self, context: &mut Context) -> Result<Self::Response, never>;
+    }
+
+    pub trait Response:
+        Debug + Default + Serialize + DeserializeOwned + 'static + Into<super::Response>
+    {
+        type Request: Request<Response = Self>;
+    }
+}

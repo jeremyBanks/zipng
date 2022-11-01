@@ -75,6 +75,12 @@ impl From<Blob> for BlobId {
     }
 }
 
+impl From<&BlobId> for BlobId {
+    fn from(blob_id: &BlobId) -> Self {
+        *blob_id
+    }
+}
+
 impl FromIterator<u8> for Blob {
     fn from_iter<T: IntoIterator<Item = u8>>(iter: T) -> Self {
         Self::new(iter.into_iter().collect::<Vec<_>>())
@@ -91,6 +97,12 @@ impl Deref for Blob {
     type Target = [u8];
 
     fn deref(&self) -> &Self::Target {
+        &self.bytes
+    }
+}
+
+impl AsRef<[u8]> for Blob {
+    fn as_ref(&self) -> &[u8] {
         &self.bytes
     }
 }

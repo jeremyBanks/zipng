@@ -1,16 +1,12 @@
 use std::any::Any;
-use std::error::Error;
 use std::fmt;
 use std::fmt::Debug;
 use std::fmt::Display;
 use std::process::ExitCode;
 use std::process::Termination;
 
-use miette::Diagnostic;
-use miette::IntoDiagnostic;
 use serde::Deserialize;
 use serde::Serialize;
-use thiserror::Error;
 
 pub fn default<T>() -> T
 where
@@ -31,7 +27,7 @@ pub fn panic<Err>(error: Err) -> panic
 where
     Err: Any + Send + Debug,
 {
-    panic!("{error:?}")
+    panic!("{error:#?}")
 }
 
 impl Termination for panic {
@@ -46,7 +42,7 @@ where
 {
     #[track_caller]
     fn from(error: Err) -> Self {
-        panic(error)
+        panic!("{error:#?}")
     }
 }
 

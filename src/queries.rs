@@ -1,8 +1,3 @@
-use std::sync::Arc;
-
-use ambassador::delegatable_trait;
-use ambassador::Delegate;
-use serde::de::DeserializeOwned;
 use serde::Deserialize;
 use serde::Serialize;
 
@@ -10,12 +5,9 @@ use crate::blob::BlobId;
 
 pub mod traits;
 
-use derive_more::From;
-use derive_more::TryInto;
+use tracing::instrument;
 
-use crate::blob::Blob;
 use crate::context::Context;
-use crate::storage::Storage;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[repr(u8)]
@@ -95,6 +87,7 @@ pub enum Response {
 impl traits::Request for Request {
     type Response = Response;
 
+    #[instrument]
     fn query(&self, context: &mut Context) -> Self::Response {
         match self {
             _ => todo!()

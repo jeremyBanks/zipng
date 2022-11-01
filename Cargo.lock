@@ -38,18 +38,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "ambassador"
-version = "0.3.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "05b8741165d4c4a8e6e8dcf8a2d09a1b0f94d85722fb57caed8babdd421a9837"
-dependencies = [
- "itertools",
- "proc-macro2",
- "quote",
- "syn",
-]
-
-[[package]]
 name = "ammonia"
 version = "3.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -79,9 +67,6 @@ name = "arrayvec"
 version = "0.7.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8da52d66c7071e2e3fa2a1e5c6d088fec47b593032b254f5e980de8ea54454d6"
-dependencies = [
- "serde",
-]
 
 [[package]]
 name = "async-compression"
@@ -197,18 +182,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "69cce20737498f97b993470a6e536b8523f0af7892a4f928cceb1ac5e52ebe7e"
 dependencies = [
  "generic-array",
-]
-
-[[package]]
-name = "bstr"
-version = "1.0.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fca0852af221f458706eb0725c03e4ed6c46af9ac98e6a689d5e634215d594dd"
-dependencies = [
- "memchr",
- "once_cell",
- "regex-automata",
- "serde",
 ]
 
 [[package]]
@@ -529,14 +502,10 @@ dependencies = [
 name = "fiction"
 version = "0.0.0-dev"
 dependencies = [
- "ambassador",
  "ammonia",
- "arrayvec",
  "blake3",
- "bstr",
  "color-eyre",
  "derive_more",
- "digest",
  "duct",
  "error-stack",
  "eyre",
@@ -546,10 +515,8 @@ dependencies = [
  "http",
  "leb128",
  "miette",
- "once-cell-regex",
  "once_cell",
  "postcard",
- "regex",
  "reqwest",
  "rusqlite",
  "rusqlite_migration",
@@ -557,7 +524,6 @@ dependencies = [
  "scraper",
  "serde",
  "serde_json",
- "static_assertions",
  "tempfile",
  "thiserror",
  "time",
@@ -565,8 +531,6 @@ dependencies = [
  "tracing",
  "tracing-error",
  "tracing-subscriber",
- "twox-hash",
- "typenum",
  "which",
  "windows 0.39.0",
 ]
@@ -994,15 +958,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "616cde7c720bb2bb5824a224687d8f77bfd38922027f01d825cd7453be5099fb"
 
 [[package]]
-name = "itertools"
-version = "0.10.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b0fd2260e829bddf4cb6ea802289de2f86d6a7a690192fbe91b3f46e0f2c8473"
-dependencies = [
- "either",
-]
-
-[[package]]
 name = "itoa"
 version = "0.4.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1257,16 +1212,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "21158b2c33aa6d4561f1c0a6ea283ca92bc54802a93b263e910746d679a7eb53"
 dependencies = [
  "memchr",
-]
-
-[[package]]
-name = "once-cell-regex"
-version = "0.2.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b3de7e389a5043420c8f2b95ed03f3f104ad6f4c41f7d7e27298f033abc253e8"
-dependencies = [
- "once_cell",
- "regex",
 ]
 
 [[package]]
@@ -2043,12 +1988,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a8f112729512f8e442d81f95a8a7ddf2b7c6b8a1a6f509a95864142b30cab2d3"
 
 [[package]]
-name = "static_assertions"
-version = "1.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a2eb9349b6444b326872e140eb1cf5e7c522154d69e7a0ffb0fb81c06b37543f"
-
-[[package]]
 name = "string_cache"
 version = "0.8.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2399,17 +2338,6 @@ name = "try-lock"
 version = "0.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "59547bce71d9c38b83d9c0e92b6066c4253371f15005def0c30d9657f50c7642"
-
-[[package]]
-name = "twox-hash"
-version = "1.6.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "97fee6b57c6a41524a810daee9286c02d7752c4253064d0b05472833a438f675"
-dependencies = [
- "cfg-if",
- "rand 0.8.5",
- "static_assertions",
-]
 
 [[package]]
 name = "typed-arena"

@@ -1,12 +1,6 @@
-use std::convert::Infallible;
 use std::ffi::OsString;
 use std::fs;
-use std::io::Read;
-use std::io::Write;
-use std::marker::PhantomData;
-use std::path::Path;
 use std::path::PathBuf;
-use std::sync::Arc;
 
 use once_cell::sync::Lazy;
 use tracing::instrument;
@@ -16,7 +10,7 @@ use crate::generic::panic;
 
 fn tempdir() -> Result<impl AsRef<std::path::Path>, std::io::Error> {
     let dir = PathBuf::from("target").join("ffmpegging");
-    fs::create_dir_all(&dir);
+    fs::create_dir_all(&dir)?;
     tempfile::Builder::new()
         .prefix("")
         .suffix("")

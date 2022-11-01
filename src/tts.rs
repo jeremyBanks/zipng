@@ -1,22 +1,9 @@
 #![cfg(windows)]
-use std::any::type_name;
-use std::any::Any;
-use std::any::TypeId;
-use std::fmt::Debug;
-
-use tracing::instrument;
-use tracing::metadata::LevelFilter;
 use tracing::trace as log;
-use tracing_subscriber::fmt::format::FmtSpan;
 use windows::core::InParam;
 use windows::core::Interface;
 use windows::core::HSTRING;
-use windows::w;
-use windows::Foundation::AsyncOperationCompletedHandler;
-use windows::Foundation::AsyncOperationProgressHandler;
-use windows::Foundation::AsyncOperationWithProgressCompletedHandler;
 use windows::Media::SpeechSynthesis::SpeechSynthesizer;
-use windows::Media::SpeechSynthesis::VoiceInformation;
 use windows::Storage::Streams::Buffer;
 use windows::Storage::Streams::DataReader;
 use windows::Storage::Streams::IBuffer;

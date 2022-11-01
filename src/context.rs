@@ -1,8 +1,5 @@
 use std::sync::Arc;
 
-use miette::Diagnostic;
-use thiserror::Error;
-
 use crate::blob::Blob;
 use crate::blob::BlobId;
 use crate::generic::never;

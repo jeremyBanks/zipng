@@ -1,54 +1,21 @@
 #[cfg(test)]
 mod test;
 
-use std::collections::HashMap;
-use std::convert::Infallible;
-use std::env;
 use std::fmt;
 use std::fmt::Debug;
-use std::fmt::Display;
-use std::format as f;
-use std::hash::Hasher;
 use std::ops::Deref;
 use std::str;
 use std::sync::Arc;
 
-use arrayvec::ArrayVec;
-use bstr::BStr;
-use bstr::BString;
-use derive_more::AsMut;
-use derive_more::AsRef;
-use derive_more::Deref;
-use derive_more::From;
-use derive_more::Into;
-use digest::generic_array::GenericArray;
-use digest::Digest;
-use rusqlite_migration::Migrations;
-use rusqlite_migration::M;
 use serde::de;
 use serde::de::SeqAccess;
 use serde::de::Visitor;
-use serde::ser;
 use serde::ser::SerializeTuple;
 use serde::Deserialize;
 use serde::Deserializer;
 use serde::Serialize;
 use serde::Serializer;
-use tracing::debug;
-use tracing::error;
-use tracing::info;
-use tracing::instrument;
-use tracing::metadata::LevelFilter;
-use tracing::trace;
-use tracing::warn;
-use tracing_error::ErrorLayer;
-use tracing_error::SpanTrace;
-use tracing_subscriber::fmt::format::FmtSpan;
-use tracing_subscriber::layer::SubscriberExt;
-use tracing_subscriber::EnvFilter;
-use typenum::U20;
 
-use crate::generic::default;
 use crate::generic::Ellipses;
 
 #[derive(Clone, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize)]

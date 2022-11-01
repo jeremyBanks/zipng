@@ -1,49 +1,26 @@
-#![forbid(unsafe_op_in_unsafe_fn)]
-#![warn(unused_crate_dependencies, unsafe_code)]
+#![deny(unsafe_code)]
+#![warn(unused_crate_dependencies)]
 #![cfg_attr(
-    all(debug_assertions, any(not(test), feature = "phony")),
-    allow(
-        unused_imports,
-        dead_code,
-        unreachable_code,
-        unused_variables,
-        unused_crate_dependencies
-    )
+    all(debug_assertions, any(not(test), feature = "EDITOR")),
+    allow(dead_code, unreachable_code, unused_variables)
 )]
 
 mod context;
 mod storage;
 
-use std::borrow::Cow;
-use std::borrow::Cow::Borrowed;
-use std::borrow::Cow::Owned;
 use std::collections::BTreeSet;
 use std::collections::HashSet;
 use std::env;
 use std::fmt::Debug;
 use std::format as f;
-use std::hash::BuildHasher;
-use std::hash::BuildHasherDefault;
 use std::hash::Hash;
-use std::hash::Hasher;
 use std::path::Path;
-use std::pin::Pin;
 use std::sync::Arc;
 use std::time::Duration;
 
-use bstr::BStr;
-use bstr::ByteSlice;
-use bstr::ByteVec;
-use color_eyre::install;
-use error_stack::Context as _;
-use error_stack::IntoReport as _;
-use error_stack::IntoReportCompat as _;
-use error_stack::Report as _;
-use error_stack::ResultExt as _;
-use generic::panic;
+use heapless as _;
 use once_cell::sync::Lazy;
-use once_cell::sync::OnceCell;
-use regex::Regex;
+use postcard as _;
 use sapi_lite::tokio::BuilderExt;
 use scraper::Html;
 use scraper::Selector;
@@ -51,42 +28,30 @@ use serde::de::DeserializeOwned;
 use serde::Deserialize;
 use serde::Serialize;
 use serde_json::json;
-use static_assertions::assert_obj_safe;
 use time::error::InvalidFormatDescription;
 use time::format_description;
-use time::OffsetDateTime;
 use time::PrimitiveDateTime;
 use tokio::fs;
-use tokio::io::AsyncReadExt;
-use tokio::io::AsyncWriteExt;
-use tokio::join;
-use tokio::spawn;
 use tokio::sync::Mutex;
 use tokio::time::interval;
 use tokio::time::Interval;
 use tokio::time::MissedTickBehavior;
-use tokio::try_join;
 use tracing::debug;
-use tracing::error;
 use tracing::info;
 use tracing::instrument;
-use tracing::metadata::LevelFilter;
 use tracing::trace;
 use tracing::warn;
 use tracing_error::ErrorLayer;
-use tracing_error::SpanTrace;
 use tracing_subscriber::fmt::format::FmtSpan;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::EnvFilter;
-use tts::speak_as;
-use twox_hash::Xxh3Hash64;
 
 use crate::ffmpeg::wavs_to_opus;
+use crate::generic::panic;
 use crate::load::load;
-use crate::load::Load;
 use crate::throttle::throttle;
 use crate::throttle::Throttle;
-use crate::tts::speak;
+use crate::tts::speak_as;
 use crate::wrapped_error::DebugResultExt;
 
 mod blob;
@@ -114,6 +79,8 @@ pub fn main() -> Result<(), panic> {
 
 #[instrument]
 async fn async_main() -> Result<(), panic> {
+    color_eyre::install()?;
+
     if cfg!(debug_assertions) {
         if env::var("RUST_LOG").is_err() {
             env::set_var("RUST_LOG", f!("warn,{}=trace", env!("CARGO_CRATE_NAME")));
@@ -123,9 +90,6 @@ async fn async_main() -> Result<(), panic> {
             env::set_var("RUST_LOG", f!("error,{}=warn", env!("CARGO_CRATE_NAME")));
         }
     }
-
-    miette::set_panic_hook();
-    color_eyre::install()?;
 
     tracing::subscriber::set_global_default(
         tracing_subscriber::fmt()
@@ -145,14 +109,6 @@ async fn async_main() -> Result<(), panic> {
         // 35858, 36950, 41251, 45534, 47997, 48012, 48274, 48948, 49033, 51404, 51925, 58362,
         // 59240,
     ];
-
-    #[instrument]
-    async fn foo() -> Result<(), panic> {
-        tokio::fs::read("oi3hoigl3n2ogj2/g4/g43g4g/3/g/34/g34").await?;
-        Ok(())
-    }
-
-    foo().await?;
 
     tokio::fs::remove_file("data/spines/index.json").await.ok();
     let index = load!("data/spines/index", async move || {
@@ -188,10 +144,7 @@ async fn async_main() -> Result<(), panic> {
 }
 
 fn digest(bytes: &[u8]) -> String {
-    let mut hasher = <BuildHasherDefault<Xxh3Hash64>>::default().build_hasher();
-    bytes.hash(&mut hasher);
-    let digest = hasher.finish();
-    f!("x{digest:016X}")
+    blake3::hash(bytes).to_hex().to_string()
 }
 
 mod web {
@@ -237,11 +190,6 @@ mod web {
 }
 
 mod royalroad {
-    use std::io::Write;
-    use std::str::FromStr;
-
-    use once_cell_regex::regex;
-
     use super::*;
 
     static THROTTLE: Lazy<Throttle> = Lazy::new(|| throttle("RoyalRoad", 128));

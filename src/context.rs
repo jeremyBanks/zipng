@@ -5,15 +5,15 @@ use crate::blob::BlobId;
 use crate::generic::never;
 use crate::queries::Request;
 use crate::queries::Response;
-use crate::storage::Storage;
+use crate::storage::sqlite::SqliteStorage;
 
 #[derive(Debug, Default)]
 pub struct Context {
-    storage: Option<Arc<Storage>>,
+    storage: Option<Arc<SqliteStorage>>,
 }
 
 impl Context {
-    pub fn new(storage: impl Into<Option<Arc<Storage>>>) -> Context {
+    pub fn new(storage: impl Into<Option<Arc<SqliteStorage>>>) -> Context {
         let storage = storage.into();
         Context { storage }
     }

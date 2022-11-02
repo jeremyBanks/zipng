@@ -76,15 +76,15 @@ $(
 }
 
 request_and_response! {
-    noop = 0;
-    concatenate_bytes = 0o004;
-    http_get = 0o010;
-    concatenate_media = 0o014;
-    text_to_speech = 0o020;
-    text_to_speech_voices = 0o024;
-    royalroad_fiction = 0o030;
-    royalroad_spine = 0o034;
-    royalroad_chapter = 0o040;
+    noop = 0o00;
+    concatenate_bytes = 0o04;
+    http_get = 0o10;
+    concatenate_media = 0o14;
+    text_to_speech = 0o20;
+    text_to_speech_voices = 0o24;
+    royalroad_fiction = 0o30;
+    royalroad_spine = 0o34;
+    royalroad_chapter = 0o40;
 }
 
 impl Default for Request {

@@ -11,15 +11,14 @@ static SOME_BYTES: &[u8] = &[
     0xFE, 0xFC, 0xF8, 0xF0, 0xE0, 0xC0, 0x80, 0x00,
 ];
 static SOME_WORDS: &str =
-    "\
-        alfa bravo charlie delta echo foxtrot golf hotel india juliet kilo lima mike november \
-     oscar papa quebec romeo sierra tango uniform victor whiskey xray yankee zulu nada una bisso \
-     terra karte panta soxi sette okto nove stop lorem ipsum dolor sit amet consectetur \
-     adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore magna aliqua ut enim ad \
-     minim veniam quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo \
-     consequat duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu \
-     fugiat nulla pariatur excepteur sint occaecat cupidatat non proident sunt in culpa qui \
-     officia deserunt mollit anim id est laborum ";
+    "alfa bravo charlie delta echo foxtrot golf hotel india juliet kilo lima mike november oscar \
+     papa quebec romeo sierra tango uniform victor whiskey xray yankee zulu nada una bisso terra \
+     karte panta soxi sette okto nove stop lorem ipsum dolor sit amet consectetur adipiscing elit \
+     sed do eiusmod tempor incididunt ut labore et dolore magna aliqua ut enim ad minim veniam \
+     quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat duis aute \
+     irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur \
+     excepteur sint occaecat cupidatat non proident sunt in culpa qui officia deserunt mollit \
+     anim id est laborum ";
 fn samples() -> Vec<(
     &'static [u8],
     &'static str,
@@ -153,13 +152,19 @@ fn samples() -> Vec<(
             "Blob { id: 0x78_BABA5B349C4B20B1582859B0BAB5D209C67FAFBF744D2CEA80EA84076A6BC3, \
              bytes: …, len(): 120 }",
         ),
-        (SOME_WORDS[..0].as_bytes(), "0x00", &[0], "[0]", ""),
+        (
+            SOME_WORDS[..0].as_bytes(),
+            "0x00",
+            &[0],
+            "[0]",
+            "Blob { id: 0x00, bytes: …, len(): 0 }",
+        ),
         (
             SOME_WORDS[..1].as_bytes(),
             "0x01_61",
             &[1, 97],
             "[1,97]",
-            "",
+            "Blob { id: 0x01_61, bytes: …, len(): 1 }",
         ),
         (
             SOME_WORDS[..16].as_bytes(),
@@ -168,7 +173,7 @@ fn samples() -> Vec<(
                 16, 97, 108, 102, 97, 32, 98, 114, 97, 118, 111, 32, 99, 104, 97, 114, 108,
             ],
             "[16,97,108,102,97,32,98,114,97,118,111,32,99,104,97,114,108]",
-            "",
+            "Blob { id: 0x10_616C666120627261766F20636861726C, bytes: …, len(): 16 }",
         ),
         (
             SOME_WORDS[..27].as_bytes(),
@@ -179,7 +184,8 @@ fn samples() -> Vec<(
             ],
             "[27,97,108,102,97,32,98,114,97,118,111,32,99,104,97,114,108,105,101,32,100,101,108,\
              116,97,32,101,99]",
-            "",
+            "Blob { id: 0x1B_616C666120627261766F20636861726C69652064656C7461206563, bytes: …, \
+             len(): 27 }",
         ),
         (
             SOME_WORDS[..28].as_bytes(),
@@ -190,7 +196,8 @@ fn samples() -> Vec<(
             ],
             "[28,97,108,102,97,32,98,114,97,118,111,32,99,104,97,114,108,105,101,32,100,101,108,\
              116,97,32,101,99,104]",
-            "",
+            "Blob { id: 0x1C_616C666120627261766F20636861726C69652064656C746120656368, bytes: …, \
+             len(): 28 }",
         ),
         (
             SOME_WORDS[..29].as_bytes(),
@@ -201,7 +208,8 @@ fn samples() -> Vec<(
             ],
             "[29,97,108,102,97,32,98,114,97,118,111,32,99,104,97,114,108,105,101,32,100,101,108,\
              116,97,32,101,99,104,111]",
-            "",
+            "Blob { id: 0x1D_616C666120627261766F20636861726C69652064656C7461206563686F, bytes: \
+             …, len(): 29 }",
         ),
         (
             SOME_WORDS[..30].as_bytes(),
@@ -212,7 +220,8 @@ fn samples() -> Vec<(
             ],
             "[30,97,108,102,97,32,98,114,97,118,111,32,99,104,97,114,108,105,101,32,100,101,108,\
              116,97,32,101,99,104,111,32]",
-            "",
+            "Blob { id: 0x1E_616C666120627261766F20636861726C69652064656C7461206563686F20, bytes: \
+             …, len(): 30 }",
         ),
         (
             SOME_WORDS[..31].as_bytes(),
@@ -223,7 +232,8 @@ fn samples() -> Vec<(
             ],
             "[31,97,108,102,97,32,98,114,97,118,111,32,99,104,97,114,108,105,101,32,100,101,108,\
              116,97,32,101,99,104,111,32,102]",
-            "",
+            "Blob { id: 0x1F_616C666120627261766F20636861726C69652064656C7461206563686F2066, \
+             bytes: …, len(): 31 }",
         ),
         (
             SOME_WORDS[..32].as_bytes(),
@@ -234,7 +244,8 @@ fn samples() -> Vec<(
             ],
             "[32,162,120,68,200,25,31,82,225,139,237,162,141,184,166,211,60,183,147,137,73,232,17,\
              91,147,126,240,174,48,82,119,21]",
-            "",
+            "Blob { id: 0x20_A27844C8191F52E18BEDA28DB8A6D33CB7938949E8115B937EF0AE30527715, \
+             bytes: …, len(): 32 }",
         ),
         (
             SOME_WORDS[..33].as_bytes(),
@@ -245,7 +256,8 @@ fn samples() -> Vec<(
             ],
             "[33,151,72,94,244,78,66,128,238,124,103,70,166,12,11,224,158,189,128,234,145,233,95,\
              161,192,202,115,4,177,55,34,115]",
-            "",
+            "Blob { id: 0x21_97485EF44E4280EE7C6746A60C0BE09EBD80EA91E95FA1C0CA7304B1372273, \
+             bytes: …, len(): 33 }",
         ),
         (
             SOME_WORDS[..].as_bytes(),
@@ -256,7 +268,8 @@ fn samples() -> Vec<(
             ],
             "[660,193,196,107,121,220,191,248,8,101,191,29,235,254,83,6,192,205,73,192,19,146,202,\
              215,69,129,54,251,178,169,158]",
-            "",
+            "Blob { id: 0x9405_C1C46B79DCBFF80865BF1DEBFE5306C0CD49C01392CAD7458136FBB2A99E, \
+             bytes: …, len(): 660 }",
         ),
     ]
 }

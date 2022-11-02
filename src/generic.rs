@@ -7,19 +7,20 @@ use std::process::Termination;
 use serde::Deserialize;
 use serde::Serialize;
 
-pub fn default<T>() -> T
+#[allow(unused)]
+pub(crate) fn default<T>() -> T
 where
     T: Default,
 {
     T::default()
 }
 
-#[allow(non_camel_case_types)]
-pub type never = core::convert::Infallible;
+#[allow(non_camel_case_types, unused)]
+pub(crate) type never = core::convert::Infallible;
 
-#[allow(non_camel_case_types)]
+#[allow(non_camel_case_types, unused)]
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum panic {}
+pub(crate) enum panic {}
 
 #[track_caller]
 pub fn panic<Err>(error: Err) -> panic
@@ -46,6 +47,7 @@ where
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, Eq, Hash, PartialOrd, Ord, Copy, Default)]
+#[allow(unused)]
 pub(crate) struct Ellipses;
 
 impl Debug for Ellipses {

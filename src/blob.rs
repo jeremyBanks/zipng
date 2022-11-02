@@ -17,11 +17,14 @@ use serde::Serialize;
 use serde::Serializer;
 
 use crate::generic::Ellipses;
+use std::marker::PhantomData;
 
-#[derive(Clone, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize)]
-pub struct Blob {
-    bytes: Arc<[u8]>,
-    id: BlobId,
+#[derive(Clone, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize, Default)]
+pub struct Blob<Representing = ()>
+where Representing: Debug + Serialize + Deserialize<'static> + 'static {
+    bytes: Arc<Vec<u8>>,
+    // XXX: serialization should just be of the bytes
+    representing: PhantomData<&'static Representing>,
 }
 
 impl Debug for Blob {
@@ -35,14 +38,13 @@ impl Debug for Blob {
 }
 
 impl Blob {
-    pub fn new(bytes: impl Into<Arc<[u8]>>) -> Self {
+    pub fn new(bytes: impl Into<Arc<Vec<u8>>>) -> Self {
         let bytes = bytes.into();
-        let id = BlobId::new(&bytes);
-        Self { id, bytes }
+        Self { bytes, representing: PhantomData }
     }
 
     pub fn id(&self) -> BlobId {
-        self.id
+        BlobId::from_bytes(&self.bytes)
     }
 
     pub fn len(&self) -> usize {
@@ -56,7 +58,7 @@ impl Blob {
 
 impl<T> From<T> for Blob
 where
-    T: Into<Arc<[u8]>>,
+    T: Into<Arc<Vec<u8>>>,
 {
     fn from(bytes: T) -> Self {
         Self::new(bytes)
@@ -65,13 +67,13 @@ where
 
 impl From<&Blob> for BlobId {
     fn from(blob: &Blob) -> Self {
-        blob.id
+        blob.id()
     }
 }
 
 impl From<Blob> for BlobId {
     fn from(blob: Blob) -> Self {
-        blob.id
+        blob.id()
     }
 }
 
@@ -107,23 +109,10 @@ impl AsRef<[u8]> for Blob {
     }
 }
 
-/// A blob ID is a value of 1 to 32 bytes representing a byte string
-/// of arbitrary length.
-///
-/// It starts with an unsigned varint indicating the byte length.
-///
-/// If the size is small enough for the value itself to fit into the
-/// remaining bytes, we do so. Otherwise, we the remaining bytes contain
-/// as many bytes as possible from the beginning of the BLAKE3 digest of
-/// the value.
-///
-/// For serialization, since the length is up-front we only need to
-/// transmit as many bytes as neccessary for inline values. In particular,
-/// note that an empty byte string is represented by a single zero byte.
-/// If a fixed-length value is neccessary, the ID must be padded with trailing
-/// zero bytes.
 #[derive(Default, Clone, Copy, Eq, PartialOrd, PartialEq, Ord, Hash)]
-pub struct BlobId {
+pub struct BlobId<Representing = ()>
+where Representing: Debug + Serialize + Deserialize<'static> + 'static {
+    representing: PhantomData<&'static Representing>,
     buffer: [u8; BlobId::BUFFER],
 }
 
@@ -141,7 +130,7 @@ impl BlobId {
             let digest = blake3::hash(slice);
             remaining.copy_from_slice(&digest.as_bytes()[..remaining.len()]);
         }
-        BlobId { buffer }
+        BlobId { buffer, representing: PhantomData }
     }
 
     pub fn len(&self) -> usize {
@@ -174,7 +163,7 @@ impl BlobId {
         } else {
             buffer.copy_from_slice(bytes);
         }
-        BlobId { buffer }
+        BlobId { buffer, representing: PhantomData }
     }
 }
 
@@ -230,7 +219,7 @@ impl<'de> Deserialize<'de> for BlobId {
                         .ok_or_else(|| de::Error::invalid_length(split + i, &"body too short"))?;
                 }
 
-                Ok(BlobId { buffer })
+                Ok(BlobId { buffer, representing: PhantomData })
             }
         }
 

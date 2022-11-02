@@ -1,6 +1,6 @@
-use super::Storage;
 use std::sync::Arc;
 
+use super::Storage;
 
 #[derive(Debug, Clone)]
 pub struct LayeredStorage<Inner: Storage, Next: Storage> {

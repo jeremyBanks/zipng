@@ -37,10 +37,3 @@ impl Context {
     pub fn insert_response(&self, request: Request, response: Response) {}
     fn insert_response_blob(&self, request: impl Into<BlobId>, response: impl Into<BlobId>) {}
 }
-
-#[derive(Debug, Clone)]
-pub struct ResponseRecord {
-    pub response: Response,
-    pub inserted_at: u32,
-    pub validated_at: u32,
-}

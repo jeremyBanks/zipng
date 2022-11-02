@@ -49,7 +49,6 @@ use tracing_subscriber::EnvFilter;
 
 use crate::ffmpeg::wavs_to_opus;
 use crate::generic::panic;
-use crate::load::load;
 use crate::throttle::throttle;
 use crate::throttle::Throttle;
 use crate::tts::speak_as;
@@ -57,14 +56,11 @@ use crate::tts::speak_as;
 mod blob;
 mod ffmpeg;
 mod generic;
-mod load;
 mod queries;
 mod throttle;
 mod tts;
 
 pub fn main() -> Result<(), panic> {
-    // enable_sapi below only applies to other threads,
-    // not the current thread we're using here!
     sapi_lite::initialize().unwrap();
     let result = tokio::runtime::Builder::new_current_thread()
         .enable_all()
@@ -99,13 +95,8 @@ async fn async_main() -> Result<(), panic> {
             .with(ErrorLayer::default()),
     )?;
 
-    // assortment of fics with varying lengths from the most popular list
     let ryl_fic_ids = [
-        // 11313, 16984, 17173, 17644, 18489, 21220,
-        22518,
-        // 22848, 24779, 25137, 25225, 30108, 32291,
-        // 35858, 36950, 41251, 45534, 47997, 48012, 48274, 48948, 49033, 51404, 51925, 58362,
-        // 59240,
+        21220, 22518, 25137, 35858, 36950, 45534, 48948, 49033, 60396,
     ];
 
     tokio::fs::remove_file("data/spines/index.json").await.ok();

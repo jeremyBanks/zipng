@@ -1,4 +1,5 @@
 use std::sync::Arc;
+use std::sync::Mutex;
 use std::vec;
 
 use rusqlite::LoadExtensionGuard;
@@ -10,15 +11,13 @@ use tracing::instrument;
 use tracing::trace;
 
 use super::Storage;
-use std::sync::Mutex;
 
 #[derive(Debug, Clone)]
 pub struct SqliteStorage {
     connection: Arc<Mutex<rusqlite::Connection>>,
 }
 
-impl Storage for SqliteStorage {
-}
+impl Storage for SqliteStorage {}
 
 const APPLICATION_ID: u32 = 0x_F_1C_15_00;
 
@@ -127,8 +126,9 @@ impl SqliteStorage {
             "#,
         )?;
 
-        // Ok(Self { connection })
-        todo!()
+        Ok(Self {
+            connection: Arc::new(Mutex::new(connection)),
+        })
     }
 
     pub fn open_in_memory() -> Result<Self, rusqlite::Error> {

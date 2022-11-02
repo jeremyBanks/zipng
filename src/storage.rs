@@ -2,6 +2,7 @@
 
 pub mod sqlite;
 pub mod web;
+pub mod layered;
 
 use std::fmt::Debug;
 
@@ -10,7 +11,6 @@ use tracing::error;
 
 use crate::blob::Blob;
 use crate::blob::BlobId;
-use crate::queries::traits::Request;
 use crate::queries::traits::Response;
 
 #[derive(Debug, Error)]
@@ -22,7 +22,7 @@ pub enum StorageError {
     Failed,
 }
 
-pub trait Storage: Debug + Clone {
+pub trait Storage: Debug + Clone + Send {
     fn get_blob(&self, blob_id: BlobId) -> Result<Option<Blob>, StorageError> {
         Err(StorageError::Denied)
     }
@@ -39,31 +39,12 @@ pub trait Storage: Debug + Clone {
         Err(StorageError::Denied)
     }
 
-    fn get_response_ids(&mut self, request_id: BlobId) -> Result<Box<dyn 'static +  Iterator<Item=Result<ResponseIdRecord, StorageError>>>, StorageError> {
-        Err(StorageError::Denied)
-    }
-
-    fn get_responses<Req: Request>(
+    fn get_response_ids(
         &mut self,
-        request: Req,
-    ) -> Result<Box<dyn 'static + Iterator<Item=Result<ResponseRecord<Req::Response>, StorageError>>>, StorageError> {
-        let request_blob =
-            Blob::from(postcard::to_stdvec(&request).map_err(|_| StorageError::Failed)?);
-
-        let response_ids = self.get_response_ids(request_blob.id())?;
-
-        Ok(Box::new(response_ids
-            .map(move |response_id| {
-                let response_id = response_id?;
-                let response_blob = self.get_blob(response_id.blob_id)?.unwrap();
-                let response: Req::Response =
-                    postcard::from_bytes(&response_blob.as_ref()).map_err(|_| StorageError::Failed)?;
-                Ok(ResponseRecord {
-                    response,
-                    inserted_at: response_id.inserted_at,
-                    validated_at: response_id.validated_at,
-                })
-            })))
+        request_id: BlobId,
+    ) -> Result<Box<dyn Iterator<Item = Result<ResponseIdRecord, StorageError>>>, StorageError>
+    {
+        Err(StorageError::Denied)
     }
 }
 

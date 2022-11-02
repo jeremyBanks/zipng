@@ -8,6 +8,5 @@ struct WebStorage {
     pub base_url: String,
 }
 
-// impl Storage for WebStorage {
-//     type Responses = vec::IntoIter<ResponseRecord>;
-// }
+impl Storage for WebStorage {
+}

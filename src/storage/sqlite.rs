@@ -1,7 +1,7 @@
 use std::sync::Arc;
-use std::sync::RwLock;
 use std::vec;
 
+use rusqlite::LoadExtensionGuard;
 use rusqlite_migration::Migrations;
 use rusqlite_migration::M;
 use tracing::error;
@@ -9,18 +9,16 @@ use tracing::info;
 use tracing::instrument;
 use tracing::trace;
 
-use super::ResponseRecord;
 use super::Storage;
-use rusqlite::LoadExtensionGuard;
+use std::sync::Mutex;
 
 #[derive(Debug, Clone)]
 pub struct SqliteStorage {
-    connection: Arc<RwLock<rusqlite::Connection>>,
+    connection: Arc<Mutex<rusqlite::Connection>>,
 }
 
-// impl Storage for SqliteStorage {
-//     type Responses = vec::IntoIter<ResponseRecord>;
-// }
+impl Storage for SqliteStorage {
+}
 
 const APPLICATION_ID: u32 = 0x_F_1C_15_00;
 

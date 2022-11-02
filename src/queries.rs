@@ -106,7 +106,7 @@ pub mod traits {
     use super::*;
 
     pub trait Request:
-        Debug + Default + Serialize + DeserializeOwned + 'static + Into<super::Request>
+        Debug + Default + Serialize + DeserializeOwned + Send + 'static + Into<super::Request>
     {
         type Response: Response<Request = Self>;
 
@@ -114,7 +114,7 @@ pub mod traits {
     }
 
     pub trait Response:
-        Debug + Default + Serialize + DeserializeOwned + 'static + Into<super::Response>
+        Debug + Default + Serialize + DeserializeOwned + Send + 'static + Into<super::Response>
     {
         type Request: Request<Response = Self>;
     }

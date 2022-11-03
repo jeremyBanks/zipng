@@ -1,4 +1,4 @@
-use crate::Storage;
+use crate::storage::Storage;
 
 #[derive(Debug, Clone)]
 struct WebStorage {

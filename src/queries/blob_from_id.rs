@@ -3,7 +3,6 @@ use serde::Serialize;
 
 use crate::context::Context;
 use crate::generic::never;
-use crate::storage::StorageError;
 use crate::blob::BlobId;
 use crate::blob::Blob;
 

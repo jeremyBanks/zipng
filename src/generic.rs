@@ -11,14 +11,16 @@ use serde::Deserialize;
 use serde::Serialize;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+#[doc(hidden)]
 pub enum never {}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+#[doc(hidden)]
 pub enum panic {}
 
 impl<Err> From<Err> for panic
 where
-    Err: Display,
+    Err: Display + Debug,
 {
     #[track_caller]
     fn from(error: Err) -> Self {
@@ -69,6 +71,7 @@ impl Bake for never {
 }
 
 #[allow(unused)]
+#[doc(hidden)]
 pub fn default<T>() -> T
 where
     T: Default,
@@ -76,8 +79,8 @@ where
     T::default()
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq, Eq, Hash, PartialOrd, Ord, Copy, Default)]
-#[allow(unused)]
+#[derive(Clone, Copy)]
+#[doc(hidden)]
 pub struct Ellipses;
 
 impl Debug for Ellipses {

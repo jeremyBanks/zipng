@@ -41,7 +41,7 @@ pub struct Response {
 }
 
 pub fn query(request: &Request, context: &mut Context) -> Result<Response, never> {
-    Ok((|| -> Result<Response, panic> {
+    Ok((|| -> Result <Response, panic> {
         std::thread::sleep(Duration::from_secs(1));
 
         let url = &request.url;

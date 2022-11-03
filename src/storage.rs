@@ -1,5 +1,6 @@
 #![allow(unsafe_code)]
 
+mod baked;
 pub mod layered;
 pub mod sqlite;
 pub mod web;
@@ -129,13 +130,13 @@ pub trait Storage: Debug + Clone + Send {
 #[derive(Debug, Clone)]
 pub struct ResponseIdRecord {
     pub response_blob_id: BlobId,
-    pub inserted_at: u32,
-    pub validated_at: u32,
+    pub inserted_at:      u32,
+    pub validated_at:     u32,
 }
 
 #[derive(Debug, Clone)]
 pub struct ResponseRecord<Res: Response> {
-    pub response: Res,
-    pub inserted_at: u32,
+    pub response:     Res,
+    pub inserted_at:  u32,
     pub validated_at: u32,
 }

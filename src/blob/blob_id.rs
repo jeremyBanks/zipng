@@ -1,6 +1,6 @@
-
 use std::fmt;
 use std::fmt::Debug;
+use std::marker::PhantomData;
 use std::ops::Deref;
 
 use serde::de;
@@ -12,15 +12,15 @@ use serde::Deserializer;
 use serde::Serialize;
 use serde::Serializer;
 
-use std::marker::PhantomData;
 use crate::blob::Blob;
-
 
 #[derive(Default, Clone, Copy, Eq, PartialOrd, PartialEq, Ord, Hash)]
 pub struct BlobId<Representing = ()>
-where Representing: Debug + Serialize + Deserialize<'static> + 'static {
+where
+    Representing: Debug + Serialize + Deserialize<'static> + 'static,
+{
     representing: PhantomData<&'static Representing>,
-    buffer: [u8; BlobId::BUFFER],
+    buffer:       [u8; BlobId::BUFFER],
 }
 
 impl BlobId {
@@ -37,7 +37,10 @@ impl BlobId {
             let digest = blake3::hash(slice);
             remaining.copy_from_slice(&digest.as_bytes()[..remaining.len()]);
         }
-        BlobId { buffer, representing: PhantomData }
+        BlobId {
+            buffer,
+            representing: PhantomData,
+        }
     }
 
     pub fn len(&self) -> usize {
@@ -70,7 +73,10 @@ impl BlobId {
         } else {
             buffer.copy_from_slice(bytes);
         }
-        BlobId { buffer, representing: PhantomData }
+        BlobId {
+            buffer,
+            representing: PhantomData,
+        }
     }
 }
 
@@ -117,7 +123,6 @@ impl AsRef<[u8]> for Blob {
         &self.bytes
     }
 }
-
 
 impl Serialize for BlobId {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
@@ -171,7 +176,10 @@ impl<'de> Deserialize<'de> for BlobId {
                         .ok_or_else(|| de::Error::invalid_length(split + i, &"body too short"))?;
                 }
 
-                Ok(BlobId { buffer, representing: PhantomData })
+                Ok(BlobId {
+                    buffer,
+                    representing: PhantomData,
+                })
             }
         }
 

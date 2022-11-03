@@ -7,7 +7,7 @@ pub struct Throttle(Arc<Impl>);
 
 #[derive(Debug)]
 struct Impl {
-    name: &'static str,
+    name:     &'static str,
     interval: Mutex<Interval>,
 }
 

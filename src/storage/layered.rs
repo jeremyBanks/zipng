@@ -5,7 +5,7 @@ use super::Storage;
 #[derive(Debug, Clone)]
 pub struct LayeredStorage<Inner: Storage, Next: Storage> {
     inner: Arc<Inner>,
-    next: Arc<Next>,
+    next:  Arc<Next>,
 }
 
 // Configurable!

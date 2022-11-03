@@ -5,6 +5,7 @@ use crate::context::Context;
 use crate::storage::StorageError;
 use crate::blob::BlobId;
 use crate::generic::never;
+use crate::generic::panic;
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct Request {
@@ -16,6 +17,6 @@ pub struct Response {
     value: BlobId
 }
 
-pub fn query(request: &Request, context: &mut Context) -> Result<Response, never> {
+pub fn query(request: &Request, context: &mut Context) -> Result<Response, panic> {
     todo!()
 }

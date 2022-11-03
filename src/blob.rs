@@ -1,30 +1,32 @@
+mod blob_id;
 #[cfg(test)]
 mod test;
-mod blob_id;
-
-pub use self::blob_id::BlobId;
 
 use std::fmt;
 use std::fmt::Debug;
 use std::sync::Arc;
 
+use databake::Bake;
+use once_cell::sync::OnceCell;
 use serde::Deserialize;
 use serde::Serialize;
 
+pub use self::blob_id::BlobId;
+use crate::generic::never;
 use crate::generic::Ellipses;
-use once_cell::sync::OnceCell;
-use databake::Bake;
 
 #[derive(Clone, Bake, Serialize, Deserialize, Default)]
 #[databake(path = fiction)]
 #[serde(transparent)]
-pub struct Blob<Representing = ()>
-where Representing: Debug + Serialize + Deserialize<'static> + 'static {
-    bytes: Arc<serde_bytes::ByteBuf>,
+pub struct Blob<Representing = never>
+where
+    Representing: Debug + Serialize + Deserialize<'static> + 'static,
+{
+    bytes:       Arc<serde_bytes::ByteBuf>,
     #[serde(skip)]
     represented: OnceCell<Arc<Representing>>,
     #[serde(skip)]
-    blob_id: OnceCell<BlobId<Representing>>,
+    blob_id:     OnceCell<BlobId<Representing>>,
 }
 
 impl From<Vec<u8>> for Blob {
@@ -47,20 +49,24 @@ impl Debug for Blob {
 }
 
 impl<Representing> From<Representing> for Blob<Representing>
-where Representing: Debug + Serialize + Deserialize<'static> + 'static {
+where
+    Representing: Debug + Serialize + Deserialize<'static> + 'static,
+{
     fn from(represented: Representing) -> Self {
         Self::new(postcard::to_stdvec(&represented).unwrap())
     }
 }
 
 impl<Representing> Blob<Representing>
-where Representing: Debug + Serialize + Deserialize<'static> + 'static {
+where
+    Representing: Debug + Serialize + Deserialize<'static> + 'static,
+{
     pub fn new(bytes: impl AsRef<[u8]>) -> Self {
         Self {
-            bytes: Arc::new(serde_bytes::ByteBuf::from(bytes.as_ref())),
-            blob_id: OnceCell::new(),
+            bytes:       Arc::new(serde_bytes::ByteBuf::from(bytes.as_ref())),
+            blob_id:     OnceCell::new(),
             represented: OnceCell::new(),
-         }
+        }
     }
 
     pub fn id(&self) -> BlobId {

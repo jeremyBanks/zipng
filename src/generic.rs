@@ -16,11 +16,13 @@ where
 }
 
 #[allow(non_camel_case_types, unused)]
-pub(crate) type never = core::convert::Infallible;
+#[doc(hidden)]
+pub type never = core::convert::Infallible;
 
 #[allow(non_camel_case_types, unused)]
+#[doc(hidden)]
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub(crate) enum panic {}
+pub enum panic {}
 
 #[track_caller]
 pub fn panic<Err>(error: Err) -> panic

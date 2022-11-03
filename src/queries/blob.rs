@@ -16,6 +16,6 @@ pub struct Request {
 #[serde(transparent)]
 pub struct Response(Blob);
 
-pub fn query(request: &Request, context: &mut Context) -> Result<Response, StorageError> {
-    Err(StorageError::Unsupported)
+pub fn query(request: &Request, context: &mut Context) -> Result<Response, never> {
+    todo!()
 }

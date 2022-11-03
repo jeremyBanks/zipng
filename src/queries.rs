@@ -92,13 +92,13 @@ request_and_response! {}
 
 impl Default for Request {
     fn default() -> Self {
-        Self::Noop(Default::default())
+        Self::Blob(Default::default())
     }
 }
 
 impl Default for Response {
     fn default() -> Self {
-        Self::Noop(Default::default())
+        Self::Blob(Default::default())
     }
 }
 

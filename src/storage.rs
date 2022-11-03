@@ -89,6 +89,8 @@ pub trait Storage: Debug + Clone + Send {
         }
     }
 
+    // XXX: move these to context!
+    // storage is internal and it can be simple and dumb.
     fn get_responses_where<Request: crate::queries::traits::Request>(
         &self,
         request: &Request,

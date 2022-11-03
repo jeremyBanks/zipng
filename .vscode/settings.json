@@ -1,3 +1,4 @@
 {
-  "window.title": "🦀 ${activeEditorShort} ${dirty}"
+  "window.title": "🦀 ${activeEditorShort} ${dirty}",
+  "rust-analyzer.checkOnSave.command": "clippy"
 }

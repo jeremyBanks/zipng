@@ -31,8 +31,8 @@ use serde_json::json;
 use thiserror as _;
 use time::error::InvalidFormatDescription;
 use time::format_description;
-use time::PrimitiveDateTime;
-use tokio::fs;
+
+
 use tokio::sync::Mutex;
 use tokio::time::interval;
 use tokio::time::Interval;
@@ -60,6 +60,13 @@ mod queries;
 mod throttle;
 mod tts;
 
+#[deprecated]
+macro_rules! load {
+    {$($tt:tt)*} => {
+        {todo!()}
+    }
+}
+
 pub fn main() -> Result<(), panic> {
     sapi_lite::initialize().unwrap();
     let result = tokio::runtime::Builder::new_current_thread()
@@ -80,10 +87,8 @@ async fn async_main() -> Result<(), panic> {
         if env::var("RUST_LOG").is_err() {
             env::set_var("RUST_LOG", f!("warn,{}=trace", env!("CARGO_CRATE_NAME")));
         }
-    } else {
-        if env::var("RUST_LOG").is_err() {
-            env::set_var("RUST_LOG", f!("error,{}=warn", env!("CARGO_CRATE_NAME")));
-        }
+    } else if env::var("RUST_LOG").is_err() {
+        env::set_var("RUST_LOG", f!("error,{}=warn", env!("CARGO_CRATE_NAME")));
     }
 
     tracing::subscriber::set_global_default(
@@ -100,34 +105,34 @@ async fn async_main() -> Result<(), panic> {
     ];
 
     tokio::fs::remove_file("data/spines/index.json").await.ok();
-    let index = load!("data/spines/index", async move || {
-        futures::future::join_all(ryl_fic_ids.map(royalroad::fic))
-            .await
-            .into_iter()
-            .collect::<Result<Vec<_>, _>>()?
-            .into_iter()
-            .map(
-                |royalroad::Fic {
-                     ref id10,
-                     ref title,
-                     ..
-                 }| json! {{ id10: id10, title: title }},
-            )
-            .collect::<Vec<_>>()
-    })?;
+    // let index = load!("data/spines/index", async move || {
+    //     futures::future::join_all(ryl_fic_ids.map(royalroad::fic))
+    //         .await
+    //         .into_iter()
+    //         .collect::<Result<Vec<_>, _>>()?
+    //         .into_iter()
+    //         .map(
+    //             |royalroad::Fic {
+    //                  ref id10,
+    //                  ref title,
+    //                  ..
+    //              }| json! {{ id10: id10, title: title }},
+    //         )
+    //         .collect::<Vec<_>>()
+    // })?;
 
-    let speech = wavs_to_opus(vec![
-        speak_as(
-            "Chrysalis, by Rhino Z... Chapter 85: The Egg and the Serpent",
-            "Microsoft Zira",
-        )
-        .await?,
-        speak_as(
-            "hello, world! said the egg. and that was the end.",
-            "Microsoft Richard",
-        )
-        .await?,
-    ])?;
+    // let speech = wavs_to_opus(vec![
+    //     speak_as(
+    //         "Chrysalis, by Rhino Z... Chapter 85: The Egg and the Serpent",
+    //         "Microsoft Zira",
+    //     )
+    //     .await?,
+    //     speak_as(
+    //         "hello, world! said the egg. and that was the end.",
+    //         "Microsoft Richard",
+    //     )
+    //     .await?,
+    // ])?;
 
     Ok::<(), panic>(())
 }
@@ -284,7 +289,7 @@ mod royalroad {
                 title,
                 chapters,
             }
-        })?;
+        });
 
         Ok(spine)
     }
@@ -314,48 +319,48 @@ mod royalroad {
             info!(chapter_count = fic.chapters.len());
 
             fic
-        })?;
-
-        let ff = fic.clone();
-        let _rich: Result<RichSpine, _> = load!("data/spines/{id10}", async move || {
-            let mut chapters = BTreeSet::new();
-
-            for chapter in ff.chapters {
-                let starts_with = ammonia::clean(
-                    &(chapter
-                        .html
-                        .to_string()
-                        .split_ascii_whitespace()
-                        .collect::<Vec<_>>()
-                        .join(" ")
-                        .chars()
-                        .take(255)
-                        .collect::<String>()
-                        .rsplit_once(" ")
-                        .unwrap()
-                        .0
-                        .to_string()
-                        + "…"),
-                );
-
-                let chapter = RichSpineChapter {
-                    id10: chapter.id10.clone(),
-                    timestamp: chapter.timestamp,
-                    title: chapter.title.clone(),
-                    length: chapter.html.len() as _,
-                    starts_with,
-                };
-                chapters.insert(chapter);
-            }
-
-            RichSpine {
-                id10,
-                author: "TODO".to_string(),
-                title: ff.title,
-                length: chapters.iter().map(|c| c.length).sum(),
-                chapters,
-            }
         });
+
+        // let ff = ;
+        // let _rich: Result<RichSpine, _> = load!("data/spines/{id10}", async move || {
+        //     let mut chapters = BTreeSet::new();
+
+        //     for chapter in ff.chapters {
+        //         let starts_with = ammonia::clean(
+        //             &(chapter
+        //                 .html
+        //                 .to_string()
+        //                 .split_ascii_whitespace()
+        //                 .collect::<Vec<_>>()
+        //                 .join(" ")
+        //                 .chars()
+        //                 .take(255)
+        //                 .collect::<String>()
+        //                 .rsplit_once(" ")
+        //                 .unwrap()
+        //                 .0
+        //                 .to_string()
+        //                 + "…"),
+        //         );
+
+        //         let chapter = RichSpineChapter {
+        //             id10: chapter.id10.clone(),
+        //             timestamp: chapter.timestamp,
+        //             title: chapter.title.clone(),
+        //             length: chapter.html.len() as _,
+        //             starts_with,
+        //         };
+        //         chapters.insert(chapter);
+        //     }
+
+        //     RichSpine {
+        //         id10,
+        //         author: "TODO".to_string(),
+        //         title: ff.title,
+        //         length: chapters.iter().map(|c| c.length).sum(),
+        //         chapters,
+        //     }
+        // });
 
         Ok(fic)
     }

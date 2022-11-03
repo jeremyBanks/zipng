@@ -49,13 +49,13 @@ pub fn query(request: &Request, context: &mut Context) -> Result<Response, never
 
         let status = response.status().as_u16();
 
-        let body = context.insert_blob(response.bytes()?.as_ref())?;
+        let body = todo!(); //context.insert_blob(response.bytes()?.as_ref())?;
 
         let headers: BTreeMap<BlobId, Vec<BlobId>> = BTreeMap::new();
         for (name, value) in response.headers().iter() {
-            let name = context.insert_blob(name.as_str().as_bytes())?;
-            let value = context.insert_blob(value.as_bytes())?;
-            headers.entry(name).or_default().push(value);
+            // let name = context.insert_blob(name.as_str().as_bytes())?;
+            // let value = context.insert_blob(value.as_bytes())?;
+            // headers.entry(name).or_default().push(value);
         }
 
         Ok(Response {

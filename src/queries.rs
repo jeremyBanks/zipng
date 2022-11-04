@@ -15,6 +15,7 @@ use crate::generic::never;
 // we can eliminate a lot of overhead if we
 // serialize the individual Response type directly, instead of
 // through the AnyResponse enum.
+// but first make it work?
 
 macro_rules! request_and_response {
     () => {
@@ -63,11 +64,11 @@ macro_rules! request_and_response {
     ($(
         $name:ident: $Name:ident = $tag:literal;
     )*) => {
-$(mod $name;)*
+$(pub mod $name;)*
 
 #[derive(Debug, Serialize, Deserialize, Clone, TryInto, From)]
 #[repr(u32)]
-pub enum Request {
+pub enum AnyRequest {
     $(
         $Name($name::Request) = $tag,
     )*
@@ -75,14 +76,14 @@ pub enum Request {
 
 #[derive(Debug, Serialize, Deserialize, Clone, TryInto, From)]
 #[repr(u32)]
-pub enum Response {
+pub enum AnyResponse {
     $(
         $Name($name::Response) = $tag,
     )*
 }
 
-impl traits::Request for Request {
-    type Response = Response;
+impl Request for AnyRequest {
+    type Response = AnyResponse;
 
     #[instrument]
     fn query(&self, context: &mut Context) -> Result<Self::Response, never> {
@@ -95,7 +96,7 @@ impl traits::Request for Request {
 }
 
 $(
-    impl traits::Request for $name::Request {
+    impl Request for $name::Request {
         type Response = $name::Response;
 
         #[instrument]
@@ -104,45 +105,41 @@ $(
         }
     }
 
-    impl traits::Response for $name::Response {
+    impl Response for $name::Response {
         type Request = $name::Request;
     }
 )*
 
 } }
 
-impl traits::Response for Response {
-    type Request = Request;
+impl Response for AnyResponse {
+    type Request = AnyRequest;
 }
 
 request_and_response! {}
 
-impl Default for Request {
+impl Default for AnyRequest {
     fn default() -> Self {
         Self::BlobFromId(default())
     }
 }
 
-impl Default for Response {
+impl Default for AnyResponse {
     fn default() -> Self {
         Self::BlobFromId(default())
     }
 }
 
-pub mod traits {
-    use super::*;
+pub trait Request:
+    Debug + Default + Serialize + DeserializeOwned + Send + 'static + Into<AnyRequest>
+{
+    type Response: Response<Request = Self>;
 
-    pub trait Request:
-        Debug + Default + Serialize + DeserializeOwned + Send + 'static + Into<super::Request>
-    {
-        type Response: Response<Request = Self>;
+    fn query(&self, context: &mut Context) -> Result<Self::Response, never>;
+}
 
-        fn query(&self, context: &mut Context) -> Result<Self::Response, never>;
-    }
-
-    pub trait Response:
-        Debug + Default + Serialize + DeserializeOwned + Send + 'static + Into<super::Response>
-    {
-        type Request: Request<Response = Self>;
-    }
+pub trait Response:
+    Debug + Default + Serialize + DeserializeOwned + Send + 'static + Into<AnyRequest>
+{
+    type Request: Request<Response = Self>;
 }

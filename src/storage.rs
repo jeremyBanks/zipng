@@ -12,7 +12,7 @@ use tracing::error;
 
 use crate::blob::Blob;
 use crate::blob::BlobId;
-use crate::queries::traits::Response;
+use crate::queries::Response;
 
 #[derive(Debug, Error)]
 #[error("{self:?}")]
@@ -61,7 +61,7 @@ pub trait Storage: Debug + Clone + Send {
         }
     }
 
-    fn insert_response<Request: crate::queries::traits::Request>(
+    fn insert_response<Request: crate::queries::Request>(
         &self,
         request: &Request,
         response: &Request::Response,
@@ -69,7 +69,7 @@ pub trait Storage: Debug + Clone + Send {
         todo!()
     }
 
-    fn get_responses<Request: crate::queries::traits::Request>(
+    fn get_responses<Request: crate::queries::Request>(
         &self,
         request: &Request,
     ) -> Result<
@@ -79,7 +79,7 @@ pub trait Storage: Debug + Clone + Send {
         todo!()
     }
 
-    fn get_response<Request: crate::queries::traits::Request>(
+    fn get_response<Request: crate::queries::Request>(
         &self,
         request: &Request,
     ) -> Result<Option<ResponseRecord<Request::Response>>, StorageError> {
@@ -92,7 +92,7 @@ pub trait Storage: Debug + Clone + Send {
 
     // XXX: move these to context!
     // storage is internal and it can be simple and dumb.
-    fn get_responses_where<Request: crate::queries::traits::Request>(
+    fn get_responses_where<Request: crate::queries::Request>(
         &self,
         request: &Request,
         predicate: impl 'static + Fn(&ResponseRecord<Request::Response>) -> bool,
@@ -114,7 +114,7 @@ pub trait Storage: Debug + Clone + Send {
         )))
     }
 
-    fn get_response_where<Request: crate::queries::traits::Request>(
+    fn get_response_where<Request: crate::queries::Request>(
         &self,
         request: &Request,
         predicate: impl 'static + Fn(&ResponseRecord<Request::Response>) -> bool,

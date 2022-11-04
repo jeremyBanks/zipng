@@ -18,7 +18,7 @@ impl Context {
         Context { storage }
     }
 
-    pub fn query(&mut self, request: Request) -> Result<Response, never> {
+    pub fn query(&mut self, request: AnyRequest) -> Result<AnyResponse, never> {
         todo!()
     }
 

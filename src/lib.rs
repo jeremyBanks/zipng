@@ -6,6 +6,7 @@
 )]
 
 mod context;
+mod engine;
 mod storage;
 
 use std::collections::BTreeSet;
@@ -36,11 +37,16 @@ use tracing_subscriber::fmt::format::FmtSpan;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::EnvFilter;
 
-pub use crate::blob::{Blob, BlobId};
-pub use crate::generic::{never, panic, default};
+pub use crate::blob::Blob;
+pub use crate::blob::BlobId;
 pub use crate::context::Context;
-
-
+pub use crate::generic::default;
+pub use crate::generic::never;
+pub use crate::generic::panic;
+pub use crate::queries::Request;
+pub use crate::queries::Response;
+pub use crate::storage::Storage;
+pub use crate::storage::StorageError;
 use crate::throttle::throttle;
 use crate::throttle::Throttle;
 

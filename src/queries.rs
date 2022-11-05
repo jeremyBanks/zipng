@@ -40,7 +40,10 @@ macro_rules! request_and_response {
             http_get = 0x09;
             // http_archive_get = 0x1A;
             // http_archive_query = 0x1B;
-            // royalroad_fiction = 0x46;
+
+            // fic_by_id = 0x1F;
+
+            // royalroad_fic = 0x46;
             // royalroad_spine = 0x47;
             // royalroad_chapter = 0x48;
 
@@ -139,7 +142,7 @@ pub trait Request:
 }
 
 pub trait Response:
-    Debug + Default + Serialize + DeserializeOwned + Send + 'static + Into<AnyRequest>
+    Debug + Default + Serialize + DeserializeOwned + Send + 'static + Into<AnyResponse>
 {
     type Request: Request<Response = Self>;
 }

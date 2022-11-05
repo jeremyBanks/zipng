@@ -1,3 +1,4 @@
+#![allow(unused_labels)]
 #![deny(unsafe_code)]
 #![warn(unused_crate_dependencies)]
 #![cfg_attr(
@@ -56,6 +57,50 @@ mod generic;
 mod queries;
 mod throttle;
 mod tts;
+use crate::engine::Engine;
+use std::process::Termination;
+use crate::storage::sqlite::SqliteStorage;
+
+pub fn main() -> Result<(), impl Termination> {
+    let runtime;
+    'busywork: {
+        color_eyre::install()?;
+
+        if cfg!(debug_assertions) {
+            if env::var("RUST_LOG").is_err() {
+                env::set_var("RUST_LOG", f!("warn,{}=trace", env!("CARGO_CRATE_NAME")));
+            }
+        } else if env::var("RUST_LOG").is_err() {
+            env::set_var("RUST_LOG", f!("error,{}=warn", env!("CARGO_CRATE_NAME")));
+        }
+
+        tracing::subscriber::set_global_default(
+            tracing_subscriber::fmt()
+                .with_env_filter(EnvFilter::from_default_env())
+                .pretty()
+                .with_span_events(FmtSpan::CLOSE)
+                .finish()
+                .with(ErrorLayer::default()),
+        )?;
+
+        runtime = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()?;
+    }
+
+    let engine;
+    'business: {
+        engine = Engine::<SqliteStorage>::default();
+    }
+
+    runtime.block_on(async {
+        let speech = engine.text_to_speech("hello, world!").await;
+
+        eprintln!("{speech:?}");
+
+        Ok(())
+    })
+}
 
 #[deprecated]
 macro_rules! load {
@@ -64,38 +109,8 @@ macro_rules! load {
     }
 }
 
-pub fn main() -> Result<(), panic> {
-    sapi_lite::initialize().unwrap();
-    let result = tokio::runtime::Builder::new_current_thread()
-        .enable_all()
-        .enable_sapi()
-        .build()
-        .unwrap()
-        .block_on(async { async_main().await });
-    sapi_lite::finalize();
-    result
-}
-
 #[instrument]
 async fn async_main() -> Result<(), panic> {
-    color_eyre::install()?;
-
-    if cfg!(debug_assertions) {
-        if env::var("RUST_LOG").is_err() {
-            env::set_var("RUST_LOG", f!("warn,{}=trace", env!("CARGO_CRATE_NAME")));
-        }
-    } else if env::var("RUST_LOG").is_err() {
-        env::set_var("RUST_LOG", f!("error,{}=warn", env!("CARGO_CRATE_NAME")));
-    }
-
-    tracing::subscriber::set_global_default(
-        tracing_subscriber::fmt()
-            .with_env_filter(EnvFilter::from_default_env())
-            .pretty()
-            .with_span_events(FmtSpan::CLOSE)
-            .finish()
-            .with(ErrorLayer::default()),
-    )?;
 
     let ryl_fic_ids = [
         21220, 22518, 25137, 35858, 36950, 45534, 48948, 49033, 60396,

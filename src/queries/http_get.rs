@@ -4,29 +4,10 @@ use std::time::Duration;
 use serde::Deserialize;
 use serde::Serialize;
 
-use crate::blob::Blob;
 use crate::blob::BlobId;
 use crate::context::Context;
 use crate::generic::never;
 use crate::generic::panic;
-
-impl super::Request {
-    pub fn http_get(url: impl AsRef<str>) -> Result<Self, never> {
-        let url = url.as_ref().to_string();
-        Ok(Self::from(Request { url }))
-    }
-}
-
-impl crate::context::Context {
-    pub fn http_get(&mut self, url: impl AsRef<str>) -> Result<Blob, never> {
-        let request = Request { url: url.as_ref().to_string() };
-        todo!()
-        // let response = self.query(Request { url: url.as_ref().to_string() })?;
-        // let blob_id = response.body;
-        // let blob = self.get_blob(&blob_id).unwrap().unwrap();
-        // Ok(blob)
-    }
-}
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct Request {

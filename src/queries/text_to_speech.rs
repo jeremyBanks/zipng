@@ -26,5 +26,20 @@ pub struct Request {
 pub struct Response {}
 
 pub fn query(request: &Request, context: &mut Context) -> Result<Response, never> {
+    if request.voice_name.is_some() {
+        context.alias(Request {
+            text: request.text,
+            voice_name: None,
+            language: request.language,
+        });
+    }
+    if request.language.is_some() {
+        context.alias(Request {
+            text: request.text,
+            voice_name: None,
+            language: None,
+        });
+    }
+
     todo!()
 }

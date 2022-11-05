@@ -5,10 +5,22 @@ use std::sync::RwLock;
 use crate::never;
 use crate::panic;
 use crate::queries;
+use std::path::PathBuf;
+use tokio::runtime::Handle;
 
 #[derive(Debug)]
 pub struct Engine<Storage: crate::Storage> {
     storage: Arc<Storage>,
+    runtime: tokio::runtime::Handle,
+}
+
+impl<Storage: crate::Storage> Default for Engine<Storage> where Storage: Default {
+    fn default() -> Self {
+        Self {
+            storage: Default::default(),
+            runtime: Handle::current(),
+        }
+    }
 }
 
 impl<Storage: crate::Storage> Engine<Storage> {
@@ -16,7 +28,7 @@ impl<Storage: crate::Storage> Engine<Storage> {
         todo!()
     }
 
-    pub fn new_in_file(path: impl Into<Path>) -> Arc<Engine<Storage>> {
+    pub fn new_in_file(path: impl Into<PathBuf>) -> Arc<Engine<Storage>> {
         todo!()
     }
 
@@ -32,12 +44,6 @@ impl<Storage: crate::Storage> Engine<Storage> {
     }
 
     pub fn http_get(&self, url: impl Into<String>) -> Result<panic, panic> {
-        self.execute(queries::http_get::Request { url: url.into() })
-    }
-}
-
-impl<Storage: crate::Storage> AsRef<Arc<Storage>> for Engine<Storage> {
-    fn as_ref(&self) -> &Storage {
-        &self.storage
+        // self.execute(queries::http_get::Request { url: url.into() })
     }
 }

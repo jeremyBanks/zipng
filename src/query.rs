@@ -12,6 +12,7 @@ use crate::never;
 use crate::panic;
 use crate::Blob;
 use crate::BlobId;
+use crate::blob::Representable;
 
 /// context associated with a given request instance.
 ///
@@ -84,13 +85,13 @@ impl From<never> for Error {
 }
 
 #[async_trait]
-impl<Representing> Request for BlobId<Representing> {
+impl<Representing: Representable> Request for BlobId<Representing> {
     const TAG: u32 = 0x00;
     type Response = Blob<Representing>;
     type Error = Error;
 }
 
-impl<Representing> Response for Blob<Representing> {
+impl<Representing: Representable> Response for Blob<Representing> {
     type Request = BlobId<Representing>;
 }
 

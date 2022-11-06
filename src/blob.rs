@@ -17,27 +17,27 @@ mod blob_id;
 #[derive(Clone, Bake, Serialize, Deserialize, Default)]
 #[databake(path = fiction)]
 #[serde(transparent)]
-pub struct Blob<Representing>
-where
-    Representing: Debug + Serialize + Deserialize<'static> + 'static,
+pub struct Blob<Representing: Representable>
 {
     bytes:       Arc<Vec<u8>>,
     #[serde(skip)]
     represented: PhantomData<fn() -> Representing>,
 }
 
-impl<Representing> AsRef<[u8]> for Blob<Representing>
-where
-    Representing: Debug + Serialize + Deserialize<'static> + 'static,
+// this is verbose as fuck, should we make an alias?
+pub trait Representable: Debug + Serialize + Deserialize<'static> + 'static + Clone {}
+impl<T> Representable for T where T: Debug + Serialize + Deserialize<'static> + 'static + Clone {}
+
+
+
+impl<Representing: Representable> AsRef<[u8]> for Blob<Representing>
 {
     fn as_ref(&self) -> &[u8] {
         self.bytes.as_ref()
     }
 }
 
-impl<Representing> From<Vec<u8>> for Blob<Representing>
-where
-    Representing: Debug + Serialize + Deserialize<'static> + 'static,
+impl<Representing: Representable> From<Vec<u8>> for Blob<Representing>
 {
     fn from(bytes: Vec<u8>) -> Self {
         Self {
@@ -47,9 +47,7 @@ where
     }
 }
 
-impl<Representing> Debug for Blob<Representing>
-where
-    Representing: Debug + Serialize + Deserialize<'static> + 'static,
+impl<Representing: Representable> Debug for Blob<Representing>
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Blob")
@@ -59,9 +57,7 @@ where
     }
 }
 
-impl<Representing> Blob<Representing>
-where
-    Representing: Debug + Serialize + Deserialize<'static> + 'static,
+impl<Representing: Representable> Blob<Representing>
 {
     pub fn new(bytes: impl AsRef<[u8]>) -> Self {
         Self {

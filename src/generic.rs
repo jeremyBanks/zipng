@@ -9,14 +9,19 @@ use std::process::Termination;
 use databake::Bake;
 use serde::Deserialize;
 use serde::Serialize;
+use static_assertions::assert_impl_all;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 #[doc(hidden)]
 pub enum never {}
 
+assert_impl_all!(never: Send, Sync);
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 #[doc(hidden)]
 pub enum panic {}
+
+assert_impl_all!(panic: Send, Sync);
 
 impl<Err> From<Err> for panic
 where

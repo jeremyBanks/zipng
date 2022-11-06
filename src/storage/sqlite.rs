@@ -19,7 +19,9 @@ pub struct SqliteStorage {
 
 impl Default for SqliteStorage {
     fn default() -> Self {
-        Self { connection: Arc::new(Mutex::new(rusqlite::Connection::open_in_memory().unwrap())) }
+        Self {
+            connection: Arc::new(Mutex::new(rusqlite::Connection::open_in_memory().unwrap())),
+        }
     }
 }
 

@@ -1,9 +1,6 @@
-mod blob_id;
-#[cfg(test)]
-mod test;
-
 use std::fmt;
 use std::fmt::Debug;
+use std::marker::PhantomData;
 use std::sync::Arc;
 
 use databake::Bake;
@@ -15,45 +12,50 @@ pub use self::blob_id::BlobId;
 use crate::generic::never;
 use crate::generic::Ellipses;
 
+mod blob_id;
+
 #[derive(Clone, Bake, Serialize, Deserialize, Default)]
 #[databake(path = fiction)]
 #[serde(transparent)]
-pub struct Blob<Representing = never>
+pub struct Blob<Representing>
 where
     Representing: Debug + Serialize + Deserialize<'static> + 'static,
 {
-    bytes:       Arc<serde_bytes::ByteBuf>,
+    bytes:       Arc<Vec<u8>>,
     #[serde(skip)]
-    represented: OnceCell<Arc<Representing>>,
-    #[serde(skip)]
-    blob_id:     OnceCell<BlobId<Representing>>,
+    represented: PhantomData<fn() -> Representing>,
 }
 
-impl From<Vec<u8>> for Blob {
+impl<Representing> AsRef<[u8]> for Blob<Representing>
+where
+    Representing: Debug + Serialize + Deserialize<'static> + 'static,
+{
+    fn as_ref(&self) -> &[u8] {
+        self.bytes.as_ref()
+    }
+}
+
+impl<Representing> From<Vec<u8>> for Blob<Representing>
+where
+    Representing: Debug + Serialize + Deserialize<'static> + 'static,
+{
     fn from(bytes: Vec<u8>) -> Self {
         Self {
-            bytes: Arc::new(serde_bytes::ByteBuf::from(bytes)),
+            bytes: Arc::new(bytes),
             ..Default::default()
         }
     }
 }
 
-impl Debug for Blob {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("Blob")
-            .field("id()", &self.id())
-            .field("len()", &self.len())
-            .field("bytes", &Ellipses)
-            .finish()
-    }
-}
-
-impl<Representing> From<Representing> for Blob<Representing>
+impl<Representing> Debug for Blob<Representing>
 where
     Representing: Debug + Serialize + Deserialize<'static> + 'static,
 {
-    fn from(represented: Representing) -> Self {
-        Self::new(postcard::to_stdvec(&represented).unwrap())
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Blob")
+            .field("id()", &self.id())
+            .field("bytes", &Ellipses)
+            .finish()
     }
 }
 
@@ -64,13 +66,12 @@ where
     pub fn new(bytes: impl AsRef<[u8]>) -> Self {
         Self {
             bytes:       Arc::new(serde_bytes::ByteBuf::from(bytes.as_ref())),
-            blob_id:     OnceCell::new(),
             represented: OnceCell::new(),
         }
     }
 
-    pub fn id(&self) -> BlobId {
-        BlobId::from_bytes(&self.bytes)
+    pub fn id(&self) -> BlobId<Representing> {
+        BlobId::from(&self)
     }
 
     pub fn len(&self) -> usize {

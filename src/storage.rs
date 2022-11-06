@@ -12,7 +12,6 @@ use tracing::error;
 
 use crate::blob::Blob;
 use crate::blob::BlobId;
-use crate::queries::Response;
 
 #[derive(Debug, Error)]
 #[error("{self:?}")]

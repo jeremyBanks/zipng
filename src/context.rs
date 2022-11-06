@@ -1,12 +1,13 @@
 use std::sync::Arc;
 
+use thiserror::Error;
+
 use crate::blob::Blob;
 use crate::blob::BlobId;
 use crate::generic::never;
-use crate::storage::sqlite::SqliteStorage;
 use crate::queries::AnyRequest;
 use crate::queries::AnyResponse;
-use thiserror::Error;
+use crate::storage::sqlite::SqliteStorage;
 
 #[derive(Debug, Default)]
 pub struct Context<Request: crate::Request = AnyRequest> {
@@ -17,14 +18,15 @@ pub struct Context<Request: crate::Request = AnyRequest> {
 
 #[derive(Debug, Error)]
 #[error("{self:?}")]
-pub enum ContextError {
-
-}
+pub enum ContextError {}
 
 impl<Request: crate::Request> Context<Request> {
     pub fn new(storage: impl Into<Option<Arc<SqliteStorage>>>) -> Self {
         let storage = storage.into();
-        Context { storage, ..Default::default() }
+        Context {
+            storage,
+            ..Default::default()
+        }
     }
 
     pub fn query(&mut self, request: AnyRequest) -> Result<AnyResponse, never> {
@@ -43,12 +45,15 @@ impl<Request: crate::Request> Context<Request> {
         todo!()
     }
 
-    pub fn insert_response<OtherRequest: crate::Request>(&self, request: OtherRequest, response: OtherRequest::Response) {
+    pub fn insert_response<OtherRequest: crate::Request>(
+        &self,
+        request: OtherRequest,
+        response: OtherRequest::Response,
+    ) {
         todo!()
     }
 
-    /// Adds an alias request that will also be associated with this request's result.
-    pub fn populate(&self, request: Request) {
-
-    }
+    /// Adds an alias request that will also be associated with this request's
+    /// result.
+    pub fn populate(&self, request: Request) {}
 }

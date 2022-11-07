@@ -22,7 +22,7 @@ my personal convenience.
     per-chapter and as a single file with embedded chapter markers.
   - (Private) postcast RSS feeds indexing the generated media files.
 
-## ⚙️ fiction engine
+## ⚙️ incremental engine
 
 fiction's engine is a sort-of incremental-computation content-based-addressing
 query-driven caching engine. Built on top of SQLite and Postcard for now, maybe

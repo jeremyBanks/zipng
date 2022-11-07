@@ -3,7 +3,7 @@
 
 ---
 
-## 📖 fiction app
+## 📖 Fiction app
 
 i want a tool to convert eBooks to audiobooks, packaged as private podcasts, for
 my personal convenience.
@@ -22,7 +22,7 @@ my personal convenience.
     per-chapter and as a single file with embedded chapter markers.
   - (Private) postcast RSS feeds indexing the generated media files.
 
-## ⚙️ incremental engine
+## ⚙️ Incremental engine
 
 fiction's engine is a sort-of incremental-computation content-based-addressing
 query-driven caching engine. Built on top of SQLite and Postcard for now, maybe
@@ -63,3 +63,7 @@ storage implementations with customizable behaviour.
 
 They're serialized with Postcard now but I'd like to do something that's
 serde-compatible while at least being forward-compatible with protocol buffers.
+
+## 👑 Ser Proto serialization
+
+a serde serialization implementation using a subset of protocol buffers wire format. the name is a reference to Cap'n Proto.

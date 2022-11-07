@@ -5,18 +5,17 @@ use databake::Bake;
 use serde::Deserialize;
 use serde::Serialize;
 
+use super::Representable;
 use crate::never;
 use crate::Blob;
-use super::Representable;
 
 #[derive(
     Default, Debug, Clone, Eq, PartialOrd, PartialEq, Ord, Hash, Serialize, Deserialize, Bake,
 )]
 #[databake(path = fiction)]
 #[serde(from = "serde_bytes::ByteBuf", into = "serde_bytes::ByteBuf")]
-pub struct BlobId<Representing: Representable>
-{
-    blob_id:      heapless::Vec<u8, 32>,
+pub struct BlobId<Representing: Representable> {
+    blob_id: heapless::Vec<u8, 32>,
     #[serde(skip)]
     representing: PhantomData<fn() -> Representing>,
 }

@@ -8,11 +8,11 @@ use serde::Deserialize;
 use serde::Serialize;
 use thiserror::Error;
 
+use crate::blob::Representable;
 use crate::never;
 use crate::panic;
 use crate::Blob;
 use crate::BlobId;
-use crate::blob::Representable;
 
 /// context associated with a given request instance.
 ///
@@ -97,8 +97,8 @@ impl<Representing: Representable> Response for Blob<Representing> {
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct TextToSpeech {
-    text:       BlobId<str>,
-    language:   Option<BlobId<str>>,
+    text: BlobId<str>,
+    language: Option<BlobId<str>>,
     voice_name: Option<BlobId<str>>,
 }
 
@@ -123,15 +123,15 @@ impl Request for TextToSpeech {
 
         if self.voice_name.is_some() {
             context.populate(Self {
-                text:       text.clone(),
-                language:   language.clone(),
+                text: text.clone(),
+                language: language.clone(),
                 voice_name: None,
             })?;
         }
         if self.language.is_some() {
             context.populate(Self {
-                text:       text.clone(),
-                language:   None,
+                text: text.clone(),
+                language: None,
                 voice_name: None,
             })?;
         }

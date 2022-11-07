@@ -5,6 +5,7 @@ use std::sync::Arc;
 
 use databake::Bake;
 use once_cell::sync::OnceCell;
+use serde::ser::SerializeTuple;
 use serde::Deserialize;
 use serde::Serialize;
 
@@ -17,28 +18,40 @@ mod blob_id;
 #[derive(Clone, Bake, Serialize, Deserialize, Default)]
 #[databake(path = fiction)]
 #[serde(transparent)]
-pub struct Blob<Representing: Representable>
-{
-    bytes:       Arc<Vec<u8>>,
+pub struct Blob<Representing: Representable> {
+    bytes: Arc<Vec<u8>>,
     #[serde(skip)]
     represented: PhantomData<fn() -> Representing>,
 }
 
-// this is verbose as fuck, should we make an alias?
-pub trait Representable: Debug + Serialize + Deserialize<'static> + 'static + Clone {}
-impl<T> Representable for T where T: Debug + Serialize + Deserialize<'static> + 'static + Clone {}
+pub trait Representable: Debug {
+    type SerdeAs: Serialize + Deserialize<'static>;
+}
 
-
-
-impl<Representing: Representable> AsRef<[u8]> for Blob<Representing>
+impl<T> Representable for T
+where
+    T: Debug + Serialize + Deserialize<'static>,
 {
+    type SerdeAs = Self;
+}
+
+// raw byte string
+impl Representable for [u8] {
+    type SerdeAs = SerdeAsBareBytes;
+}
+
+// raw utf-8 string
+impl Representable for str {
+    type SerdeAs = SerdeAsBareBytes;
+}
+
+impl<Representing: Representable> AsRef<[u8]> for Blob<Representing> {
     fn as_ref(&self) -> &[u8] {
         self.bytes.as_ref()
     }
 }
 
-impl<Representing: Representable> From<Vec<u8>> for Blob<Representing>
-{
+impl<Representing: Representable> From<Vec<u8>> for Blob<Representing> {
     fn from(bytes: Vec<u8>) -> Self {
         Self {
             bytes: Arc::new(bytes),
@@ -47,8 +60,7 @@ impl<Representing: Representable> From<Vec<u8>> for Blob<Representing>
     }
 }
 
-impl<Representing: Representable> Debug for Blob<Representing>
-{
+impl<Representing: Representable> Debug for Blob<Representing> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Blob")
             .field("id()", &self.id())
@@ -57,11 +69,10 @@ impl<Representing: Representable> Debug for Blob<Representing>
     }
 }
 
-impl<Representing: Representable> Blob<Representing>
-{
+impl<Representing: Representable> Blob<Representing> {
     pub fn new(bytes: impl AsRef<[u8]>) -> Self {
         Self {
-            bytes:       Arc::new(serde_bytes::ByteBuf::from(bytes.as_ref())),
+            bytes: Arc::new(serde_bytes::ByteBuf::from(bytes.as_ref())),
             represented: OnceCell::new(),
         }
     }

@@ -37,12 +37,12 @@ where
 
 // raw byte string
 impl Representable for [u8] {
-    type SerdeAs = SerdeAsBareBytes;
+    type SerdeAs = crate::serde::UnterminatedBytes;
 }
 
 // raw utf-8 string
 impl Representable for str {
-    type SerdeAs = SerdeAsBareBytes;
+    type SerdeAs = crate::serde::UnterminatedBytes;
 }
 
 impl<Representing: Representable> AsRef<[u8]> for Blob<Representing> {

@@ -16,8 +16,7 @@ use crate::panic;
 
 /// Wrapper type for bytes that will be serialized/deserialized without any
 /// form of terminator/delimiter. As many bytes will be read as the
-/// (de)serializer will allow. Intended for use with Postcard, other serializers
-/// may not produce sensible results!
+/// (de)serializer will allow, stopping at a None or Err.
 #[derive(Clone, Default, PartialEq, PartialOrd, Eq, Ord, Debug, AsRef, From, Into, Deref)]
 pub struct UnterminatedBytes(Vec<u8>);
 

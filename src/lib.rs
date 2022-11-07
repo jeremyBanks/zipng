@@ -17,38 +17,34 @@ use tracing_subscriber::fmt::format::FmtSpan;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::EnvFilter;
 
-// mod blob;
-// mod ffmpeg;
+mod blob;
+mod ffmpeg;
 mod generic;
 // mod queries;
 // mod throttle;
 // mod tts;
-// mod context;
-// mod engine;
-// mod storage;
-// mod query;
+mod context;
+mod engine;
+mod storage;
+mod query;
 mod serde;
-
-pub trait Storage {}
-#[derive(Error, Debug)]
-pub enum StorageError {}
 
 use thiserror::Error;
 
-// pub use crate::blob::Blob;
-// pub use crate::blob::BlobId;
-// pub use crate::engine::Engine;
+pub use crate::blob::Blob;
+pub use crate::blob::BlobId;
+pub use crate::engine::Engine;
 pub use crate::generic::default;
 pub use crate::generic::never;
 pub use crate::generic::panic;
-// pub use crate::query::AnyRequest;
-// pub use crate::query::AnyResponse;
-// pub use crate::query::Context;
-// pub use crate::query::Request;
-// pub use crate::query::Response;
-// pub use crate::storage::sqlite::SqliteStorage;
-// pub use crate::storage::Storage;
-// pub use crate::storage::StorageError;
+pub use crate::query::AnyRequest;
+pub use crate::query::AnyResponse;
+pub use crate::query::Context;
+pub use crate::query::Request;
+pub use crate::query::Response;
+pub use crate::storage::sqlite::SqliteStorage;
+pub use crate::storage::Storage;
+pub use crate::storage::StorageError;
 
 pub fn main() -> Result<(), panic> {
     if cfg!(debug_assertions) {

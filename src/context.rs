@@ -5,12 +5,13 @@ use thiserror::Error;
 use crate::blob::Blob;
 use crate::blob::BlobId;
 use crate::generic::never;
-use crate::queries::AnyRequest;
-use crate::queries::AnyResponse;
 use crate::storage::sqlite::SqliteStorage;
+use crate::blob::Representable;
+use crate::AnyRequest;
+use crate::AnyResponse;
 
 #[derive(Debug, Default)]
-pub struct Context<Request: crate::Request = AnyRequest> {
+pub struct Context<Request: crate::Request> {
     storage: Option<Arc<SqliteStorage>>,
 
     request_and_aliases: Vec<Request>,
@@ -33,11 +34,11 @@ impl<Request: crate::Request> Context<Request> {
         todo!()
     }
 
-    pub fn get_blob(&self, id: impl Into<BlobId>) -> Result<Option<Blob>, never> {
+    pub fn get_blob<Rep: Representable>(&self, id: impl Into<BlobId<Rep>>) -> Result<Option<Blob<Rep>>, never> {
         todo!()
     }
 
-    pub fn insert_blob(&self, data: impl Into<Blob>) -> Result<BlobId, never> {
+    pub fn insert_blob<Rep: Representable>(&self, data: impl Into<Blob<Rep>>) -> Result<BlobId<Rep>, never> {
         todo!()
     }
 

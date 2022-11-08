@@ -46,6 +46,8 @@ pub use crate::storage::sqlite::SqliteStorage;
 pub use crate::storage::Storage;
 pub use crate::storage::StorageError;
 
+// https://blessed.rs/crates
+
 pub fn main() -> Result<(), panic> {
     if cfg!(debug_assertions) {
         if env::var("RUST_LOG").is_err() {

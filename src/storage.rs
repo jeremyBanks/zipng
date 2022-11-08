@@ -1,4 +1,3 @@
-#![allow(unsafe_code)]
 
 mod baked;
 pub mod layered;
@@ -13,8 +12,9 @@ use tracing::error;
 use crate::blob::Blob;
 use crate::blob::BlobId;
 use crate::blob::Representable;
+use miette::Diagnostic;
 
-#[derive(Debug, Error)]
+#[derive(Debug, Error, Diagnostic)]
 #[error("{self:?}")]
 pub enum StorageError {
     #[error("storage operation not supported")]

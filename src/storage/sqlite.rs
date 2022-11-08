@@ -1,3 +1,5 @@
+#![allow(unsafe_code)]
+13
 use std::sync::Arc;
 use std::sync::Mutex;
 use std::vec;

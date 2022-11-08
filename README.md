@@ -20,7 +20,7 @@ my personal convenience.
   - EPUB with embedded aligned synchronized audio.
   - MKV/WebM files, with embedded synchronized text, both individually
     per-chapter and as a single file with embedded chapter markers.
-  - (Private) postcast RSS feeds indexing the generated media files.
+  - postcast RSS feeds indexing the generated media files.
 
 ## ⚙️ Incremental engine
 
@@ -36,9 +36,9 @@ Turbo extension in the future might make sense.
 
 An implementation of the Storage layer will provide one or both of:
 
-1. Content-addressed storage of byte strings, between 32B and 1 GiB in size,
+1. **Blobs** Content-addressed storage of byte strings, between 32B and 1 GiB in size,
    each identified by its 32B BLAKE3 hash digest.
-2. Storage of Request-Response pairs, each 32B (addressing a stored blob) or
+2. **Queries** Storage of Request-Response pairs, each 32B (addressing a stored blob) or
    less (a short inlined value). Each pair should include `inserted_at` and
    `validated_at` fields, indicating the first and most-recent times that a
    given Request-Response pair was inserted. Should be indexed by `Request`
@@ -64,6 +64,8 @@ storage implementations with customizable behaviour.
 They're serialized with Postcard now but I'd like to do something that's
 serde-compatible while at least being forward-compatible with protocol buffers.
 
+Request and Response types should themselves be relatively small. Any large data should be serialized as a Blob and the Request or Response should include the Blob IDs instead.
+
 ## 👑 Ser Proto serialization
 
-a serde serialization implementation using a subset of protocol buffers wire format. the name is a reference to Cap'n Proto.
+a **ser**de serialization implementation using a subset of **proto**col buffers wire format, though not its schemas. the name is a reference to Cap'n Proto.

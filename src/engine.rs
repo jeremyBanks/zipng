@@ -8,6 +8,7 @@ use tokio::runtime::Handle;
 use crate::never;
 use crate::panic;
 use crate::Blob;
+use crate::Context;
 
 #[derive(Debug)]
 pub struct Engine<Storage: crate::Storage> {
@@ -35,23 +36,18 @@ impl<Storage: crate::Storage> Engine<Storage> {
         }
     }
 
-    fn execute<Request: crate::Request>(
+    pub async fn execute<Request: crate::Request>(
         &self,
         request: Request,
     ) -> Result<Request::Response, never> {
-        todo!()
-    }
+        let request_blob_id = request.to_blob().blob_id();
 
-    // pub fn get_blob(&self, id: impl Into<crate::BlobId>) ->
-    // Result<Option<crate::Blob>, never> {     todo!()
-    // }
+        let context = Context::new(&request, &self.storage);
 
-    pub fn http_get(&self, url: impl Into<String>) -> Result<panic, panic> {
-        todo!()
-        // self.execute(queries::http_get::Request { url: url.into() })
-    }
+        let response = request.execute(&mut context).await?;
 
-    pub async fn text_to_speech(&self, arg: &str) -> Result<Blob, panic> {
+        self.storage.insert_response(&request, &response).await?;
+
         todo!()
     }
 }

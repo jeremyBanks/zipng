@@ -8,6 +8,8 @@ use windows::Storage::Streams::Buffer;
 use windows::Storage::Streams::DataReader;
 use windows::Storage::Streams::IBuffer;
 
+use sapi_lite;
+
 use super::*;
 
 // Let's try to get sentence/word boundaries so we can slice them up!

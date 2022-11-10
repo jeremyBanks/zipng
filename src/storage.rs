@@ -1,4 +1,3 @@
-
 mod baked;
 pub mod layered;
 pub mod sqlite;
@@ -6,13 +5,13 @@ pub mod web;
 
 use std::fmt::Debug;
 
+use miette::Diagnostic;
 use thiserror::Error;
 use tracing::error;
 
 use crate::blob::Blob;
 use crate::blob::BlobId;
 use crate::blob::Representable;
-use miette::Diagnostic;
 
 #[derive(Debug, Error, Diagnostic)]
 #[error("{self:?}")]
@@ -26,7 +25,10 @@ pub enum StorageError {
 }
 
 pub trait Storage: Debug + Clone + Send {
-    fn get_blob<Rep: Representable>(&self, blob_id: BlobId<Rep>) -> Result<Option<Blob<Rep>>, StorageError> {
+    fn get_blob<Rep: Representable>(
+        &self,
+        blob_id: BlobId<Rep>,
+    ) -> Result<Option<Blob<Rep>>, StorageError> {
     }
 
     // fn insert_blob(&self, blob: Blob) -> Result<BlobId, StorageError> {
@@ -44,8 +46,8 @@ pub trait Storage: Debug + Clone + Send {
     // fn get_response_ids(
     //     &self,
     //     request_id: BlobId,
-    // ) -> Result<Box<dyn Iterator<Item = Result<ResponseIdRecord, StorageError>>>, StorageError>
-    // {
+    // ) -> Result<Box<dyn Iterator<Item = Result<ResponseIdRecord, StorageError>>>,
+    // StorageError> {
     //     Err(StorageError::Unsupported)
     // }
 
@@ -72,10 +74,9 @@ pub trait Storage: Debug + Clone + Send {
     //     &self,
     //     request: &Request,
     // ) -> Result<
-    //     Box<dyn Iterator<Item = Result<ResponseRecord<Request::Response>, StorageError>>>,
-    //     StorageError,
-    // > {
-    //     todo!()
+    //     Box<dyn Iterator<Item = Result<ResponseRecord<Request::Response>,
+    // StorageError>>>,     StorageError,
+    // > { todo!()
     // }
 
     // fn get_response<Request: crate::queries::Request>(
@@ -96,21 +97,12 @@ pub trait Storage: Debug + Clone + Send {
     //     request: &Request,
     //     predicate: impl 'static + Fn(&ResponseRecord<Request::Response>) -> bool,
     // ) -> Result<
-    //     Box<dyn Iterator<Item = Result<ResponseRecord<Request::Response>, StorageError>>>,
-    //     StorageError,
-    // > {
-    //     let responses = self.get_responses(request)?;
-    //     Ok(Box::new(responses.filter_map(
-    //         move |response| match response {
-    //             Ok(response) =>
-    //                 if predicate(&response) {
-    //                     Some(Ok(response))
-    //                 } else {
-    //                     None
-    //                 },
-    //             Err(error) => Some(Err(error)),
-    //         },
-    //     )))
+    //     Box<dyn Iterator<Item = Result<ResponseRecord<Request::Response>,
+    // StorageError>>>,     StorageError,
+    // > { let responses = self.get_responses(request)?;
+    // > Ok(Box::new(responses.filter_map( move |response| match response {
+    // > Ok(response) => if predicate(&response) { Some(Ok(response)) } else { None
+    // > }, Err(error) => Some(Err(error)), }, )))
     // }
 
     // fn get_response_where<Request: crate::queries::Request>(
@@ -118,8 +110,8 @@ pub trait Storage: Debug + Clone + Send {
     //     request: &Request,
     //     predicate: impl 'static + Fn(&ResponseRecord<Request::Response>) -> bool,
     // ) -> Result<Option<ResponseRecord<Request::Response>>, StorageError> {
-    //     if let Some(result) = self.get_responses_where(request, predicate)?.next() {
-    //         Ok(Some(result?))
+    //     if let Some(result) = self.get_responses_where(request,
+    // predicate)?.next() {         Ok(Some(result?))
     //     } else {
     //         Ok(None)
     //     }
@@ -129,6 +121,6 @@ pub trait Storage: Debug + Clone + Send {
 #[derive(Debug, Clone)]
 pub struct RequestRecord<Request: crate::Request> {
     pub response_blob_id: BlobId<Request>,
-    pub inserted_at:      u32,
-    pub validated_at:     u32,
+    pub inserted_at: u32,
+    pub validated_at: u32,
 }

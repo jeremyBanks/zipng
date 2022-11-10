@@ -19,6 +19,8 @@ use serde_bytes::Serialize as SerializeBytes;
 
 // Use a guid for your struct name?
 // Only change it when you want to break compatibility.
+// Use truncated blake3 of... something? A plain text
+// description of the desired behaviour?
 
 #[derive(Serialize, Deserialize, Deref, AsRef, From)]
 #[repr(transparent)]

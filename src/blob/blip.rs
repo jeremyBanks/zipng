@@ -11,6 +11,7 @@ use thiserror::Error;
 use crate::blob::Blob;
 use crate::generic::default;
 use crate::generic::PhantomType;
+use crate::inline::InlineVec;
 
 /// A `Blip` represents a `Blob`, stored inline if it's under 32 bytes,
 /// otherwise represented by its 32-byte BLAKE3 hash digest.
@@ -18,14 +19,14 @@ pub struct Blip<T>
 where
     T: ?Sized,
 {
-    bytes: heapless::Vec<u8, 32>,
+    bytes: InlineVec<u8, 32>,
     representing: PhantomType<T>,
 }
 
-// impl<T> Copy for Blip<T> where T: ?Sized {}
+impl<T> Copy for Blip<T> where T: ?Sized {}
 
 #[derive(Debug, Error, Copy, Clone)]
-#[error("Blips be between 0 and 32 bytes, but the input was {0} bytes.")]
+#[error("Blips must be between 0 and 32 bytes, but the input was {0} bytes.")]
 pub struct TooLongForBlipError(usize);
 
 impl<T> Blip<T>
@@ -40,9 +41,20 @@ where
         }
     }
 
+    pub fn deserialize_inline(&self) -> Option<T>
+    where
+        T: Deserialize<'static>,
+    {
+        self.inline().map(Blob::deserialize)
+    }
+
+    pub fn for_blob(blob: &Blob<T>) -> Self {
+        Blip::for_bytes(blob.as_ref()).retype()
+    }
+
     fn try_from_raw_bytes(blip_bytes: &[u8]) -> Result<Self, TooLongForBlipError> {
         Ok(Self {
-            bytes: heapless::Vec::from_slice(&blip_bytes)
+            bytes: InlineVec::try_from_slice(&blip_bytes)
                 .map_err(|_| TooLongForBlipError(blip_bytes.len()))?,
             representing: default(),
         })
@@ -75,7 +87,9 @@ where
 {
     type Error = TooLongForInlineBlipError;
 
-    fn try_from(value: Blip<T>) -> Result<Self, Self::Error> {}
+    fn try_from(value: Blip<T>) -> Result<Self, Self::Error> {
+        todo!()
+    }
 }
 
 impl Blip<[u8]> {
@@ -84,7 +98,7 @@ impl Blip<[u8]> {
             bytes = blake3::hash(bytes).as_bytes()
         }
         Self {
-            bytes: heapless::Vec::from_slice(bytes).unwrap(),
+            bytes: InlineVec::try_from_slice(bytes).unwrap(),
             representing: default(),
         }
     }
@@ -179,7 +193,7 @@ where
     where
         S: serde::Serializer,
     {
-        serde_bytes::Bytes::new(&self.bytes).serialize(serializer)
+        serde_bytes::Bytes::new(&self.bytes.as_ref()).serialize(serializer)
     }
 }
 

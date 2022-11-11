@@ -3,6 +3,17 @@
 
 ---
 
+next goals:
+
+- [ ] sqlite storage layer with separate blobs and queries, but not much smarts.
+      (maybe we merge later, but maybe not.)
+- [ ] queries for web caching
+- [ ] and royal road ingestion
+- [ ] and per-chapter text-to-speech production of ogg files
+- [ ] nothing else for now, get this working, merge it
+
+---
+
 ## 📖 Fiction app
 
 i want a tool to convert eBooks to audiobooks, packaged as private podcasts, for

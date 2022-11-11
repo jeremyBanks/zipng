@@ -10,7 +10,10 @@ use crate::Blob;
 
 #[derive(Default, Debug, Eq, PartialOrd, PartialEq, Ord, Hash, Serialize, Deserialize)]
 #[serde(from = "serde_bytes::ByteBuf", into = "serde_bytes::ByteBuf")]
-#[serde(bound(serialize = "Representing: Into<Representing>", deserialize = "Representing: Into<Representing>"))]
+#[serde(bound(
+    serialize = "Representing: Into<Representing>",
+    deserialize = "Representing: Into<Representing>"
+))]
 pub struct BlobId<Representing: Representable + ?Sized> {
     blob_id: heapless::Vec<u8, 32>,
     #[serde(skip)]

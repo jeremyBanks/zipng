@@ -1,26 +1,26 @@
-#![allow(non_camel_case_types, unused)]
+mod phantom_type;
 
-use std::fmt;
 use std::fmt::Debug;
 use std::fmt::Display;
-use std::marker::PhantomData;
 use std::process::ExitCode;
 use std::process::Termination;
 
-use serde::de;
-use serde::de::Visitor;
 use serde::Deserialize;
 use serde::Serialize;
 use static_assertions::assert_impl_all;
 
+pub use self::phantom_type::PhantomType;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 #[doc(hidden)]
+#[allow(non_camel_case_types)]
 pub enum never {}
 
 assert_impl_all!(never: Send, Sync);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 #[doc(hidden)]
+#[allow(non_camel_case_types)]
 pub enum panic {}
 
 assert_impl_all!(panic: Send, Sync);
@@ -65,27 +65,9 @@ impl Termination for never {
     }
 }
 
-#[allow(unused)]
-#[doc(hidden)]
-pub fn default<T>() -> T
+pub(crate) fn default<T>() -> T
 where
     T: Default,
 {
     T::default()
-}
-
-#[derive(Clone, Copy)]
-#[doc(hidden)]
-pub struct Ellipses;
-
-impl Debug for Ellipses {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "…")
-    }
-}
-
-impl Display for Ellipses {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "…")
-    }
 }

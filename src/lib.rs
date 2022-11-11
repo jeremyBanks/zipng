@@ -25,17 +25,13 @@ mod generic;
 // mod tts;
 mod context;
 mod engine;
-mod phantom_type;
 mod query;
 mod serde;
 mod storage;
 
-use thiserror::Error;
-
+pub use crate::blob::Blip;
 pub use crate::blob::Blob;
-pub use crate::blob::BlobId;
 pub use crate::engine::Engine;
-pub use crate::generic::default;
 pub use crate::generic::never;
 pub use crate::generic::panic;
 pub use crate::query::AnyRequest;

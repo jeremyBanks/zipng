@@ -40,7 +40,7 @@ impl<Storage: crate::Storage> Engine<Storage> {
         &self,
         request: Request,
     ) -> Result<Request::Response, never> {
-        let request_blob_id = request.to_blob().blob_id();
+        let request_blip = request.to_blob().blip();
 
         let context = Context::new(&request, &self.storage);
 

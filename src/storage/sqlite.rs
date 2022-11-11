@@ -86,7 +86,7 @@ impl SqliteStorage {
                 M::up(
                     r#"
                     create table BlobStore(
-                        blob_id Blob primary key,
+                        blip Blob primary key,
                         bytes Blob not null
                     ) strict;
                 "#,
@@ -106,13 +106,13 @@ impl SqliteStorage {
                 M::up(
                     r#"
                     create table if not exists QueryCache(
-                        request_blob_id Blob not null,
-                        response_blob_id Blob not null,
+                        request_blip Blob not null,
+                        response_blip Blob not null,
                         first_seen Integer not null default( CURRENT_TIMESTAMP ),
                         last_seen Integer not null default( CURRENT_TIMESTAMP ),
-                        unique( request_blob_id, response_blob_id ),
-                        foreign key( request_blob_id ) references BlobStore( blob_id ),
-                        foreign key( response_blob_id ) references BlobStore( blob_id )
+                        unique( request_blip, response_blip ),
+                        foreign key( request_blip ) references BlobStore( blip ),
+                        foreign key( response_blip ) references BlobStore( blip )
                     ) strict;
                 "#,
                 ),

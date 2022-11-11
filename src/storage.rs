@@ -9,9 +9,8 @@ use miette::Diagnostic;
 use thiserror::Error;
 use tracing::error;
 
+use crate::blob::Blip;
 use crate::blob::Blob;
-use crate::blob::BlobId;
-use crate::blob::Representable;
 
 #[derive(Debug, Error, Diagnostic)]
 #[error("{self:?}")]
@@ -25,27 +24,23 @@ pub enum StorageError {
 }
 
 pub trait Storage: Debug + Clone + Send {
-    fn get_blob<Rep: Representable>(
-        &self,
-        blob_id: BlobId<Rep>,
-    ) -> Result<Option<Blob<Rep>>, StorageError> {
-    }
+    fn get_blob<T>(&self, blip: Blip<T>) -> Result<Option<Blob<T>>, StorageError> {}
 
-    // fn insert_blob(&self, blob: Blob) -> Result<BlobId, StorageError> {
+    // fn insert_blob(&self, blob: Blob) -> Result<Blip, StorageError> {
     //     Err(StorageError::Unsupported)
     // }
 
     // fn insert_response_id(
     //     &self,
-    //     request_id: BlobId,
-    //     response_id: BlobId,
+    //     request_id: Blip,
+    //     response_id: Blip,
     // ) -> Result<(), StorageError> {
     //     Err(StorageError::Unsupported)
     // }
 
     // fn get_response_ids(
     //     &self,
-    //     request_id: BlobId,
+    //     request_id: Blip,
     // ) -> Result<Box<dyn Iterator<Item = Result<ResponseIdRecord, StorageError>>>,
     // StorageError> {
     //     Err(StorageError::Unsupported)
@@ -53,7 +48,7 @@ pub trait Storage: Debug + Clone + Send {
 
     // fn get_response_id(
     //     &self,
-    //     request_id: BlobId,
+    //     request_id: Blip,
     // ) -> Result<Option<ResponseIdRecord>, StorageError> {
     //     if let Some(result) = self.get_response_ids(request_id)?.next() {
     //         Ok(Some(result?))
@@ -120,7 +115,7 @@ pub trait Storage: Debug + Clone + Send {
 
 #[derive(Debug, Clone)]
 pub struct RequestRecord<Request: crate::Request> {
-    pub response_blob_id: BlobId<Request>,
+    pub response_blip: Blip<Request>,
     pub inserted_at: u32,
     pub validated_at: u32,
 }

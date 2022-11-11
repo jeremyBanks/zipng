@@ -2,9 +2,8 @@ use std::sync::Arc;
 
 use thiserror::Error;
 
+use crate::blob::Blip;
 use crate::blob::Blob;
-use crate::blob::BlobId;
-use crate::blob::Representable;
 use crate::generic::never;
 use crate::storage::sqlite::SqliteStorage;
 use crate::AnyRequest;
@@ -34,17 +33,11 @@ impl<Request: crate::Request> Context<Request> {
         todo!()
     }
 
-    pub fn get_blob<Rep: Representable>(
-        &self,
-        id: impl Into<BlobId<Rep>>,
-    ) -> Result<Option<Blob<Rep>>, never> {
+    pub fn get_blob<Rep>(&self, id: impl Into<Blip<Rep>>) -> Result<Option<Blob<Rep>>, never> {
         todo!()
     }
 
-    pub fn insert_blob<Rep: Representable>(
-        &self,
-        data: impl Into<Blob<Rep>>,
-    ) -> Result<BlobId<Rep>, never> {
+    pub fn insert_blob<Rep>(&self, data: impl Into<Blob<Rep>>) -> Result<Blip<Rep>, never> {
         todo!()
     }
 

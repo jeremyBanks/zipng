@@ -8,11 +8,10 @@ use serde::Deserialize;
 use serde::Serialize;
 use thiserror::Error;
 
-use crate::blob::Representable;
 use crate::never;
 use crate::panic;
+use crate::Blip;
 use crate::Blob;
-use crate::BlobId;
 
 /// context associated with a given request instance.
 ///
@@ -46,14 +45,14 @@ pub trait Response: Debug + Serialize + Deserialize<'static> + Clone + Sync + Se
 #[derive(Debug, Serialize, Deserialize, Clone, TryInto, From)]
 #[repr(u32)]
 pub enum AnyRequest {
-    Blob(BlobId<never>) = BlobId::<never>::TAG,
+    Blob(Blip<never>) = Blip::<never>::TAG,
     TextToSpeech(TextToSpeech) = TextToSpeech::TAG,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, TryInto, From)]
 #[repr(u32)]
 pub enum AnyResponse {
-    Blob(Blob<never>) = BlobId::<never>::TAG,
+    Blob(Blob<never>) = Blip::<never>::TAG,
     TextToSpeech(TextToSpeechResponse) = TextToSpeech::TAG,
 }
 
@@ -85,26 +84,26 @@ impl From<never> for Error {
 }
 
 #[async_trait]
-impl<Representing: Representable + ?Sized> Request for BlobId<Representing> {
+impl<T> Request for Blip<T> {
     const TAG: u32 = 0x00;
-    type Response = Blob<Representing>;
+    type Response = Blob<T>;
     type Error = Error;
 }
 
-impl<Representing: Representable + ?Sized> Response for Blob<Representing> {
-    type Request = BlobId<Representing>;
+impl<T> Response for Blob<T> {
+    type Request = Blip<T>;
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct TextToSpeech {
-    text: BlobId<str>,
-    language: Option<BlobId<str>>,
-    voice_name: Option<BlobId<str>>,
+    text: Blip<str>,
+    language: Option<Blip<str>>,
+    voice_name: Option<Blip<str>>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct TextToSpeechResponse {
-    blob_id: BlobId<never>,
+    blip: Blip<never>,
 }
 
 pub fn text_to_speech(text: impl ToString) -> TextToSpeech {}
@@ -136,7 +135,7 @@ impl Request for TextToSpeech {
             })?;
         }
 
-        Ok(TextToSpeechResponse { blob_id: todo!() })
+        Ok(TextToSpeechResponse { blip: todo!() })
     }
 }
 

@@ -12,12 +12,13 @@ use static_assertions::assert_impl_all;
 /// This is a convenience wrapper for `PhantomData<fn(T) -> T>`, which
 /// seems to be the right way to defined a `PhantomData` without affecting
 /// either the borrow checker (lifetimes) or the drop checker (ownership,
-/// borrowing). Unfortunately, `Copy`
-#[derive(Copy)]
+/// borrowing).
 pub struct PhantomType<T: ?Sized>(PhantomData<fn(T) -> T>);
 
+impl<T: ?Sized> Copy for PhantomType<T> {}
+
 assert_impl_all!(
-  PhantomType<(*const u8, str, dyn Clone)>:
+  PhantomType<(*const u8, dyn Debug)>:
     Copy,
     Send,
     Sync,
@@ -81,15 +82,13 @@ impl<T: ?Sized> Default for PhantomType<T> {
 }
 
 impl<T: ?Sized> From<()> for PhantomType<T> {
-    fn from(value: ()) -> Self {
+    fn from(_: ()) -> Self {
         PhantomType(PhantomData)
     }
 }
 
 impl<T: ?Sized> From<PhantomType<T>> for () {
-    fn from(_: PhantomType<T>) -> Self {
-        PhantomType(PhantomData)
-    }
+    fn from(_: PhantomType<T>) -> Self {}
 }
 
 impl<T: ?Sized> Serialize for PhantomType<T> {

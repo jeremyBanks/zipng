@@ -1,6 +1,7 @@
 use std::fmt;
 use std::fmt::Debug;
 use std::fmt::Display;
+use std::hash::Hash;
 
 use bstr::BStr;
 use serde::Deserialize;
@@ -31,6 +32,14 @@ impl<T> Blip<T>
 where
     T: ?Sized,
 {
+    pub fn inline(&self) -> Option<Blob<T>> {
+        if self.bytes.len() < 32 {
+            Some(Blob::for_bytes(&self.bytes))
+        } else {
+            None
+        }
+    }
+
     fn try_from_raw_bytes(blip_bytes: &[u8]) -> Result<Self, TooLongForBlipError> {
         Ok(Self {
             bytes: heapless::Vec::from_slice(&blip_bytes)
@@ -52,7 +61,7 @@ where
     T: ?Sized,
 {
     fn from(value: Blob<T>) -> Self {
-        todo!()
+        Blip::for_bytes(value.as_ref()).retype()
     }
 }
 
@@ -66,9 +75,7 @@ where
 {
     type Error = TooLongForInlineBlipError;
 
-    fn try_from(value: Blip<T>) -> Result<Self, Self::Error> {
-        todo!()
-    }
+    fn try_from(value: Blip<T>) -> Result<Self, Self::Error> {}
 }
 
 impl Blip<[u8]> {
@@ -105,6 +112,15 @@ where
 {
     pub fn blob(value: &Blob<T>) -> Self {
         Blip::for_bytes(value.as_ref()).retype()
+    }
+}
+
+impl<T> Hash for Blip<T>
+where
+    T: ?Sized,
+{
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.bytes.hash(state);
     }
 }
 

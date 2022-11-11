@@ -5,6 +5,10 @@
 
 next goals:
 
+- [ ] make it compile, apparently we've gone ahead and figured out how we want
+      our blob/blob_id (now called "blip") implementation to work, so finish it
+      up. I think Blip is mostly good, so copy over some of the changes to Blob.
+
 - [ ] sqlite storage layer with separate blobs and queries, but not much smarts.
       (maybe we merge later, but maybe not.)
 - [ ] queries for web caching
@@ -42,6 +46,11 @@ like Salsa and Turbo is that it sucks. Secondary to that, fiction is focused on
 data that can be cached long-term, to disk, while Salsa seems to be focused on
 data that's stored in-memory, and Turbo confused me. Aiming for some kind of
 Turbo extension in the future might make sense.
+
+Every operation in the engine is represented by a Query, which has a Request
+type and a Response type. The database stores Request-Response pairs, with
+associated Metadata indicating what dependencies the response had when being
+built.
 
 ### Storage Layers
 

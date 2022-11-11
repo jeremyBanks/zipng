@@ -25,6 +25,7 @@ mod generic;
 // mod tts;
 mod context;
 mod engine;
+mod inline;
 mod query;
 mod serde;
 mod storage;

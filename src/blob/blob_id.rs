@@ -1,7 +1,6 @@
 use std::fmt::Debug;
 use std::marker::PhantomData;
 
-use databake::Bake;
 use serde::Deserialize;
 use serde::Serialize;
 
@@ -9,15 +8,22 @@ use super::Representable;
 use crate::never;
 use crate::Blob;
 
-#[derive(
-    Default, Debug, Clone, Eq, PartialOrd, PartialEq, Ord, Hash, Serialize, Deserialize, Bake,
-)]
-#[databake(path = fiction)]
+#[derive(Default, Debug, Eq, PartialOrd, PartialEq, Ord, Hash, Serialize, Deserialize)]
 #[serde(from = "serde_bytes::ByteBuf", into = "serde_bytes::ByteBuf")]
-pub struct BlobId<Representing: Representable> {
+#[serde(bound(serialize = "Representing: Into<Representing>", deserialize = "Representing: Into<Representing>"))]
+pub struct BlobId<Representing: Representable + ?Sized> {
     blob_id: heapless::Vec<u8, 32>,
     #[serde(skip)]
     representing: PhantomData<fn() -> Representing>,
+}
+
+impl<Representing: Representable> Clone for BlobId<Representing> {
+    fn clone(&self) -> Self {
+        Self {
+            blob_id: self.blob_id.clone(),
+            representing: PhantomData,
+        }
+    }
 }
 
 impl<Representing: Representable> BlobId<Representing> {

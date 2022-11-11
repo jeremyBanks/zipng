@@ -12,7 +12,6 @@ async-trait.workspace = true
 blake3.workspace = true
 bstr.workspace = true
 color-eyre.workspace = true
-databake.workspace = true
 derive_more.workspace = true
 duct.workspace = true
 eyre.workspace = true

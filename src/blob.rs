@@ -3,25 +3,37 @@ use std::fmt::Debug;
 use std::marker::PhantomData;
 use std::sync::Arc;
 
-use databake::Bake;
 use once_cell::sync::OnceCell;
-use serde::ser::SerializeTuple;
 use serde::Deserialize;
 use serde::Serialize;
 
 pub use self::blob_id::BlobId;
-use crate::generic::never;
 use crate::generic::Ellipses;
 
 mod blob_id;
 
-#[derive(Clone, Bake, Serialize, Deserialize, Default)]
-#[databake(path = fiction)]
+#[derive(Serialize, Deserialize)]
 #[serde(transparent)]
-pub struct Blob<Representing: Representable> {
-    bytes: Arc<Vec<u8>>,
+pub struct Blob<Representing: Representable + ?Sized> {
+    #[serde(with = "serde_bytes")]
+    bytes: Vec<u8>,
     #[serde(skip)]
-    represented: PhantomData<fn() -> Representing>,
+    representing: PhantomData<fn(Representing) -> Representing>,
+}
+
+impl<Representing: Representable> Default for Blob<Representing> {
+    fn default() -> Self {
+        Self { bytes: Default::default(), representing: PhantomData }
+    }
+}
+
+impl<Representing: Representable> Clone for Blob<Representing> {
+    fn clone(&self) -> Self {
+        Self {
+            bytes: self.bytes.clone(),
+            representing: PhantomData,
+        }
+    }
 }
 
 pub trait Representable: Debug {
@@ -66,26 +78,5 @@ impl<Representing: Representable> Debug for Blob<Representing> {
             .field("id()", &self.id())
             .field("bytes", &Ellipses)
             .finish()
-    }
-}
-
-impl<Representing: Representable> Blob<Representing> {
-    pub fn new(bytes: impl AsRef<[u8]>) -> Self {
-        Self {
-            bytes: Arc::new(serde_bytes::ByteBuf::from(bytes.as_ref())),
-            represented: OnceCell::new(),
-        }
-    }
-
-    pub fn id(&self) -> BlobId<Representing> {
-        BlobId::from(&self)
-    }
-
-    pub fn len(&self) -> usize {
-        self.bytes.len()
-    }
-
-    pub fn bytes(&self) -> &[u8] {
-        &self.bytes
     }
 }

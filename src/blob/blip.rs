@@ -1,3 +1,4 @@
+use std::borrow::Borrow;
 use std::convert::Infallible;
 use std::fmt;
 use std::fmt::Debug;
@@ -16,6 +17,7 @@ use crate::generic::default;
 use crate::generic::Type;
 use crate::inline::InlineVec;
 use crate::never;
+use crate::Blobbable;
 
 /// A [`Blip`] represents a [`Blob`], stored inline if it's under 32 bytes,
 /// otherwise represented by its 32-byte BLAKE3 hash digest.
@@ -36,9 +38,18 @@ assert_impl_all!(Blip<dyn Debug>: Sized, Copy, Serialize, Sync, Send);
 impl<T> Blip<T>
 where T: ?Sized
 {
+    /// Creates a new Blip from a reference to any blobbable value.
+    pub fn new<Ref>(value: Ref) -> Self
+    where
+        T: Blobbable,
+        Ref: Sized + Borrow<T>,
+    {
+        value.borrow().to_blip()
+    }
+
     /// Returns the Blip representing a given Blob.
     pub fn for_blob(blob: &Blob<T>) -> Self {
-        Blip::for_bytes(blob.as_ref()).retype()
+        blob.blip()
     }
 
     /// Creates a blip from the corresponding raw bytes (either a hash or an
@@ -71,64 +82,10 @@ where T: ?Sized
     /// Returns the inline value as a Blob, if present.
     pub fn inline_blob(&self) -> Option<Blob<T>> {
         if self.is_inline() {
-            Some(Blob::for_bytes(&self.bytes))
+            Some(Blob::from_raw_bytes(self.bytes.as_ref()))
         } else {
             None
         }
-    }
-}
-
-impl Blip<[u8]> {
-    pub fn for_bytes(mut bytes: &[u8]) -> Self {
-        if bytes.len() >= 32 {
-            bytes = blake3::hash(bytes).as_bytes()
-        }
-        Self {
-            bytes: InlineVec::try_from_slice(bytes).unwrap(),
-            t: default(),
-        }
-    }
-
-    pub fn for_value(bytes: &[u8]) -> Self {
-        Blip::for_bytes(bytes).retype()
-    }
-
-    pub fn inline_value(&self) -> Option<&[u8]> {
-        if self.is_inline() {
-            Some(self.bytes.as_ref())
-        } else {
-            None
-        }
-    }
-}
-
-impl Blip<str> {
-    pub fn for_str(bytes: &str) -> Self {
-        Blip::for_bytes(bytes.as_bytes()).retype()
-    }
-
-    pub fn for_value(bytes: &str) -> Self {
-        Blip::for_bytes(bytes.as_bytes()).retype()
-    }
-
-    pub fn inline_value(&self) -> Option<&str> {
-        if self.is_inline() {
-            Some(std::str::from_utf8(self.bytes.as_ref()).unwrap())
-        } else {
-            None
-        }
-    }
-}
-
-impl<T> Blip<T>
-where T: Serialize + Deserialize<'static>
-{
-    pub fn for_value(value: &T) -> Self {
-        Blob::for_value(value).blip()
-    }
-
-    pub fn inline_value(&self) -> Option<T> {
-        self.inline_blob().map(|b| b.as_ref().value().unwrap())
     }
 }
 
@@ -150,7 +107,7 @@ impl<T> From<Blob<T>> for Blip<T>
 where T: ?Sized
 {
     fn from(value: Blob<T>) -> Self {
-        Blip::for_bytes(value.as_ref()).retype()
+        value.blip()
     }
 }
 
@@ -158,13 +115,13 @@ impl<T> From<&Blob<T>> for Blip<T>
 where T: ?Sized
 {
     fn from(value: &Blob<T>) -> Self {
-        Blip::for_bytes(value.as_ref()).retype()
+        value.blip()
     }
 }
 
 #[derive(Debug, Error, Copy, Clone)]
-#[error("This Blip represents a value that's too long to store inline ({0} bytes > 31 bytes).")]
-pub struct TooLongForInlineBlipError(usize);
+#[error("This Blip represents a value that's too long to store inline.")]
+pub struct TooLongForInlineBlipError;
 
 impl<T> TryFrom<Blip<T>> for Blob<T>
 where T: ?Sized
@@ -172,7 +129,7 @@ where T: ?Sized
     type Error = TooLongForInlineBlipError;
 
     fn try_from(value: Blip<T>) -> Result<Self, Self::Error> {
-        todo!()
+        value.inline_blob().ok_or_else(|| TooLongForInlineBlipError)
     }
 }
 

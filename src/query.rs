@@ -12,13 +12,16 @@ use crate::never;
 use crate::panic;
 use crate::Blip;
 use crate::Blob;
+use crate::Blobbable;
 
-/// context associated with a given request instance.
+/// context associated with a given request instance, producing a given
+/// response.
 ///
 /// all of a requests instance evaluation's interactions with the rest of the
 /// engine go through its context.
 pub struct Context<Request: self::Request> {
-    request: Request,
+    request: Blip<Request>,
+    // xxx: what other metadata do we need?
 }
 
 impl<Request: self::Request + Sync> Context<Request> {
@@ -28,7 +31,7 @@ impl<Request: self::Request + Sync> Context<Request> {
 }
 
 #[async_trait]
-pub trait Request: Debug + Serialize + Deserialize<'static> + Clone + Sync + Send {
+pub trait Request: Debug + Blobbable + Clone + Sync + Send {
     const TAG: u32;
     type Response: self::Response;
     type Error: Debug + Into<self::Error> + From<self::Error>;
@@ -38,7 +41,7 @@ pub trait Request: Debug + Serialize + Deserialize<'static> + Clone + Sync + Sen
     }
 }
 
-pub trait Response: Debug + Serialize + Deserialize<'static> + Clone + Sync + Send {
+pub trait Response: Debug + Blobbable + Clone + Sync + Send {
     type Request: self::Request;
 }
 
@@ -105,8 +108,6 @@ pub struct TextToSpeech {
 pub struct TextToSpeechResponse {
     blip: Blip<never>,
 }
-
-pub fn text_to_speech(text: impl ToString) -> TextToSpeech {}
 
 #[async_trait]
 impl Request for TextToSpeech {

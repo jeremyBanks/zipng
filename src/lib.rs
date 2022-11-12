@@ -30,6 +30,7 @@ mod storage;
 
 pub use crate::blob::Blip;
 pub use crate::blob::Blob;
+pub use crate::blob::Blobbable;
 pub use crate::engine::Engine;
 pub use crate::generic::never;
 pub use crate::generic::panic;

@@ -1,8 +1,5 @@
-mod borrowable;
 mod phantom_type;
 
-use std::borrow::Borrow;
-use std::borrow::BorrowMut;
 use std::fmt::Debug;
 use std::fmt::Display;
 use std::process::ExitCode;
@@ -12,7 +9,6 @@ use serde::Deserialize;
 use serde::Serialize;
 use static_assertions::assert_impl_all;
 
-pub use self::borrowable::Borrowable;
 pub use self::phantom_type::Type;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]

@@ -1,3 +1,4 @@
+use std::borrow::Borrow;
 use std::convert::Infallible;
 use std::fmt;
 use std::fmt::Debug;
@@ -8,6 +9,7 @@ use std::ops::DerefMut;
 use std::rc::Rc;
 
 use bstr::BStr;
+use serde::de::DeserializeOwned;
 use serde::Deserialize;
 use serde::Serialize;
 use static_assertions::assert_impl_all;
@@ -17,7 +19,7 @@ use crate::generic::default;
 use crate::generic::Type;
 use crate::never;
 
-/// A blob is a byte vector, t the Postcard binary serialization of a
+/// A blob is a byte vector, containing the Postcard binary serialization of a
 /// value of a given type, or else a raw byte or character string (`Blob<[u8]>`,
 /// `Blob<str>`).
 pub struct Blob<T>
@@ -27,17 +29,22 @@ where T: ?Sized
     t: Type<T>,
 }
 
-assert_impl_all!(Blob<never>: Sized, Serialize, Sync, Send);
-assert_impl_all!(Blob<Infallible>: Sized, Serialize, Sync, Send);
-assert_impl_all!(Blob<Rc<u8>>: Sized, Serialize, Sync, Send);
-assert_impl_all!(Blob<[u8]>: Sized, Serialize, Sync, Send);
-assert_impl_all!(Blob<dyn Debug>: Sized, Serialize, Sync, Send);
+assert_impl_all!(Blob<never>: Sized, Serialize, DeserializeOwned, Sync, Send);
+assert_impl_all!(Blob<Infallible>: Sized, Serialize, DeserializeOwned, Sync, Send);
+assert_impl_all!(Blob<Rc<u8>>: Sized, Serialize, DeserializeOwned, Sync, Send);
+assert_impl_all!(Blob<[u8]>: Sized, Serialize, DeserializeOwned, Sync, Send);
+assert_impl_all!(Blob<dyn Debug>: Sized, Serialize, DeserializeOwned, Sync, Send);
 
 impl<T> Blob<T>
 where T: ?Sized
 {
-    pub fn new() -> Self {
-        default()
+    /// Creates a new blob from a reference to any blobbable value.
+    pub fn new<Ref>(value: Ref) -> Self
+    where
+        T: Blobbable,
+        Ref: Sized + Borrow<T>,
+    {
+        value.borrow().to_blob()
     }
 
     /// Creates a blob from bytes directly, without making sure the type
@@ -64,43 +71,6 @@ where T: ?Sized
             bytes: self.bytes,
             t: default(),
         }
-    }
-}
-
-impl Blob<[u8]> {
-    pub fn for_bytes(bytes: &[u8]) -> Self {
-        Self::from_raw_bytes(bytes)
-    }
-
-    pub fn for_value(bytes: &[u8]) -> Self {
-        Self::from_raw_bytes(bytes)
-    }
-
-    pub fn value(&self) -> &[u8] {
-        &self.bytes
-    }
-}
-
-impl Blob<str> {
-    pub fn for_str(bytes: &str) -> Self {
-        Self::from_raw_bytes(bytes.as_bytes())
-    }
-
-    pub fn for_value(bytes: &str) -> Self {
-        Self::from_raw_bytes(bytes.as_bytes())
-    }
-
-    pub fn value(&self) -> &str {
-        std::str::from_utf8(&self.bytes).unwrap()
-    }
-}
-
-impl<T> Blob<T>
-where T: Serialize + Deserialize<'static>
-{
-    pub fn for_value(value: &T) -> Self {
-        let blob = postcard::to_allocvec(value).expect("serialization must not fail");
-        Blob::for_bytes(&blob).retype()
     }
 }
 
@@ -169,7 +139,7 @@ where T: ?Sized
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where D: serde::Deserializer<'de> {
         let bytes = serde_bytes::ByteBuf::deserialize(deserializer)?.into_vec();
-        Ok(bytes.as_slice().blob().retype())
+        Ok(bytes.as_slice().to_blob().retype())
     }
 }
 

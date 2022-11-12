@@ -33,26 +33,28 @@ impl<T> Blip<T>
 where
     T: ?Sized,
 {
-    pub fn inline(&self) -> Option<Blob<T>> {
-        if self.bytes.len() < 32 {
+    /// Whether this contains an inline value.
+    pub const fn is_inline(&self) -> bool {
+        self.bytes.len() < 32
+    }
+
+    /// Returns the inline value as a Blob, if present.
+    pub fn inline_blob(&self) -> Option<Blob<T>> {
+        if self.is_inline() {
             Some(Blob::for_bytes(&self.bytes))
         } else {
             None
         }
     }
 
-    pub fn deserialize_inline(&self) -> Option<T>
-    where
-        T: Deserialize<'static>,
-    {
-        self.inline().map(Blob::deserialize)
-    }
-
+    /// Returns the Blip representing a given Blob.
     pub fn for_blob(blob: &Blob<T>) -> Self {
         Blip::for_bytes(blob.as_ref()).retype()
     }
 
-    fn try_from_raw_bytes(blip_bytes: &[u8]) -> Result<Self, TooLongForBlipError> {
+    /// Creates a blip from the corresponding raw bytes (either a hash or an
+    /// inline value, depending on length).
+    pub fn try_from_raw_bytes(blip_bytes: &[u8]) -> Result<Self, TooLongForBlipError> {
         Ok(Self {
             bytes: InlineVec::try_from_slice(&blip_bytes)
                 .map_err(|_| TooLongForBlipError(blip_bytes.len()))?,
@@ -102,30 +104,50 @@ impl Blip<[u8]> {
             representing: default(),
         }
     }
+
+    pub fn for_value(bytes: &[u8]) -> Self {
+        Blip::for_bytes(bytes).retype()
+    }
+
+    pub fn inline_value(&self) -> Option<&[u8]> {
+        if self.is_inline() {
+            Some(self.bytes.as_ref())
+        } else {
+            None
+        }
+    }
 }
 
 impl Blip<str> {
     pub fn for_str(bytes: &str) -> Self {
         Blip::for_bytes(bytes.as_bytes()).retype()
     }
-}
 
-impl<T> Blip<T>
-where
-    T: Serialize + ?Sized,
-{
-    pub fn for_value(value: &T) -> Self {
-        Blip::for_bytes(&postcard::to_allocvec(value).expect("serialization must not fail"))
-            .retype()
+    pub fn for_value(bytes: &str) -> Self {
+        Blip::for_bytes(bytes.as_bytes()).retype()
+    }
+
+    pub fn inline_value(&self) -> Option<&str> {
+        if self.is_inline() {
+            Some(std::str::from_utf8(self.bytes.as_ref()).unwrap())
+        } else {
+            None
+        }
     }
 }
 
 impl<T> Blip<T>
 where
-    T: ?Sized,
+    T: Serialize + Deserialize<'static>,
 {
-    pub fn blob(value: &Blob<T>) -> Self {
-        Blip::for_bytes(value.as_ref()).retype()
+    pub fn for_value(value: &T) -> Self {
+        Blip::for_bytes(&postcard::to_allocvec(value).expect("serialization must not fail"))
+            .retype()
+    }
+
+    pub fn inline_value(&self) -> Option<T> {
+        self.inline_blob()
+            .map(|b| b.as_ref().deserialize().unwrap())
     }
 }
 

@@ -1,6 +1,6 @@
 #![allow(unused_labels)]
 #![deny(unsafe_code)]
-#![warn(unused_crate_dependencies)]
+#![warn(unused_crate_dependencies, missing_docs)]
 #![cfg_attr(
     all(debug_assertions, any(not(test), feature = "EDITOR")),
     allow(dead_code, unreachable_code, unused_variables)
@@ -8,8 +8,6 @@
 
 use std::env;
 use std::format as f;
-use std::process::Termination;
-use std::sync::Arc;
 
 use tracing::warn;
 use tracing_error::ErrorLayer;

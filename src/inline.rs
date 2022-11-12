@@ -3,8 +3,6 @@ use std::borrow::BorrowMut;
 use std::fmt::Debug;
 use std::hash::Hash;
 
-use serde::Deserialize;
-use serde::Serialize;
 use static_assertions::assert_impl_all;
 use thiserror::Error;
 

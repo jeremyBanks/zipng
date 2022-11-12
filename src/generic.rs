@@ -1,4 +1,4 @@
-mod owned_or_borrowed;
+mod borrowable;
 mod phantom_type;
 
 use std::borrow::Borrow;
@@ -12,6 +12,7 @@ use serde::Deserialize;
 use serde::Serialize;
 use static_assertions::assert_impl_all;
 
+pub use self::borrowable::Borrowable;
 pub use self::phantom_type::Type;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]

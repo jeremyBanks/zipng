@@ -1,13 +1,9 @@
-use std::borrow::Borrow;
-use std::borrow::BorrowMut;
-
-use derive_more::From;
-use derive_more::TryInto;
 use serde::Deserialize;
 use serde::Serialize;
 
 use crate::blob::Blip;
 use crate::blob::Blob;
+use crate::generic::Borrowable;
 
 /// A type that can be serialized to/from a [`Blob`].
 ///
@@ -16,11 +12,8 @@ use crate::blob::Blob;
 pub trait Blobbable {
     fn blob(&self) -> Blob<Self>;
 
-    type BlobAs: ?Sized;
-    fn blob_as(blob: &Blob<Self>) -> &Self::BlobAs;
-
-    type BlobTo: Sized;
-    fn blob_to(blob: &Blob<Self>) -> Self::BlobTo;
+    fn blob_to(blob: &Blob<Self>) -> Borrowable<Self>
+    where Self: Sized;
 
     fn blip(&self) -> Blip<Self> {
         self.blob().blip()
@@ -32,13 +25,9 @@ impl Blobbable for str {
         Blob::from_raw_bytes(self.as_ref())
     }
 
-    type BlobAs = str;
-    fn blob_as(blob: &Blob<Self>) -> &Self::BlobAs {
-        std::str::from_utf8(blob.as_ref()).unwrap()
+    fn blob_to(blob: &Blob<Self>) -> Borrowable<Self> {
+        std::str::from_utf8(blob.as_ref()).unwrap().into()
     }
-
-    type BlobTo = ();
-    fn blob_to(blob: &Blob<Self>) {}
 }
 
 impl Blobbable for [u8] {
@@ -46,13 +35,10 @@ impl Blobbable for [u8] {
         Blob::from_raw_bytes(self.as_ref())
     }
 
-    type BlobAs = [u8];
-    fn blob_as(blob: &Blob<Self>) -> &Self::BlobAs {
-        blob.as_ref()
+    fn blob_to(blob: &Blob<Self>) -> Borrowable<Self>
+    where Self: Sized {
+        blob.as_ref().into()
     }
-
-    type BlobTo = ();
-    fn blob_to(blob: &Blob<Self>) -> Self::BlobTo {}
 }
 
 impl<T> Blobbable for T
@@ -62,13 +48,8 @@ where T: Serialize + Deserialize<'static> + 'static
         Blob::from_raw_vec(postcard::to_stdvec(self).unwrap())
     }
 
-    type BlobAs = ();
-    fn blob_as(blob: &Blob<Self>) -> &Self::BlobAs {
-        &()
-    }
-
-    type BlobTo = T;
-    fn blob_to(blob: &Blob<Self>) -> Self::BlobTo {
-        postcard::from_bytes(blob.as_ref()).unwrap()
+    fn blob_to(blob: &Blob<Self>) -> Borrowable<Self>
+    where Self: Sized {
+        postcard::from_bytes(blob.as_ref()).unwrap().into()
     }
 }

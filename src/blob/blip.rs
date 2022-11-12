@@ -12,7 +12,6 @@ use serde::Serialize;
 use static_assertions::assert_impl_all;
 use thiserror::Error;
 
-use super::serialization::Postcard;
 use super::BlobSerialization;
 use super::DefaultBlobSerialization;
 use crate::blob::Blob;
@@ -52,7 +51,7 @@ where
         T: Blobbable<S>,
         Ref: Sized + Borrow<T>,
     {
-        T::to_blip(&value.borrow())
+        T::to_blip(value.borrow())
     }
 
     /// Returns the Blip representing a given Blob.
@@ -64,7 +63,7 @@ where
     /// inline value, depending on length).
     pub fn try_from_raw_bytes(blip_bytes: &[u8]) -> Result<Self, TooLongForBlipError> {
         Ok(Self {
-            bytes: InlineVec::try_from_slice(&blip_bytes)
+            bytes: InlineVec::try_from_slice(blip_bytes)
                 .map_err(|_| TooLongForBlipError(blip_bytes.len()))?,
             ..default()
         })
@@ -108,6 +107,7 @@ where
     T: ?Sized,
     S: BlobSerialization,
 {
+    /// Returns the Blip representing this Blob.
     pub fn blip(&self) -> Blip<T, S> {
         self.into()
     }
@@ -115,6 +115,7 @@ where
 
 #[derive(Debug, Error, Copy, Clone)]
 #[error("Blips must be between 0 and 32 bytes, but the input was {0} bytes.")]
+/// Blips must be between 0 and 32 bytes, but the input was longer.
 pub struct TooLongForBlipError(usize);
 
 impl<T, S> From<Blob<T, S>> for Blip<T, S>
@@ -138,6 +139,7 @@ where
 }
 
 #[derive(Debug, Error, Copy, Clone)]
+/// This Blip represents a value that's too long to store inline.
 #[error("This Blip represents a value that's too long to store inline.")]
 pub struct TooLongForInlineBlipError;
 
@@ -149,7 +151,7 @@ where
     type Error = TooLongForInlineBlipError;
 
     fn try_from(value: Blip<T, S>) -> Result<Self, Self::Error> {
-        value.inline_blob().ok_or_else(|| TooLongForInlineBlipError)
+        value.inline_blob().ok_or(TooLongForInlineBlipError)
     }
 }
 
@@ -227,7 +229,7 @@ where
 {
     fn serialize<Ser>(&self, serializer: Ser) -> Result<Ser::Ok, Ser::Error>
     where Ser: serde::Serializer {
-        serde_bytes::Bytes::new(&self.bytes.as_ref()).serialize(serializer)
+        serde_bytes::Bytes::new(self.bytes.as_ref()).serialize(serializer)
     }
 }
 
@@ -264,7 +266,7 @@ where
 {
     fn clone(&self) -> Self {
         Self {
-            bytes: self.bytes.clone(),
+            bytes: self.bytes,
             ..default()
         }
     }

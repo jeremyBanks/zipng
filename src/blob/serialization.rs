@@ -4,6 +4,7 @@ use serde::Serialize;
 use crate::Blob;
 use crate::Blobbable;
 
+/// The default serialization used by Blob unless explicitly indicated otherwise.
 pub type DefaultBlobSerialization = Postcard;
 
 /// A [`serde`] implementation that can be used to serialize a [`Blobbable`]
@@ -19,6 +20,7 @@ pub trait BlobSerialization: Sized {
     fn deserialize_from_bytes<T: DeserializeOwned + Blobbable<Self>>(value: &[u8]) -> T;
 }
 
+/// [`postcard`]
 pub enum Postcard {}
 impl BlobSerialization for Postcard {
     fn serialize_as_bytes<T: Serialize + Blobbable<Self>>(value: &T) -> Vec<u8> {
@@ -29,6 +31,7 @@ impl BlobSerialization for Postcard {
     }
 }
 
+/// [`serde_json`]
 pub enum Json {}
 impl BlobSerialization for Json {
     fn serialize_as_bytes<T: Serialize + Blobbable<Self>>(value: &T) -> Vec<u8> {
@@ -39,6 +42,7 @@ impl BlobSerialization for Json {
     }
 }
 
+/// [`flexbuffers`]
 pub enum FlexBuffers {}
 impl BlobSerialization for FlexBuffers {
     fn serialize_as_bytes<T: Serialize + Blobbable<Self>>(value: &T) -> Vec<u8> {
@@ -49,6 +53,7 @@ impl BlobSerialization for FlexBuffers {
     }
 }
 
+/// [`serde_cbor`]
 pub enum Cbor {}
 impl BlobSerialization for Cbor {
     fn serialize_as_bytes<T: Serialize + Blobbable<Self>>(value: &T) -> Vec<u8> {

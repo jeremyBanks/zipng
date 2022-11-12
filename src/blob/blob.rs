@@ -152,7 +152,7 @@ where
 {
     fn serialize<Ser>(&self, serializer: Ser) -> Result<Ser::Ok, Ser::Error>
     where Ser: serde::Serializer {
-        serde_bytes::Bytes::new(&self.bytes.as_ref()).serialize(serializer)
+        serde_bytes::Bytes::new(self.bytes.as_ref()).serialize(serializer)
     }
 }
 

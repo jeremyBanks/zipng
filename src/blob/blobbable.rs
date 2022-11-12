@@ -34,11 +34,9 @@ where Serialization: BlobSerialization
     /// Deserializes a [`Blob`] into this type as an owned value.
     fn from_blob(blob: &Blob<Self, Serialization>) -> Self
     where Self: Clone {
-        Self::owned_from_blob(blob).unwrap_or(
-            Self::borrowed_from_blob(&blob)
+        Self::owned_from_blob(blob).unwrap_or_else(|| Self::borrowed_from_blob(blob)
                 .expect("either blob_to or blob_as must be implemented")
-                .clone(),
-        )
+                .clone())
     }
 
     /// Serialize this value into a [`Blob`] and then return its [`Blip`].
@@ -63,7 +61,7 @@ impl<Serialization> Blobbable<Serialization> for [u8]
 where Serialization: BlobSerialization
 {
     fn to_blob(&self) -> Blob<Self, Serialization> {
-        Blob::from_raw_bytes(self.as_ref())
+        Blob::from_raw_bytes(self)
     }
 
     fn borrowed_from_blob(blob: &Blob<Self, Serialization>) -> Option<&Self> {

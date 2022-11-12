@@ -13,12 +13,12 @@ use static_assertions::assert_impl_all;
 /// seems to be the right way to defined a `PhantomData` without affecting
 /// either the borrow checker (lifetimes) or the drop checker (ownership,
 /// borrowing).
-pub struct PhantomType<T: ?Sized>(PhantomData<fn(T) -> T>);
+pub struct Type<T: ?Sized>(PhantomData<fn(T) -> T>);
 
-impl<T: ?Sized> Copy for PhantomType<T> {}
+impl<T: ?Sized> Copy for Type<T> {}
 
 assert_impl_all!(
-  PhantomType<(*const u8, dyn Debug)>:
+  Type<(*const u8, dyn Debug)>:
     Copy,
     Send,
     Sync,
@@ -33,80 +33,76 @@ assert_impl_all!(
     Into<()>,
 );
 
-impl<T: ?Sized> Clone for PhantomType<T> {
+impl<T: ?Sized> Clone for Type<T> {
     fn clone(&self) -> Self {
-        PhantomType(PhantomData)
+        Type(PhantomData)
     }
 }
 
-impl<T: ?Sized> PartialEq for PhantomType<T> {
+impl<T: ?Sized> PartialEq for Type<T> {
     fn eq(&self, _other: &Self) -> bool {
         true
     }
 }
 
-impl<T: ?Sized> Eq for PhantomType<T> {}
+impl<T: ?Sized> Eq for Type<T> {}
 
-impl<T: ?Sized> PartialOrd for PhantomType<T> {
+impl<T: ?Sized> PartialOrd for Type<T> {
     fn partial_cmp(&self, _other: &Self) -> Option<Ordering> {
         Some(Ordering::Equal)
     }
 }
 
-impl<T: ?Sized> Ord for PhantomType<T> {
+impl<T: ?Sized> Ord for Type<T> {
     fn cmp(&self, other: &Self) -> Ordering {
         Ordering::Equal
     }
 }
 
-impl<T: ?Sized> Hash for PhantomType<T> {
+impl<T: ?Sized> Hash for Type<T> {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {}
 }
 
-impl<T: ?Sized> PhantomType<T> {
+impl<T: ?Sized> Type<T> {
     pub fn new() -> Self {
-        PhantomType(PhantomData)
+        Type(PhantomData)
     }
 }
 
-impl<T: ?Sized> Debug for PhantomType<T> {
+impl<T: ?Sized> Debug for Type<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str("👻")
     }
 }
 
-impl<T: ?Sized> Default for PhantomType<T> {
+impl<T: ?Sized> Default for Type<T> {
     fn default() -> Self {
-        PhantomType(PhantomData)
+        Type(PhantomData)
     }
 }
 
-impl<T: ?Sized> From<()> for PhantomType<T> {
+impl<T: ?Sized> From<()> for Type<T> {
     fn from(_: ()) -> Self {
-        PhantomType(PhantomData)
+        Type(PhantomData)
     }
 }
 
-impl<T: ?Sized> From<PhantomType<T>> for () {
-    fn from(_: PhantomType<T>) -> Self {}
+impl<T: ?Sized> From<Type<T>> for () {
+    fn from(_: Type<T>) -> Self {}
 }
 
-impl<T: ?Sized> Serialize for PhantomType<T> {
+impl<T: ?Sized> Serialize for Type<T> {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
+    where S: serde::Serializer {
         serializer.serialize_unit()
     }
 }
 
-impl<'de, T: ?Sized> Deserialize<'de> for PhantomType<T> {
+impl<'de, T: ?Sized> Deserialize<'de> for Type<T> {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: serde::Deserializer<'de>,
-    {
+    where D: serde::Deserializer<'de> {
         deserializer.deserialize_unit(UnitVisitor)?;
-        Ok(PhantomType(PhantomData))
+        Ok(Type(PhantomData))
     }
 }
 
@@ -119,9 +115,7 @@ impl<'de> de::Visitor<'de> for UnitVisitor {
     }
 
     fn visit_unit<E>(self) -> Result<Self::Value, E>
-    where
-        E: de::Error,
-    {
+    where E: de::Error {
         Ok(())
     }
 }

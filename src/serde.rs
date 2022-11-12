@@ -53,9 +53,7 @@ impl<'de, 'a> Visitor<'de> for BytesVisitor<'a> {
     }
 
     fn visit_seq<Seq>(self, mut seq: Seq) -> Result<Self::Value, Seq::Error>
-    where
-        Seq: serde::de::SeqAccess<'de>,
-    {
+    where Seq: serde::de::SeqAccess<'de> {
         loop {
             match seq.next_element::<u8>() {
                 Ok(next) => match next {

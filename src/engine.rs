@@ -17,8 +17,7 @@ pub struct Engine<Storage: crate::Storage> {
 }
 
 impl<Storage: crate::Storage> Default for Engine<Storage>
-where
-    Storage: Default,
+where Storage: Default
 {
     fn default() -> Self {
         Self {

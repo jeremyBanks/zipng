@@ -25,23 +25,17 @@ pub struct InlineVec<T: Primitive, const Capacity: usize> {
 
 impl<T: Primitive, const Capacity: usize> InlineVec<T, Capacity> {
     pub const fn new() -> Self
-    where
-        T: Default,
-    {
+    where T: Default {
         Self::default()
     }
 
     pub fn try_from_slice(slice: &[T]) -> Result<Self, CapacityExceeded>
-    where
-        T: Default,
-    {
+    where T: Default {
         slice.try_into()
     }
 
     pub fn try_from_vec(slice: Vec<T>) -> Result<Self, CapacityExceeded>
-    where
-        T: Default,
-    {
+    where T: Default {
         slice.as_slice().try_into()
     }
 
@@ -86,8 +80,7 @@ impl<T: Primitive, const Capacity: usize> InlineVec<T, Capacity> {
 }
 
 impl<T: Primitive, const Capacity: usize> Default for InlineVec<T, Capacity>
-where
-    T: Default,
+where T: Default
 {
     fn default() -> Self {
         Self {
@@ -122,8 +115,7 @@ impl<T: Primitive, const Capacity: usize> BorrowMut<[T]> for InlineVec<T, Capaci
 }
 
 impl<T: Primitive, const Capacity: usize> Hash for InlineVec<T, Capacity>
-where
-    T: Hash,
+where T: Hash
 {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         self.as_ref().hash(state)
@@ -131,32 +123,28 @@ where
 }
 impl<T: Primitive, const Capacity: usize> Eq for InlineVec<T, Capacity> where T: Eq {}
 impl<T: Primitive, const Capacity: usize> PartialEq for InlineVec<T, Capacity>
-where
-    T: PartialEq,
+where T: PartialEq
 {
     fn eq(&self, other: &Self) -> bool {
         self.as_ref().eq(other.as_ref())
     }
 }
 impl<T: Primitive, const Capacity: usize> Ord for InlineVec<T, Capacity>
-where
-    T: Ord,
+where T: Ord
 {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         self.as_ref().cmp(other.as_ref())
     }
 }
 impl<T: Primitive, const Capacity: usize> PartialOrd for InlineVec<T, Capacity>
-where
-    T: PartialOrd,
+where T: PartialOrd
 {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         self.as_ref().partial_cmp(other.as_ref())
     }
 }
 impl<T: Primitive, const Capacity: usize> Debug for InlineVec<T, Capacity>
-where
-    T: Debug,
+where T: Debug
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         self.as_ref().fmt(f)
@@ -172,8 +160,7 @@ impl<T: Primitive, const Capacity: usize> Copy for InlineVec<T, Capacity> {}
 
 impl<T: Primitive, const Capacity: usize> From<heapless::Vec<T, Capacity>>
     for InlineVec<T, Capacity>
-where
-    T: Default,
+where T: Default
 {
     fn from(value: heapless::Vec<T, Capacity>) -> Self {
         value.as_slice().try_into().unwrap()
@@ -185,8 +172,7 @@ where
 pub struct CapacityExceeded;
 
 impl<T: Primitive, const Capacity: usize> TryFrom<&[T]> for InlineVec<T, Capacity>
-where
-    T: Default,
+where T: Default
 {
     type Error = CapacityExceeded;
 

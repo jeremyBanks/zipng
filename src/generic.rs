@@ -1,5 +1,8 @@
+mod owned_or_borrowed;
 mod phantom_type;
 
+use std::borrow::Borrow;
+use std::borrow::BorrowMut;
 use std::fmt::Debug;
 use std::fmt::Display;
 use std::process::ExitCode;
@@ -9,7 +12,7 @@ use serde::Deserialize;
 use serde::Serialize;
 use static_assertions::assert_impl_all;
 
-pub use self::phantom_type::PhantomType;
+pub use self::phantom_type::Type;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 #[doc(hidden)]
@@ -26,8 +29,7 @@ pub enum panic {}
 assert_impl_all!(panic: Send, Sync);
 
 impl<Err> From<Err> for panic
-where
-    Err: Display + Debug,
+where Err: Display + Debug
 {
     #[track_caller]
     fn from(error: Err) -> Self {
@@ -66,8 +68,6 @@ impl Termination for never {
 }
 
 pub(crate) fn default<T>() -> T
-where
-    T: Default,
-{
+where T: Default {
     T::default()
 }

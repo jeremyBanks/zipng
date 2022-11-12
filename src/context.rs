@@ -2,12 +2,13 @@ use std::sync::Arc;
 
 use thiserror::Error;
 
-use crate::blob::Blip;
-use crate::blob::Blob;
-use crate::generic::never;
-use crate::storage::sqlite::SqliteStorage;
+use crate::default;
+use crate::never;
 use crate::AnyRequest;
 use crate::AnyResponse;
+use crate::Blip;
+use crate::Blob;
+use crate::SqliteStorage;
 
 #[derive(Debug, Default)]
 pub struct Context<Request: crate::Request> {
@@ -25,7 +26,7 @@ impl<Request: crate::Request> Context<Request> {
         let storage = storage.into();
         Context {
             storage,
-            ..Default::default()
+            ..default()
         }
     }
 

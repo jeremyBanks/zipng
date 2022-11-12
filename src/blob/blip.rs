@@ -12,6 +12,9 @@ use serde::Serialize;
 use static_assertions::assert_impl_all;
 use thiserror::Error;
 
+use super::serialization::Postcard;
+use super::BlobSerialization;
+use super::DefaultBlobSerialization;
 use crate::blob::Blob;
 use crate::generic::default;
 use crate::generic::Type;
@@ -22,11 +25,14 @@ use crate::Blobbable;
 /// A [`Blip`] represents a [`Blob`], stored inline if it's under 32 bytes,
 /// otherwise represented by its 32-byte BLAKE3 hash digest.
 /// This type is `Copy`.
-pub struct Blip<T>
-where T: ?Sized
+pub struct Blip<T, S = DefaultBlobSerialization>
+where
+    T: ?Sized,
+    S: BlobSerialization,
 {
     bytes: InlineVec<u8, 32>,
     t: Type<T>,
+    s: Type<S>,
 }
 
 assert_impl_all!(Blip<never>: Sized, Copy, Serialize, Sync, Send);
@@ -35,20 +41,22 @@ assert_impl_all!(Blip<Rc<u8>>: Sized, Copy, Serialize, Sync, Send);
 assert_impl_all!(Blip<[u8]>: Sized, Copy, Serialize, Sync, Send);
 assert_impl_all!(Blip<dyn Debug>: Sized, Copy, Serialize, Sync, Send);
 
-impl<T> Blip<T>
-where T: ?Sized
+impl<T, S> Blip<T, S>
+where
+    T: ?Sized,
+    S: BlobSerialization,
 {
     /// Creates a new Blip from a reference to any blobbable value.
     pub fn new<Ref>(value: Ref) -> Self
     where
-        T: Blobbable,
+        T: Blobbable<S>,
         Ref: Sized + Borrow<T>,
     {
-        value.borrow().to_blip()
+        T::to_blip(&value.borrow())
     }
 
     /// Returns the Blip representing a given Blob.
-    pub fn for_blob(blob: &Blob<T>) -> Self {
+    pub fn for_blob(blob: &Blob<T, S>) -> Self {
         blob.blip()
     }
 
@@ -58,29 +66,28 @@ where T: ?Sized
         Ok(Self {
             bytes: InlineVec::try_from_slice(&blip_bytes)
                 .map_err(|_| TooLongForBlipError(blip_bytes.len()))?,
-            t: default(),
+            ..default()
         })
     }
-
-    fn retype<R: ?Sized>(self) -> Blip<R> {
+    pub(in crate::blob) fn retype<R: ?Sized, Q: BlobSerialization>(self) -> Blip<R, Q> {
         Blip {
             bytes: self.bytes,
-            t: default(),
+            ..default()
         }
     }
 
     /// Whether this Blip contains an inline value.
-    pub const fn is_inline(&self) -> bool {
+    pub fn is_inline(&self) -> bool {
         self.bytes.len() < 32
     }
 
     /// Whether this Blip contains a hash identifying external-stored content.
-    pub const fn is_hash(&self) -> bool {
+    pub fn is_hash(&self) -> bool {
         self.bytes.len() == 32
     }
 
     /// Returns the inline value as a Blob, if present.
-    pub fn inline_blob(&self) -> Option<Blob<T>> {
+    pub fn inline_blob(&self) -> Option<Blob<T, S>> {
         if self.is_inline() {
             Some(Blob::from_raw_bytes(self.bytes.as_ref()))
         } else {
@@ -89,12 +96,19 @@ where T: ?Sized
     }
 }
 
-impl<T> Copy for Blip<T> where T: ?Sized {}
-
-impl<T> Blob<T>
-where T: ?Sized
+impl<T, S> Copy for Blip<T, S>
+where
+    T: ?Sized,
+    S: BlobSerialization,
 {
-    pub fn blip(&self) -> Blip<T> {
+}
+
+impl<T, S> Blob<T, S>
+where
+    T: ?Sized,
+    S: BlobSerialization,
+{
+    pub fn blip(&self) -> Blip<T, S> {
         self.into()
     }
 }
@@ -103,18 +117,22 @@ where T: ?Sized
 #[error("Blips must be between 0 and 32 bytes, but the input was {0} bytes.")]
 pub struct TooLongForBlipError(usize);
 
-impl<T> From<Blob<T>> for Blip<T>
-where T: ?Sized
+impl<T, S> From<Blob<T, S>> for Blip<T, S>
+where
+    T: ?Sized,
+    S: BlobSerialization,
 {
-    fn from(value: Blob<T>) -> Self {
+    fn from(value: Blob<T, S>) -> Self {
         value.blip()
     }
 }
 
-impl<T> From<&Blob<T>> for Blip<T>
-where T: ?Sized
+impl<T, S> From<&Blob<T, S>> for Blip<T, S>
+where
+    T: ?Sized,
+    S: BlobSerialization,
 {
-    fn from(value: &Blob<T>) -> Self {
+    fn from(value: &Blob<T, S>) -> Self {
         value.blip()
     }
 }
@@ -123,77 +141,100 @@ where T: ?Sized
 #[error("This Blip represents a value that's too long to store inline.")]
 pub struct TooLongForInlineBlipError;
 
-impl<T> TryFrom<Blip<T>> for Blob<T>
-where T: ?Sized
+impl<T, S> TryFrom<Blip<T, S>> for Blob<T, S>
+where
+    T: ?Sized,
+    S: BlobSerialization,
 {
     type Error = TooLongForInlineBlipError;
 
-    fn try_from(value: Blip<T>) -> Result<Self, Self::Error> {
+    fn try_from(value: Blip<T, S>) -> Result<Self, Self::Error> {
         value.inline_blob().ok_or_else(|| TooLongForInlineBlipError)
     }
 }
 
-impl<T> Hash for Blip<T>
-where T: ?Sized
+impl<T, S> Hash for Blip<T, S>
+where
+    T: ?Sized,
+    S: BlobSerialization,
 {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         self.bytes.hash(state);
     }
 }
 
-impl<T> PartialEq for Blip<T>
-where T: ?Sized
+impl<T, S> PartialEq for Blip<T, S>
+where
+    T: ?Sized,
+    S: BlobSerialization,
 {
     fn eq(&self, other: &Self) -> bool {
         self.bytes.eq(&other.bytes)
     }
 }
 
-impl<T> Eq for Blip<T> where T: ?Sized {}
+impl<T, S> Eq for Blip<T, S>
+where
+    T: ?Sized,
+    S: BlobSerialization,
+{
+}
 
-impl<T> PartialOrd for Blip<T>
-where T: ?Sized
+impl<T, S> PartialOrd for Blip<T, S>
+where
+    T: ?Sized,
+    S: BlobSerialization,
 {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         self.bytes.partial_cmp(&other.bytes)
     }
 }
 
-impl<T> Ord for Blip<T>
-where T: ?Sized
+impl<T, S> Ord for Blip<T, S>
+where
+    T: ?Sized,
+    S: BlobSerialization,
 {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         self.bytes.cmp(&other.bytes)
     }
 }
 
-impl<T> Debug for Blip<T>
-where T: ?Sized
+impl<T, S> Debug for Blip<T, S>
+where
+    T: ?Sized,
+    S: BlobSerialization,
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         Debug::fmt(BStr::new(&self.bytes), f)
     }
 }
 
-impl<T> Display for Blip<T>
-where T: ?Sized
+impl<T, S> Display for Blip<T, S>
+where
+    T: ?Sized,
+    S: BlobSerialization,
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         Display::fmt(BStr::new(&self.bytes), f)
     }
 }
 
-impl<T> Serialize for Blip<T>
-where T: ?Sized
+impl<T, S> Serialize for Blip<T, S>
+where
+    T: ?Sized,
+    S: BlobSerialization,
 {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where S: serde::Serializer {
+    fn serialize<Ser>(&self, serializer: Ser) -> Result<Ser::Ok, Ser::Error>
+    where Ser: serde::Serializer {
         serde_bytes::Bytes::new(&self.bytes.as_ref()).serialize(serializer)
     }
 }
 
-impl<'de, T> Deserialize<'de> for Blip<T>
-where T: ?Sized
+impl<'de, T, S> Deserialize<'de> for Blip<T, S>
+where
+    T: ?Sized,
+    S: BlobSerialization,
 {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where D: serde::Deserializer<'de> {
@@ -202,48 +243,69 @@ where T: ?Sized
     }
 }
 
-impl<T> Default for Blip<T>
-where T: ?Sized
+impl<T, S> Default for Blip<T, S>
+where
+    T: ?Sized,
+    S: BlobSerialization,
 {
     fn default() -> Self {
         Self {
             bytes: default(),
             t: default(),
+            s: default(),
         }
     }
 }
 
-impl<T> Clone for Blip<T>
-where T: ?Sized
+impl<T, S> Clone for Blip<T, S>
+where
+    T: ?Sized,
+    S: BlobSerialization,
 {
     fn clone(&self) -> Self {
         Self {
             bytes: self.bytes.clone(),
-            t: default(),
+            ..default()
         }
     }
 }
 
-impl<T> AsRef<[u8]> for Blip<T>
-where T: ?Sized
+impl<T, S> AsRef<[u8]> for Blip<T, S>
+where
+    T: ?Sized,
+    S: BlobSerialization,
 {
     fn as_ref(&self) -> &[u8] {
         self.bytes.as_ref()
     }
 }
 
-impl<T> PartialEq<Blob<T>> for Blip<T>
-where T: ?Sized
+impl<T, S> PartialEq<Blob<T, S>> for Blip<T, S>
+where
+    T: ?Sized,
+    S: BlobSerialization,
 {
-    fn eq(&self, other: &Blob<T>) -> bool {
+    fn eq(&self, other: &Blob<T, S>) -> bool {
         self == &other.blip()
     }
 }
 
-impl<T> PartialEq<Blip<T>> for Blob<T>
-where T: ?Sized
+impl<T, S> PartialEq<Blip<T, S>> for Blob<T, S>
+where
+    T: ?Sized,
+    S: BlobSerialization,
 {
-    fn eq(&self, other: &Blip<T>) -> bool {
+    fn eq(&self, other: &Blip<T, S>) -> bool {
         &self.blip() == other
+    }
+}
+
+impl<T, S> PartialEq<T> for Blip<T, S>
+where
+    T: ?Sized + Blobbable<S>,
+    S: BlobSerialization,
+{
+    fn eq(&self, other: &T) -> bool {
+        self == &other.to_blip()
     }
 }

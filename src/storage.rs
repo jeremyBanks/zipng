@@ -1,7 +1,6 @@
-mod baked;
-pub mod layered;
-pub mod sqlite;
-pub mod web;
+mod layered;
+mod sqlite;
+mod web;
 
 use std::fmt::Debug;
 
@@ -9,6 +8,9 @@ use miette::Diagnostic;
 use thiserror::Error;
 use tracing::error;
 
+pub use self::layered::*;
+pub use self::sqlite::*;
+pub use self::web::*;
 use crate::blob::Blip;
 use crate::blob::Blob;
 
@@ -24,7 +26,8 @@ pub enum StorageError {
 }
 
 pub trait Storage: Debug + Clone + Send {
-    fn get_blob<T>(&self, blip: Blip<T>) -> Result<Option<Blob<T>>, StorageError> {}
+    // fn get_blob<T>(&self, blip: Blip<T>) -> Result<Option<Blob<T>>, StorageError>
+    // {}
 
     // fn insert_blob(&self, blob: Blob) -> Result<Blip, StorageError> {
     //     Err(StorageError::Unsupported)

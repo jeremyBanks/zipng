@@ -1,7 +1,9 @@
 mod blip;
 mod blob;
 mod blobbable;
+mod serialization;
 
-pub use self::blip::Blip;
-pub use self::blob::Blob;
-pub use self::blobbable::Blobbable;
+pub use self::blip::*;
+pub use self::blob::*;
+pub use self::blobbable::*;
+pub use self::serialization::*;

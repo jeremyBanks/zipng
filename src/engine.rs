@@ -41,11 +41,11 @@ impl<Storage: crate::Storage> Engine<Storage> {
     ) -> Result<Request::Response, never> {
         let request_blip = request.to_blob().blip();
 
-        let context = Context::new(&request, &self.storage);
+        // let context = Context::new(&request, &self.storage);
 
-        let response = request.execute(&mut context).await?;
+        // let response = request.execute(&mut context).await?;
 
-        self.storage.insert_response(&request, &response).await?;
+        // self.storage.insert_response(&request, &response).await?;
 
         todo!()
     }

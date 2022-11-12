@@ -8,6 +8,7 @@ use serde::Deserialize;
 use serde::Serialize;
 use thiserror::Error;
 
+use crate::blob::Postcard;
 use crate::never;
 use crate::panic;
 use crate::Blip;
@@ -31,7 +32,7 @@ impl<Request: self::Request + Sync> Context<Request> {
 }
 
 #[async_trait]
-pub trait Request: Debug + Blobbable + Clone + Sync + Send {
+pub trait Request: Default + Debug + Blobbable<Postcard> + Clone + Sync + Send {
     const TAG: u32;
     type Response: self::Response;
     type Error: Debug + Into<self::Error> + From<self::Error>;
@@ -41,7 +42,7 @@ pub trait Request: Debug + Blobbable + Clone + Sync + Send {
     }
 }
 
-pub trait Response: Debug + Blobbable + Clone + Sync + Send {
+pub trait Response: Default + Debug + Blobbable<Postcard> + Clone + Sync + Send {
     type Request: self::Request;
 }
 

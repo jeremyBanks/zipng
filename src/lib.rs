@@ -40,6 +40,8 @@ pub mod storage;
 
 use std::sync::Arc;
 
+use query::TextToSpeech;
+
 #[doc(inline)]
 pub use crate::blobs::Blip;
 #[doc(inline)]
@@ -105,7 +107,7 @@ pub fn main() -> Result<(), panic> {
     runtime.block_on(async {
         let storage: Arc<dyn Storage> = Arc::new(SqliteStorage::default());
         let engine = Engine::new(storage);
-        // Arc::new(exercise(engine))
+        TextToSpeech
     });
 
     std::process::exit(0)

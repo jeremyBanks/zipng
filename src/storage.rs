@@ -14,7 +14,7 @@ pub use self::sqlite::*;
 pub use self::web::*;
 use crate::blobs::Blip;
 #[cfg(doc)]
-use crate::blobs::Blob;
+use crate::*;
 
 #[derive(Debug, Error, Diagnostic)]
 #[error("{self:?}")]

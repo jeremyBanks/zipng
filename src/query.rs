@@ -1,3 +1,5 @@
+mod text_to_speech;
+
 use std::fmt::Debug;
 
 use async_trait::async_trait;
@@ -8,6 +10,8 @@ use serde::Deserialize;
 use serde::Serialize;
 use thiserror::Error;
 
+use self::text_to_speech::TextToSpeech;
+use self::text_to_speech::TextToSpeechResponse;
 use crate::blobs::bytes;
 use crate::blobs::Postcard;
 use crate::never;
@@ -17,7 +21,7 @@ use crate::Blob;
 use crate::Blobbable;
 use crate::Context;
 #[cfg(doc)]
-use crate::Engine;
+use crate::*;
 
 #[async_trait]
 /// The input for an operation that can be executed by the [`Engine`].
@@ -92,51 +96,4 @@ impl<T> Response for Blob<T>
 where T: ?Sized
 {
     type Request = Blip<T>;
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone, Default)]
-pub struct TextToSpeech {
-    text: Blip<str>,
-    language: Option<Blip<str>>,
-    voice_name: Option<Blip<str>>,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone, Default)]
-pub struct TextToSpeechResponse {
-    blip: Blip<never>,
-}
-
-#[async_trait]
-impl Request for TextToSpeech {
-    const TAG: u32 = 0x31;
-    type Response = TextToSpeechResponse;
-    type Error = panic;
-    async fn execute(&self, context: &mut Context<Self>) -> Result<Self::Response, panic> {
-        let Self {
-            text,
-            language,
-            voice_name,
-        } = self;
-
-        if self.voice_name.is_some() {
-            context.populate(Self {
-                text: *text,
-                language: *language,
-                voice_name: None,
-            });
-        }
-        if self.language.is_some() {
-            context.populate(Self {
-                text: *text,
-                language: None,
-                voice_name: None,
-            });
-        }
-
-        Ok(TextToSpeechResponse { blip: todo!() })
-    }
-}
-
-impl Response for TextToSpeechResponse {
-    type Request = TextToSpeech;
 }

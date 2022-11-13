@@ -2,6 +2,7 @@ use serde::de::DeserializeOwned;
 use serde::Serialize;
 
 use super::serialization::BlobSerialization;
+use super::Postcard;
 use crate::blobs::blip::Blip;
 use crate::blobs::blob::Blob;
 

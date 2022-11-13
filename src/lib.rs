@@ -1,13 +1,13 @@
-#![allow(unused_labels)]
-#![deny(unsafe_code)]
+//! it's not real
+//!
+//! it's [`fiction`][self]
 #![warn(unused_crate_dependencies, missing_docs)]
+#![allow(unused_labels, missing_docs)]
 #![cfg_attr(
     all(debug_assertions, any(not(test), feature = "EDITOR")),
     allow(dead_code, unreachable_code, unused_variables)
 )]
-//! it's not real
-//!
-//! it's [`fiction`][self]
+#![deny(unsafe_code)]
 
 use std::env;
 use std::format as f;
@@ -22,6 +22,7 @@ use tracing_subscriber::EnvFilter;
 pub mod blobs;
 mod ffmpeg;
 /// Generic supporting types.
+#[doc(hidden)]
 pub mod generic;
 // pub mod queries;
 // pub mod throttle;
@@ -30,6 +31,7 @@ pub mod generic;
 pub mod context;
 mod copyvec;
 /// Supporting types for [`Engine`].
+#[doc(hidden)]
 pub mod engine;
 /// Supporting types for [`Request`], and [`Response`].
 pub mod query;
@@ -69,7 +71,11 @@ pub use crate::storage::Storage;
 #[doc(inline)]
 pub use crate::storage::WebStorage;
 
-/// CLI entry point
+/// `fiction` CLI entry point
+///
+/// # Panics
+///
+/// Panics for a variety of possible unhandled errors.
 pub fn main() -> Result<(), panic> {
     if cfg!(debug_assertions) {
         if env::var("RUST_LOG").is_err() {

@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use static_assertions::assert_obj_safe;
 use thiserror::Error;
 
 use crate::blobs::bytes;
@@ -8,19 +9,25 @@ use crate::AnyRequest;
 use crate::AnyResponse;
 use crate::Blip;
 use crate::Blob;
+use crate::Engine;
+use crate::Request;
+use crate::Response;
 use crate::SqliteStorage;
+use crate::Storage;
 
+/// A context is associated with a [`Request`] instance and manages all of its
+/// interactions with the rest of the [`Engine`]. If the request produces a new
+/// [`Response`], the [`Context`] is consumed to produce its [`Metadata`].
 #[derive(Debug, Default)]
-pub struct Context<Request, Storage>
-where
-    Request: crate::Request,
-    Storage: crate::Storage,
+pub struct Context<Request>
+where Request: crate::Request
 {
-    storage: Storage,
+    storage: Option<Arc<dyn Storage>>,
     request: Request,
     aliases: Vec<Blip<bytes>>,
 }
 
+/// Metadata associated with the production of a given [`Response`].
 pub struct Metadata<Request: crate::Request> {
     request: Request,
 }
@@ -29,10 +36,8 @@ pub struct Metadata<Request: crate::Request> {
 #[error("{self:?}")]
 pub enum ContextError {}
 
-impl<Request, Storage> Context<Request, Storage>
-where
-    Request: crate::Request,
-    Storage: crate::Storage,
+impl<Request> Context<Request>
+where Request: crate::Request
 {
     pub fn new(storage: impl Into<Option<Arc<SqliteStorage>>>) -> Self {
         let storage = storage.into();

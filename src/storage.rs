@@ -5,6 +5,7 @@ mod web;
 use std::fmt::Debug;
 
 use miette::Diagnostic;
+use static_assertions::assert_obj_safe;
 use thiserror::Error;
 use tracing::error;
 
@@ -25,7 +26,11 @@ pub enum StorageError {
     Failed,
 }
 
-pub trait Storage: Debug + Clone + Send {
+assert_obj_safe!(Storage);
+
+/// A storage backend for an `Engine`. This is object-safe and typically
+/// handled as an `Arc<dyn Storage>`.
+pub trait Storage: Debug + Send + Sync {
     // fn get_blob<T>(&self, blip: Blip<T>) -> Result<Option<Blob<T>>, StorageError>
     // {}
 

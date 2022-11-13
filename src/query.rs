@@ -15,24 +15,11 @@ use crate::panic;
 use crate::Blip;
 use crate::Blob;
 use crate::Blobbable;
-
-/// context associated with a given request instance, producing a given
-/// response.
-///
-/// all of a requests instance evaluation's interactions with the rest of the
-/// engine go through its context.
-pub struct Context<Request: self::Request> {
-    request: Blip<Request>,
-    // xxx: what other metadata do we need?
-}
-
-impl<Request: self::Request + Sync> Context<Request> {
-    pub fn populate(&mut self, synonym: Request) -> Result<(), never> {
-        Ok(())
-    }
-}
+use crate::Context;
+use crate::Engine;
 
 #[async_trait]
+/// The input for an operation that can be executed by the [`Engine`].
 pub trait Request: Default + Debug + Blobbable<Postcard> + Clone + Sync + Send {
     const TAG: u32;
     type Response: self::Response;
@@ -43,11 +30,12 @@ pub trait Request: Default + Debug + Blobbable<Postcard> + Clone + Sync + Send {
     }
 }
 
+///  The output of an operation executed by the [`Engine`].
 pub trait Response: Default + Debug + Blobbable<Postcard> + Clone + Sync + Send {
     type Request: self::Request;
 }
 
-/// An enum that may contain any `Request` type.
+/// An enum that may contain any [`Request`] type.
 #[derive(Debug, Serialize, Deserialize, Clone, TryInto, From)]
 #[repr(u32)]
 pub enum AnyRequest {
@@ -55,7 +43,7 @@ pub enum AnyRequest {
     TextToSpeech(TextToSpeech) = TextToSpeech::TAG,
 }
 
-/// An enum that may contain any `Response` type.
+/// An enum that may contain any [`Response`] type.
 #[derive(Debug, Serialize, Deserialize, Clone, TryInto, From)]
 #[repr(u32)]
 pub enum AnyResponse {
@@ -134,14 +122,14 @@ impl Request for TextToSpeech {
                 text: *text,
                 language: *language,
                 voice_name: None,
-            })?;
+            });
         }
         if self.language.is_some() {
             context.populate(Self {
                 text: *text,
                 language: None,
                 voice_name: None,
-            })?;
+            });
         }
 
         Ok(TextToSpeechResponse { blip: todo!() })

@@ -6,32 +6,23 @@ use std::sync::RwLock;
 use tokio::runtime::Handle;
 
 use crate::context::Context;
+use crate::default;
 use crate::never;
 use crate::panic;
 use crate::Blob;
+use crate::Storage;
 
 /// `Engine` is the main entry point for the library, connecting the storage
 /// backend with the query engine.
 #[derive(Debug)]
-pub struct Engine<Storage: crate::Storage> {
-    storage: Arc<Storage>,
+pub struct Engine {
+    storage: Arc<dyn Storage>,
     runtime: tokio::runtime::Handle,
 }
 
-impl<Storage: crate::Storage> Default for Engine<Storage>
-where Storage: Default
-{
-    fn default() -> Self {
-        Self {
-            storage: Default::default(),
-            runtime: Handle::current(),
-        }
-    }
-}
-
-impl<Storage: crate::Storage> Engine<Storage> {
+impl Engine {
     /// Creates a new `Engine` with the given storage backend.
-    pub fn new(storage: Arc<Storage>) -> Engine<Storage> {
+    pub fn new(storage: Arc<dyn Storage>) -> Engine {
         Self {
             storage,
             runtime: Handle::current(),

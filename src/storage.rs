@@ -39,22 +39,30 @@ assert_obj_safe!(Storage);
 impl<S> StorageExt for S where S: Storage + ?Sized {}
 pub trait StorageExt: Storage {
     fn insert_blob<T: Blobbable + ?Sized>(&self, blob: Blob<T>) -> Result<Blip<T>, StorageError> {
-        Ok(self.insert_byte_blob(blob.retype())?.retype())
+        Ok(self.insert_blob_bytes(blob.retype())?.retype())
     }
 
     fn get_blob<T: Blobbable + ?Sized>(&self, blip: Blip<T>) -> Result<Blob<T>, StorageError> {
-        Ok(self.get_byte_blob(blip.retype())?.retype())
+        Ok(self.get_blob_bytes(blip.retype())?.retype())
     }
 }
 
 /// A storage backend for an `Engine`. This is object-safe and typically
 /// handled as an `Arc<dyn Storage>`.
 pub trait Storage: Debug + Send + Sync {
-    fn insert_byte_blob(&self, blob: Blob<bytes>) -> Result<Blip<bytes>, StorageError> {
+    fn insert_blob_bytes(&self, blob: Blob<bytes>) -> Result<Blip<bytes>, StorageError> {
         Err(StorageError::Unsupported)
     }
 
-    fn get_byte_blob(&self, blip: Blip<bytes>) -> Result<Blob<bytes>, StorageError> {
+    fn get_blob_bytes(&self, blip: Blip<bytes>) -> Result<Blob<bytes>, StorageError> {
+        Err(StorageError::Unsupported)
+    }
+
+    fn insert_query_bytes(&self, query: Query<bytes>) -> Result<(), StorageError> {
+        Err(StorageError::Unsupported)
+    }
+
+    fn get_query_bytes(&self, request: ByteBlip) -> Result<Query<bytes>, StorageError> {
         Err(StorageError::Unsupported)
     }
 

@@ -61,7 +61,7 @@ impl SqliteStorage {
             schema_version = schema_version
         );
 
-        if application_id == 0 || application_id != APPLICATION_ID {
+        if application_id == 0 || application_id == APPLICATION_ID {
             if application_id == 0 {
                 info!("initializing application_id to {APPLICATION_ID:08X}");
                 connection.pragma_update(None, "application_id", APPLICATION_ID)?;

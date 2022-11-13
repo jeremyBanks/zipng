@@ -105,20 +105,10 @@ pub fn main() -> Result<(), panic> {
         .enable_all()
         .build()?;
 
-    // let request = text_to_speech("hello, world!");
-
     runtime.block_on(async {
         let engine = PERSISTENT.deref();
         let speech = engine.text_to_speech("hello, world!").await?;
 
-        Result::<(), panic>::Ok(())
+        Ok(())
     })
 }
-
-// async fn exercise(engine: Engine<impl Storage>) -> Result<(), panic> {
-//     let speech = engine.text_to_speech("hello, world!").await?;
-
-//     eprintln!("{speech:?}");
-
-//     Ok(())
-// }

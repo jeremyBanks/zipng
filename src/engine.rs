@@ -5,11 +5,13 @@ use std::sync::RwLock;
 
 use tokio::runtime::Handle;
 
+use crate::context::Context;
 use crate::never;
 use crate::panic;
 use crate::Blob;
-use crate::Context;
 
+/// `Engine` is the main entry point for the library, connecting the storage
+/// backend with the query engine.
 #[derive(Debug)]
 pub struct Engine<Storage: crate::Storage> {
     storage: Arc<Storage>,
@@ -28,6 +30,7 @@ where Storage: Default
 }
 
 impl<Storage: crate::Storage> Engine<Storage> {
+    /// Creates a new `Engine` with the given storage backend.
     pub fn new(storage: Arc<Storage>) -> Engine<Storage> {
         Self {
             storage,
@@ -35,6 +38,8 @@ impl<Storage: crate::Storage> Engine<Storage> {
         }
     }
 
+    /// Executes a query, returning either a new `Response` or a cached one from
+    /// the backing storage.
     pub async fn execute<Request: crate::Request>(
         &self,
         request: Request,

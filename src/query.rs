@@ -8,7 +8,8 @@ use serde::Deserialize;
 use serde::Serialize;
 use thiserror::Error;
 
-use crate::blob::Postcard;
+use crate::blobs::bytes;
+use crate::blobs::Postcard;
 use crate::never;
 use crate::panic;
 use crate::Blip;
@@ -46,17 +47,19 @@ pub trait Response: Default + Debug + Blobbable<Postcard> + Clone + Sync + Send 
     type Request: self::Request;
 }
 
+/// An enum that may contain any `Request` type.
 #[derive(Debug, Serialize, Deserialize, Clone, TryInto, From)]
 #[repr(u32)]
 pub enum AnyRequest {
-    Blob(Blip<never>) = Blip::<never>::TAG,
+    Blob(Blip<bytes>) = Blip::<bytes>::TAG,
     TextToSpeech(TextToSpeech) = TextToSpeech::TAG,
 }
 
+/// An enum that may contain any `Response` type.
 #[derive(Debug, Serialize, Deserialize, Clone, TryInto, From)]
 #[repr(u32)]
 pub enum AnyResponse {
-    Blob(Blob<never>) = Blip::<never>::TAG,
+    Blob(Blob<bytes>) = Blip::<bytes>::TAG,
     TextToSpeech(TextToSpeechResponse) = TextToSpeech::TAG,
 }
 
@@ -88,13 +91,17 @@ impl From<never> for Error {
 }
 
 #[async_trait]
-impl<T> Request for Blip<T> {
+impl<T> Request for Blip<T>
+where T: ?Sized
+{
     const TAG: u32 = 0x00;
     type Response = Blob<T>;
     type Error = Error;
 }
 
-impl<T> Response for Blob<T> {
+impl<T> Response for Blob<T>
+where T: ?Sized
+{
     type Request = Blip<T>;
 }
 
@@ -124,14 +131,14 @@ impl Request for TextToSpeech {
 
         if self.voice_name.is_some() {
             context.populate(Self {
-                text: text.clone(),
-                language: language.clone(),
+                text: *text,
+                language: *language,
                 voice_name: None,
             })?;
         }
         if self.language.is_some() {
             context.populate(Self {
-                text: text.clone(),
+                text: *text,
                 language: None,
                 voice_name: None,
             })?;

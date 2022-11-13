@@ -2,13 +2,15 @@ use serde::de::DeserializeOwned;
 use serde::Serialize;
 
 use super::serialization::BlobSerialization;
-use crate::blob::Blip;
-use crate::blob::Blob;
+use crate::blobs::blip::Blip;
+use crate::blobs::blob::Blob;
 
-/// A type that can be serialized to/from a [`Blob`].
+/// A type that can be serialized to/from a [`Blob`] using a
+/// [`BlobSerialization`].
 ///
 /// This is automatically implemented for any type that's [`Serialize`] and
-/// [`DeserializeOwned`], which are serialized using [`postcard`],
+/// [`DeserializeOwned`], as well as some special cases including `[u8]` and
+/// `str`.
 pub trait Blobbable<Serialization>
 where Serialization: BlobSerialization
 {
@@ -34,9 +36,11 @@ where Serialization: BlobSerialization
     /// Deserializes a [`Blob`] into this type as an owned value.
     fn from_blob(blob: &Blob<Self, Serialization>) -> Self
     where Self: Clone {
-        Self::owned_from_blob(blob).unwrap_or_else(|| Self::borrowed_from_blob(blob)
+        Self::owned_from_blob(blob).unwrap_or_else(|| {
+            Self::borrowed_from_blob(blob)
                 .expect("either blob_to or blob_as must be implemented")
-                .clone())
+                .clone()
+        })
     }
 
     /// Serialize this value into a [`Blob`] and then return its [`Blip`].

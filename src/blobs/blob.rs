@@ -16,29 +16,31 @@ use static_assertions::assert_impl_all;
 
 use super::BlobSerialization;
 use super::Blobbable;
-use super::DefaultBlobSerialization;
-use crate::generic::default;
-use crate::generic::Type;
+use crate::blobs::Cbor;
+use crate::blobs::FlexBuffers;
+use crate::blobs::Json;
+use crate::blobs::Postcard;
+use crate::default;
 use crate::never;
+use crate::PhantomType;
 
-/// A blob is a byte vector, containing the binary serialization of a
-/// value of a given type, or else a raw byte or character string (`Blob<[u8]>`,
-/// `Blob<str>`).
-pub struct Blob<T, S = DefaultBlobSerialization>
+/// A [`Blob`] is a byte vector, containing the binary serialization of a
+/// value of the given type `T`.
+pub struct Blob<T, S>
 where
     T: ?Sized,
     S: BlobSerialization,
 {
     bytes: Vec<u8>,
-    t: Type<T>,
-    s: Type<S>,
+    t: PhantomType<T>,
+    s: PhantomType<S>,
 }
 
-assert_impl_all!(Blob<never>: Sized, Serialize, DeserializeOwned, Sync, Send);
-assert_impl_all!(Blob<Infallible>: Sized, Serialize, DeserializeOwned, Sync, Send);
-assert_impl_all!(Blob<Rc<u8>>: Sized, Serialize, DeserializeOwned, Sync, Send);
-assert_impl_all!(Blob<[u8]>: Sized, Serialize, DeserializeOwned, Sync, Send);
-assert_impl_all!(Blob<dyn Debug>: Sized, Serialize, DeserializeOwned, Sync, Send);
+assert_impl_all!(Blob<never, Postcard>: Sized, Serialize, DeserializeOwned, Sync, Send);
+assert_impl_all!(Blob<Infallible, Json>: Sized, Serialize, DeserializeOwned, Sync, Send);
+assert_impl_all!(Blob<Rc<u8>, Cbor>: Sized, Serialize, DeserializeOwned, Sync, Send);
+assert_impl_all!(Blob<[u8], FlexBuffers>: Sized, Serialize, DeserializeOwned, Sync, Send);
+assert_impl_all!(Blob<dyn Debug, Postcard>: Sized, Serialize, DeserializeOwned, Sync, Send);
 
 impl<T, S> Blob<T, S>
 where
@@ -70,7 +72,7 @@ where
         Self { bytes, ..default() }
     }
 
-    pub(in crate::blob) fn retype<R: ?Sized, Q: BlobSerialization>(self) -> Blob<R, Q> {
+    pub(in crate::blobs) fn retype<R: ?Sized, Q: BlobSerialization>(self) -> Blob<R, Q> {
         Blob {
             bytes: self.bytes,
             ..default()

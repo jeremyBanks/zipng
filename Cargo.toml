@@ -1,53 +1,9 @@
-[workspace]
-members = [".", "crates/*"]
-
 [package]
 name = "fiction"
-version = "0.0.0-dev"
+version = "0.0.20221122"
 edition = "2021"
 
 [dependencies]
-ammonia.workspace = true
-async-trait.workspace = true
-blake3.workspace = true
-bstr.workspace = true
-color-eyre.workspace = true
-derive_more.workspace = true
-duct.workspace = true
-eyre.workspace = true
-flexbuffers = "2.0.0"
-futures.workspace = true
-heapless.workspace = true
-hex.workspace = true
-http.workspace = true
-leb128.workspace = true
-miette.workspace = true
-once_cell.workspace = true
-paste.workspace = true
-postcard.workspace = true
-reqwest.workspace = true
-rusqlite.workspace = true
-rusqlite_migration.workspace = true
-sapi-lite.workspace = true
-scraper.workspace = true
-serde.workspace = true
-serde_bytes.workspace = true
-serde_cbor = "0.11.2"
-serde_json.workspace = true
-serde_repr.workspace = true
-smallvec.workspace = true
-static_assertions.workspace = true
-tempfile.workspace = true
-thiserror.workspace = true
-time.workspace = true
-tokio.workspace = true
-tracing.workspace = true
-tracing-error.workspace = true
-tracing-subscriber.workspace = true
-which.workspace = true
-windows.workspace = true
-
-[workspace.dependencies]
 ammonia = "3.2.1"
 async-trait = "0.1.58"
 blake3 = { version = "1.3.1", features = ["traits-preview"] }
@@ -57,6 +13,7 @@ databake = { version = "0.1.2", features = ["derive"] }
 derive_more = "0.99.17"
 duct = "0.13.5"
 eyre = "0.6.8"
+flexbuffers = "2.0.0"
 futures = "0.3.24"
 heapless = "0.7.16"
 hex = "0.4.3"
@@ -73,8 +30,8 @@ sapi-lite = { version = "0.1.1", features = ["tokio-tts", "tokio-rt"] }
 scraper = "0.13.0"
 serde = { version = "1.0.144", features = ["derive", "rc"] }
 serde_bytes = "0.11.7"
+serde_cbor = "0.11.2"
 serde_json = "1.0.85"
-serde_repr = "0.1.9"
 smallvec = { version = "1.10.0", features = ["union", "const_generics", "const_new", "serde", "write"] }
 static_assertions = "1.1.0"
 tempfile = "3.3.0"

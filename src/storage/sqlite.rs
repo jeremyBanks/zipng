@@ -14,6 +14,7 @@ use tracing::trace;
 use super::Storage;
 
 #[derive(Debug, Clone)]
+/// Storage backed by a SQLite database.
 pub struct SqliteStorage {
     connection: Arc<Mutex<rusqlite::Connection>>,
 }

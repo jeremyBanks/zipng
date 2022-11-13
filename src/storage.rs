@@ -11,8 +11,8 @@ use tracing::error;
 pub use self::layered::*;
 pub use self::sqlite::*;
 pub use self::web::*;
-use crate::blob::Blip;
-use crate::blob::Blob;
+use crate::blobs::Blip;
+use crate::blobs::Blob;
 
 #[derive(Debug, Error, Diagnostic)]
 #[error("{self:?}")]

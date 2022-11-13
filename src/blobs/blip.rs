@@ -13,32 +13,35 @@ use static_assertions::assert_impl_all;
 use thiserror::Error;
 
 use super::BlobSerialization;
-use super::DefaultBlobSerialization;
-use crate::blob::Blob;
+use crate::blobs::blob::Blob;
+use crate::blobs::serialization::Cbor;
+use crate::blobs::serialization::FlexBuffers;
+use crate::blobs::serialization::Json;
+use crate::blobs::serialization::Postcard;
+use crate::copyvec::InlineVec;
 use crate::generic::default;
-use crate::generic::Type;
-use crate::inline::InlineVec;
+use crate::generic::PhantomType;
 use crate::never;
 use crate::Blobbable;
 
 /// A [`Blip`] represents a [`Blob`], stored inline if it's under 32 bytes,
 /// otherwise represented by its 32-byte BLAKE3 hash digest.
 /// This type is `Copy`.
-pub struct Blip<T, S = DefaultBlobSerialization>
+pub struct Blip<T, S>
 where
     T: ?Sized,
     S: BlobSerialization,
 {
     bytes: InlineVec<u8, 32>,
-    t: Type<T>,
-    s: Type<S>,
+    t: PhantomType<T>,
+    s: PhantomType<S>,
 }
 
-assert_impl_all!(Blip<never>: Sized, Copy, Serialize, Sync, Send);
-assert_impl_all!(Blip<Infallible>: Sized, Copy, Serialize, Sync, Send);
-assert_impl_all!(Blip<Rc<u8>>: Sized, Copy, Serialize, Sync, Send);
-assert_impl_all!(Blip<[u8]>: Sized, Copy, Serialize, Sync, Send);
-assert_impl_all!(Blip<dyn Debug>: Sized, Copy, Serialize, Sync, Send);
+assert_impl_all!(Blip<never, Json>: Sized, Copy, Serialize, Sync, Send);
+assert_impl_all!(Blip<Infallible, Postcard>: Sized, Copy, Serialize, Sync, Send);
+assert_impl_all!(Blip<Rc<u8>, FlexBuffers>: Sized, Copy, Serialize, Sync, Send);
+assert_impl_all!(Blip<[u8], Cbor>: Sized, Copy, Serialize, Sync, Send);
+assert_impl_all!(Blip<dyn Debug, Postcard>: Sized, Copy, Serialize, Sync, Send);
 
 impl<T, S> Blip<T, S>
 where
@@ -68,7 +71,7 @@ where
             ..default()
         })
     }
-    pub(in crate::blob) fn retype<R: ?Sized, Q: BlobSerialization>(self) -> Blip<R, Q> {
+    pub(in crate::blobs) fn retype<R: ?Sized, Q: BlobSerialization>(self) -> Blip<R, Q> {
         Blip {
             bytes: self.bytes,
             ..default()

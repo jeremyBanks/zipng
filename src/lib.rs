@@ -5,6 +5,9 @@
     all(debug_assertions, any(not(test), feature = "EDITOR")),
     allow(dead_code, unreachable_code, unused_variables)
 )]
+//! it's not real
+//!
+//! it's [`fiction`][self]
 
 use std::env;
 use std::format as f;
@@ -15,25 +18,58 @@ use tracing_subscriber::fmt::format::FmtSpan;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::EnvFilter;
 
-mod blob;
+/// Supporting types for [`Blobs`][Blob] and [`Blips`][Blip].
+pub mod blobs;
 mod ffmpeg;
-mod generic;
-// mod queries;
-// mod throttle;
-// mod tts;
-mod context;
-mod engine;
-mod inline;
-mod query;
-mod serde;
-mod storage;
+/// Generic supporting types.
+pub mod generic;
+// pub mod queries;
+// pub mod throttle;
+// pub mod tts;
+/// Supporting types for [`Context`], and [`Metadata`]
+pub mod context;
+mod copyvec;
+/// Supporting types for [`Engine`].
+pub mod engine;
+/// Supporting types for [`Request`], and [`Response`].
+pub mod query;
+/// Supporting types for [`Storage`]
+pub mod storage;
 
-pub use crate::blob::*;
+use std::sync::Arc;
+
+#[doc(inline)]
+pub use crate::blobs::Blip;
+#[doc(inline)]
+pub use crate::blobs::Blob;
+#[doc(inline)]
+pub use crate::blobs::Blobbable;
+#[doc(inline)]
+pub use crate::context::Context;
+#[doc(inline)]
+pub use crate::context::Metadata;
+#[doc(inline)]
 pub use crate::engine::*;
+#[doc(inline)]
 pub use crate::generic::*;
-pub use crate::query::*;
-pub use crate::storage::*;
+#[doc(inline)]
+pub use crate::query::AnyRequest;
+#[doc(inline)]
+pub use crate::query::AnyResponse;
+#[doc(inline)]
+pub use crate::query::Request;
+#[doc(inline)]
+pub use crate::query::Response;
+#[doc(inline)]
+pub use crate::storage::LayeredStorage;
+#[doc(inline)]
+pub use crate::storage::SqliteStorage;
+#[doc(inline)]
+pub use crate::storage::Storage;
+#[doc(inline)]
+pub use crate::storage::WebStorage;
 
+/// CLI entry point
 pub fn main() -> Result<(), panic> {
     if cfg!(debug_assertions) {
         if env::var("RUST_LOG").is_err() {
@@ -56,8 +92,8 @@ pub fn main() -> Result<(), panic> {
         .enable_all()
         .build()?;
 
-    // let storage: Arc<SqliteStorage> = default();
-    // let engine = Engine::new(storage);
+    let storage: Arc<SqliteStorage> = default();
+    let engine = Engine::new(storage);
 
     // let request = text_to_speech("hello, world!");
 

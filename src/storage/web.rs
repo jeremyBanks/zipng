@@ -1,7 +1,8 @@
 use super::Storage;
 
+/// Storage backed by a web server.
 #[derive(Debug, Clone)]
-struct WebStorage {
+pub struct WebStorage {
     pub base_url: String,
 }
 

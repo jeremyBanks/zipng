@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use thiserror::Error;
 
-use crate::default;
+use crate::blobs::bytes;
 use crate::never;
 use crate::AnyRequest;
 use crate::AnyResponse;
@@ -11,23 +11,32 @@ use crate::Blob;
 use crate::SqliteStorage;
 
 #[derive(Debug, Default)]
-pub struct Context<Request: crate::Request> {
-    storage: Option<Arc<SqliteStorage>>,
+pub struct Context<Request, Storage>
+where
+    Request: crate::Request,
+    Storage: crate::Storage,
+{
+    storage: Storage,
+    request: Request,
+    aliases: Vec<Blip<bytes>>,
+}
 
-    request_and_aliases: Vec<Request>,
+pub struct Metadata<Request: crate::Request> {
+    request: Request,
 }
 
 #[derive(Debug, Error)]
 #[error("{self:?}")]
 pub enum ContextError {}
 
-impl<Request: crate::Request> Context<Request> {
+impl<Request, Storage> Context<Request, Storage>
+where
+    Request: crate::Request,
+    Storage: crate::Storage,
+{
     pub fn new(storage: impl Into<Option<Arc<SqliteStorage>>>) -> Self {
         let storage = storage.into();
-        Context {
-            storage,
-            ..default()
-        }
+        todo!()
     }
 
     pub fn query(&mut self, request: AnyRequest) -> Result<AnyResponse, never> {

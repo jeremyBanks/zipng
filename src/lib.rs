@@ -2,7 +2,7 @@
 //!
 //! it's [`fiction`][self]
 #![warn(unused_crate_dependencies, missing_docs)]
-#![allow(unused_labels, missing_docs)]
+#![allow(unused_labels, missing_docs, unused_imports)]
 #![cfg_attr(
     all(debug_assertions, any(not(test), feature = "EDITOR")),
     allow(dead_code, unreachable_code, unused_variables)
@@ -94,16 +94,19 @@ pub fn main() -> Result<(), panic> {
             .with(ErrorLayer::default()),
     )?;
 
+    color_eyre::install()?;
+
     let runtime = tokio::runtime::Builder::new_current_thread()
         .enable_all()
         .build()?;
 
-    let storage: Arc<SqliteStorage> = default();
-    let engine = Engine::new(storage);
-
     // let request = text_to_speech("hello, world!");
 
-    // return runtime.block_on(exercise(engine));
+    runtime.block_on(async {
+        let storage: Arc<dyn Storage> = Arc::new(SqliteStorage::default());
+        let engine = Engine::new(storage);
+        // Arc::new(exercise(engine))
+    });
 
     std::process::exit(0)
 }

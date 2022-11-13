@@ -1,6 +1,5 @@
 use std::sync::Arc;
 
-use static_assertions::assert_obj_safe;
 use thiserror::Error;
 
 use crate::blobs::bytes;
@@ -9,8 +8,11 @@ use crate::AnyRequest;
 use crate::AnyResponse;
 use crate::Blip;
 use crate::Blob;
+#[cfg(doc)]
 use crate::Engine;
+#[cfg(doc)]
 use crate::Request;
+#[cfg(doc)]
 use crate::Response;
 use crate::SqliteStorage;
 use crate::Storage;

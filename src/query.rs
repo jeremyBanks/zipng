@@ -16,6 +16,7 @@ use crate::Blip;
 use crate::Blob;
 use crate::Blobbable;
 use crate::Context;
+#[cfg(doc)]
 use crate::Engine;
 
 #[async_trait]

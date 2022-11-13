@@ -13,6 +13,7 @@ pub use self::layered::*;
 pub use self::sqlite::*;
 pub use self::web::*;
 use crate::blobs::Blip;
+#[cfg(doc)]
 use crate::blobs::Blob;
 
 #[derive(Debug, Error, Diagnostic)]

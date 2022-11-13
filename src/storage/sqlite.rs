@@ -14,17 +14,10 @@ use tracing::trace;
 use super::Storage;
 
 #[derive(Debug, Clone)]
-/// Storage backed by a SQLite database.
+/// Storage backed by a SQLite database, which may be either in-memory or
+/// on-disk.
 pub struct SqliteStorage {
     connection: Arc<Mutex<rusqlite::Connection>>,
-}
-
-impl Default for SqliteStorage {
-    fn default() -> Self {
-        Self {
-            connection: Arc::new(Mutex::new(rusqlite::Connection::open_in_memory().unwrap())),
-        }
-    }
 }
 
 impl Storage for SqliteStorage {}

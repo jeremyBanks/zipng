@@ -3,6 +3,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use std::sync::RwLock;
 
+use once_cell::sync::Lazy;
 use tokio::runtime::Handle;
 
 use crate::context::Context;
@@ -11,7 +12,24 @@ use crate::never;
 use crate::panic;
 use crate::Blip;
 use crate::Blob;
+use crate::SqliteStorage;
 use crate::Storage;
+
+/// A lazy-initialized [`Engine`] instance storing its results in an in-memory
+/// SQLite database.
+pub static EPHEMERAL: Lazy<Engine> =
+    Lazy::new(|| Engine::new(Arc::new(SqliteStorage::open_in_memory().unwrap())));
+
+/// A lazy-initialized [`Engine`] instance storing its results in a SQLite
+/// database in the user's home directory.
+pub static PERSISTENT: Lazy<Engine> = Lazy::new(|| {
+    let mut path = home::home_dir().unwrap_or_default();
+    path.push(format!(".{}", env!("CARGO_CRATE_NAME", "fiction")));
+    path.push("db");
+    Engine::new(Arc::new(
+        SqliteStorage::open(path.to_string_lossy().as_ref()).unwrap(),
+    ))
+});
 
 /// `Engine` is the main entry point for the library, connecting the storage
 /// backend with the query engine.

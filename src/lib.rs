@@ -67,6 +67,8 @@ pub use crate::query::Response;
 #[doc(inline)]
 pub use crate::storage::LayeredStorage;
 #[doc(inline)]
+pub use crate::storage::NoStorage;
+#[doc(inline)]
 pub use crate::storage::SqliteStorage;
 #[doc(inline)]
 pub use crate::storage::Storage;

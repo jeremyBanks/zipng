@@ -10,8 +10,8 @@ use serde::Deserialize;
 use serde::Serialize;
 use thiserror::Error;
 
-use self::text_to_speech::TextToSpeech;
-use self::text_to_speech::TextToSpeechResponse;
+pub use self::text_to_speech::TextToSpeech;
+pub use self::text_to_speech::TextToSpeechResponse;
 use crate::blobs::bytes;
 use crate::blobs::Postcard;
 use crate::never;
@@ -25,7 +25,7 @@ use crate::*;
 
 #[async_trait]
 /// The input for an operation that can be executed by the [`Engine`].
-pub trait Request: Default + Debug + Blobbable<Postcard> + Clone + Sync + Send {
+pub trait Request: Default + Debug + Blobbable + Clone + Sync + Send {
     const TAG: u32;
     type Response: self::Response;
     type Error: Debug + Into<self::Error> + From<self::Error>;
@@ -36,7 +36,7 @@ pub trait Request: Default + Debug + Blobbable<Postcard> + Clone + Sync + Send {
 }
 
 ///  The output of an operation executed by the [`Engine`].
-pub trait Response: Default + Debug + Blobbable<Postcard> + Clone + Sync + Send {
+pub trait Response: Default + Debug + Blobbable + Clone + Sync + Send {
     type Request: self::Request;
 }
 

@@ -9,6 +9,7 @@ use crate::context::Context;
 use crate::default;
 use crate::never;
 use crate::panic;
+use crate::Blip;
 use crate::Blob;
 use crate::Storage;
 
@@ -29,13 +30,17 @@ impl Engine {
         }
     }
 
+    pub fn storage(&self) -> &Arc<dyn Storage> {
+        &self.storage
+    }
+
     /// Executes a query, returning either a new `Response` or a cached one from
     /// the backing storage.
     pub async fn execute<Request: crate::Request>(
         &self,
         request: Request,
     ) -> Result<Request::Response, never> {
-        let request_blip = request.to_blob().blip();
+        let request_blip = Blip::new(request);
 
         // let context = Context::new(&request, &self.storage);
 

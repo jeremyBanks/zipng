@@ -13,6 +13,7 @@ use crate::blobs::Postcard;
 use crate::blobs::PostcardBlob;
 use crate::never;
 use crate::panic;
+use crate::storage::StorageExt;
 use crate::Blip;
 use crate::Blob;
 use crate::Blobbable;
@@ -35,8 +36,8 @@ impl Engine {
         &self,
         text: impl AsRef<str>,
     ) -> Result<TextToSpeechResponse, panic> {
-        let text = PostcardBlob::new(text.as_ref());
-        let text = self.insert_blob(text)?;
+        let text = PostcardBlob::<str>::new(text.as_ref());
+        let text = self.storage().insert_blob(text)?;
         let request = TextToSpeech {
             text,
             language: "en-us".to_blip().into(),
@@ -79,7 +80,7 @@ impl Request for TextToSpeech {
             });
         }
 
-        Ok(TextToSpeechResponse { blip: todo!() })
+        Ok(TextToSpeechResponse { speech: todo!() })
     }
 }
 

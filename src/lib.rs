@@ -107,7 +107,9 @@ pub fn main() -> Result<(), panic> {
     runtime.block_on(async {
         let storage: Arc<dyn Storage> = Arc::new(SqliteStorage::default());
         let engine = Engine::new(storage);
-        TextToSpeech
+        let speech = engine.text_to_speech("hello, world!").await?;
+
+        Result::<(), panic>::Ok(())
     });
 
     std::process::exit(0)

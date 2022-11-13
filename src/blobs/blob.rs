@@ -14,6 +14,7 @@ use serde::Deserialize;
 use serde::Serialize;
 use static_assertions::assert_impl_all;
 
+use super::bytes;
 use super::BlobSerialization;
 use super::Blobbable;
 use crate::blobs::Cbor;
@@ -50,7 +51,7 @@ where
     /// Creates a new blob from a reference to any blobbable value.
     pub fn new<Ref>(value: Ref) -> Self
     where
-        T: Blobbable<S>,
+        T: Blobbable,
         Ref: Sized + Borrow<T>,
     {
         T::to_blob(value.borrow())
@@ -72,7 +73,7 @@ where
         Self { bytes, ..default() }
     }
 
-    pub(in crate::blobs) fn retype<R: ?Sized, Q: BlobSerialization>(self) -> Blob<R, Q> {
+    pub(crate) fn retype<R: ?Sized, Q: BlobSerialization>(self) -> Blob<R, Q> {
         Blob {
             bytes: self.bytes,
             ..default()
@@ -165,8 +166,8 @@ where
 {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where D: serde::Deserializer<'de> {
-        let bytes = serde_bytes::ByteBuf::deserialize(deserializer)?.into_vec();
-        Ok(Blobbable::<S>::to_blob(&bytes).retype())
+        let serialized = serde_bytes::ByteBuf::deserialize(deserializer)?.into_vec();
+        Ok(Blob::from_raw_bytes(serialized.as_ref()))
     }
 }
 
@@ -240,7 +241,7 @@ where
 
 impl<T, S> PartialEq<T> for Blob<T, S>
 where
-    T: ?Sized + Blobbable<S>,
+    T: ?Sized + Blobbable,
     S: BlobSerialization,
 {
     fn eq(&self, other: &T) -> bool {

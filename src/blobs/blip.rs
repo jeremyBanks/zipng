@@ -51,7 +51,7 @@ where
     /// Creates a new Blip from a reference to any blobbable value.
     pub fn new<Ref>(value: Ref) -> Self
     where
-        T: Blobbable<S>,
+        T: Blobbable,
         Ref: Sized + Borrow<T>,
     {
         T::to_blip(value.borrow())
@@ -71,7 +71,7 @@ where
             ..default()
         })
     }
-    pub(in crate::blobs) fn retype<R: ?Sized, Q: BlobSerialization>(self) -> Blip<R, Q> {
+    pub(crate) fn retype<R: ?Sized, Q: BlobSerialization>(self) -> Blip<R, Q> {
         Blip {
             bytes: self.bytes,
             ..default()
@@ -307,7 +307,7 @@ where
 
 impl<T, S> PartialEq<T> for Blip<T, S>
 where
-    T: ?Sized + Blobbable<S>,
+    T: ?Sized + Blobbable,
     S: BlobSerialization,
 {
     fn eq(&self, other: &T) -> bool {

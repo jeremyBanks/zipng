@@ -3,8 +3,12 @@ pub mod blob;
 pub mod blobbable;
 pub mod serialization;
 
-pub use self::blobbable::*;
-pub use self::serialization::*;
+pub use self::blobbable::Blobbable;
+pub use self::serialization::BlobSerialization;
+pub use self::serialization::Cbor;
+pub use self::serialization::FlexBuffers;
+pub use self::serialization::Json;
+pub use self::serialization::Postcard;
 
 /// [`Blob<T, Json>`][blob::Blob]
 pub type JsonBlob<T> = blob::Blob<T, Json>;

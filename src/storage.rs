@@ -12,7 +12,10 @@ use tracing::error;
 pub use self::layered::*;
 pub use self::sqlite::*;
 pub use self::web::*;
+use crate::blobs::bytes;
 use crate::blobs::Blip;
+use crate::Blob;
+use crate::Blobbable;
 #[cfg(doc)]
 use crate::*;
 
@@ -29,15 +32,29 @@ pub enum StorageError {
 
 assert_obj_safe!(Storage);
 
+/// Generic wrapper methods for [`Storage`] need to go here because putting them
+/// on the trait itself would break object-safety.
+impl<S> StorageExt for S where S: Storage + ?Sized {}
+pub trait StorageExt: Storage {
+    fn insert_blob<T: Blobbable + ?Sized>(&self, blob: Blob<T>) -> Result<Blip<T>, StorageError> {
+        Ok(self.insert_byte_blob(blob.retype())?.retype())
+    }
+
+    fn get_blob<T: Blobbable + ?Sized>(&self, blip: Blip<T>) -> Result<Blob<T>, StorageError> {
+        Ok(self.get_byte_blob(blip.retype())?.retype())
+    }
+}
+
 /// A storage backend for an `Engine`. This is object-safe and typically
 /// handled as an `Arc<dyn Storage>`.
 pub trait Storage: Debug + Send + Sync {
-    // fn get_blob<T>(&self, blip: Blip<T>) -> Result<Option<Blob<T>>, StorageError>
-    // {}
+    fn insert_byte_blob(&self, blob: Blob<bytes>) -> Result<Blip<bytes>, StorageError> {
+        Err(StorageError::Unsupported)
+    }
 
-    // fn insert_blob(&self, blob: Blob) -> Result<Blip, StorageError> {
-    //     Err(StorageError::Unsupported)
-    // }
+    fn get_byte_blob(&self, blip: Blip<bytes>) -> Result<Blob<bytes>, StorageError> {
+        Err(StorageError::Unsupported)
+    }
 
     // fn insert_response_id(
     //     &self,

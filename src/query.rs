@@ -1,3 +1,4 @@
+mod blob;
 mod text_to_speech;
 
 use std::fmt::Debug;
@@ -23,6 +24,22 @@ use crate::Context;
 #[cfg(doc)]
 use crate::*;
 
+/// An enum that may contain any [`Request`] type.
+#[derive(Debug, Serialize, Deserialize, Clone, TryInto, From)]
+#[repr(u32)]
+pub enum AnyRequest {
+    Blob(Blip<bytes>) = Blip::<bytes>::TAG,
+    TextToSpeech(TextToSpeech) = TextToSpeech::TAG,
+}
+
+/// An enum that may contain any [`Response`] type.
+#[derive(Debug, Serialize, Deserialize, Clone, TryInto, From)]
+#[repr(u32)]
+pub enum AnyResponse {
+    Blob(Blob<bytes>) = Blip::<bytes>::TAG,
+    TextToSpeech(TextToSpeechResponse) = TextToSpeech::TAG,
+}
+
 #[async_trait]
 /// The input for an operation that can be executed by the [`Engine`].
 pub trait Request: Default + Debug + Blobbable + Clone + Sync + Send {
@@ -38,22 +55,6 @@ pub trait Request: Default + Debug + Blobbable + Clone + Sync + Send {
 ///  The output of an operation executed by the [`Engine`].
 pub trait Response: Default + Debug + Blobbable + Clone + Sync + Send {
     type Request: self::Request;
-}
-
-/// An enum that may contain any [`Request`] type.
-#[derive(Debug, Serialize, Deserialize, Clone, TryInto, From)]
-#[repr(u32)]
-pub enum AnyRequest {
-    Blob(Blip<bytes>) = Blip::<bytes>::TAG,
-    TextToSpeech(TextToSpeech) = TextToSpeech::TAG,
-}
-
-/// An enum that may contain any [`Response`] type.
-#[derive(Debug, Serialize, Deserialize, Clone, TryInto, From)]
-#[repr(u32)]
-pub enum AnyResponse {
-    Blob(Blob<bytes>) = Blip::<bytes>::TAG,
-    TextToSpeech(TextToSpeechResponse) = TextToSpeech::TAG,
 }
 
 #[derive(Debug, Error, Diagnostic)]
@@ -81,19 +82,4 @@ impl From<never> for Error {
     fn from(_: never) -> Self {
         unreachable!()
     }
-}
-
-#[async_trait]
-impl<T> Request for Blip<T>
-where T: ?Sized
-{
-    const TAG: u32 = 0x00;
-    type Response = Blob<T>;
-    type Error = Error;
-}
-
-impl<T> Response for Blob<T>
-where T: ?Sized
-{
-    type Request = Blip<T>;
 }

@@ -16,7 +16,7 @@ use crate::SqliteStorage;
 use crate::Storage;
 
 /// A lazy-initialized [`Engine`] instance storing its results in an in-memory
-/// SQLite database.
+/// SQLite database. Must be run inside of a [`tokio`] runtime.
 pub static EPHEMERAL: Lazy<Engine> =
     Lazy::new(|| Engine::new(Arc::new(SqliteStorage::open_in_memory().unwrap())));
 
@@ -25,6 +25,9 @@ pub static EPHEMERAL: Lazy<Engine> =
 pub static PERSISTENT: Lazy<Engine> = Lazy::new(|| {
     let mut path = home::home_dir().unwrap_or_default();
     path.push(format!(".{}", env!("CARGO_CRATE_NAME", "fiction")));
+    if !path.exists() {
+        std::fs::create_dir_all(&path).unwrap();
+    }
     path.push("db");
     Engine::new(Arc::new(
         SqliteStorage::open(path.to_string_lossy().as_ref()).unwrap(),

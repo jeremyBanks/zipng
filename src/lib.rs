@@ -38,6 +38,7 @@ pub mod query;
 /// Supporting types for [`Storage`]
 pub mod storage;
 
+use std::ops::Deref;
 use std::sync::Arc;
 
 use query::TextToSpeech;
@@ -107,14 +108,11 @@ pub fn main() -> Result<(), panic> {
     // let request = text_to_speech("hello, world!");
 
     runtime.block_on(async {
-        let storage: Arc<dyn Storage> = Arc::new(SqliteStorage::default());
-        let engine = Engine::new(storage);
+        let engine = PERSISTENT.deref();
         let speech = engine.text_to_speech("hello, world!").await?;
 
         Result::<(), panic>::Ok(())
-    });
-
-    std::process::exit(0)
+    })
 }
 
 // async fn exercise(engine: Engine<impl Storage>) -> Result<(), panic> {

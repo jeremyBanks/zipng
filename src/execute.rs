@@ -1,17 +1,50 @@
 use async_trait::async_trait;
 
+use crate::blobs::blip::blip;
+use crate::blobs::blip::Blip;
+use crate::blobs::blob::Blob;
+use crate::blobs::BlobSerialization;
+use crate::query;
+use crate::query::RequestError;
+use crate::storage::StorageError;
+use crate::Blobbable;
 use crate::Request;
 
-/// Common trait for types that can "execute" a [`Request`].
-///
-/// For users with will typically be the [`Engine`], but for implementors this
-/// is often a [`Context`].
-///
-/// This is also implemented for [`Storage`], but that's read-only.
 #[async_trait]
-pub trait Execute {
-    async fn execute<Request: crate::Request>(
+pub trait Incremental {
+    async fn blip<T: Blobbable + ?Sized, S: BlobSerialization>(
+        blob: Blob<T, S>,
+    ) -> Result<Blip<T, S>, StorageError> {
+        let blip = blob.blip();
+        if !blip.is_inline() {
+            // just remove the fucking query alltogether you idiot
+            // it's just a distraction
+            self.set(&blip, &blob);
+        }
+        Ok(blip)
+    }
+
+    async fn get<Request: crate::Request>(
         &self,
         request: &Request,
-    ) -> Result<Request::Response, Request::Error>;
+    ) -> Result<Request::Response, RequestError> {
+        self.get(self.get_blip(blip(request)))
+    }
+
+    async fn set<Request: crate::Request>(
+        &self,
+        request: &Request,
+        response: &Request::Response,
+    ) -> Result<(), StorageError>;
+
+    async fn get_blip<Request: crate::Request>(
+        &self,
+        request: Blip<Request>,
+    ) -> Result<Blip<Request::Response>, RequestError>;
+
+    async fn set_blip<Request: crate::Request>(
+        &self,
+        request: Blip<Request>,
+        response: Blip<Request>,
+    ) -> Result<(), RequestError>;
 }

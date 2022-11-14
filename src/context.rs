@@ -6,7 +6,7 @@ use serde::Serialize;
 use thiserror::Error;
 
 use crate::blobs::UnknownBlip;
-use crate::execute::Execute;
+use crate::execute::Incremental;
 use crate::never;
 use crate::storage::StorageImpl;
 use crate::AnyRequest;
@@ -26,12 +26,10 @@ use crate::Storage;
 /// interactions with the rest of the [`Engine`]. If the request produces a new
 /// [`Response`], the [`Context`] is consumed to produce its [`Metadata`].
 #[derive(Debug)]
-pub struct Context<Request>
-where Request: crate::Request
-{
-    engine: Arc<Engine>,
-    request: Request,
-    aliases: Vec<UnknownBlip>,
+pub struct Context {
+    storage: Arc<dyn Storage>,
+    request: Blip<AnyRequest>,
+    aliases: Vec<Blip<AnyRequest>>,
 }
 
 /// Metadata associated with the production of a given [`Response`].
@@ -47,9 +45,7 @@ pub struct Metadata {
 #[error("{self:?}")]
 pub enum ContextError {}
 
-impl<Request> Context<Request>
-where Request: crate::Request
-{
+impl Context {
     pub fn new(storage: impl Into<Option<Arc<SqliteStorage>>>) -> Self {
         let storage = storage.into();
         todo!()
@@ -85,8 +81,8 @@ where Request: crate::Request
 }
 
 #[async_trait]
-impl<ContextRequest: crate::Request> Execute for Context<ContextRequest> {
-    async fn execute<Request: crate::Request>(
+impl Incremental for Context {
+    async fn get<Request: crate::Request>(
         &self,
         request: &Request,
     ) -> Result<Request::Response, Request::Error> {

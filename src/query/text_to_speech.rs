@@ -8,6 +8,7 @@ use serde::Deserialize;
 use serde::Serialize;
 use thiserror::Error;
 
+use super::RequestError;
 use crate::blobs::bytes;
 use crate::blobs::Postcard;
 use crate::blobs::PostcardBlob;
@@ -40,8 +41,7 @@ pub struct TextToSpeechResponse {
 impl Request for TextToSpeech {
     const TAG: u32 = 0x31;
     type Response = TextToSpeechResponse;
-    type Error = panic;
-    async fn execute(&self, context: &mut Context<Self>) -> Result<Self::Response, panic> {
+    async fn execute(&self, context: &mut Context) -> Result<Self::Response, RequestError> {
         let Self {
             text,
             language,

@@ -1,6 +1,6 @@
 use std::fmt::Debug;
 
-use super::Error;
+use super::RequestError;
 use crate::Blip;
 use crate::Blob;
 use crate::Request;
@@ -11,7 +11,6 @@ where T: ?Sized
 {
     const TAG: u32 = 0x00;
     type Response = Blob<T>;
-    type Error = Error;
 }
 
 impl<T> Response for Blob<T>

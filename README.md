@@ -5,8 +5,11 @@
 
 next goals:
 
+- [ ] priorities: queries with NO dependencies, so we don't have to worry about
+      context doing much complicated.
 - [ ] sqlite storage layer with separate blobs and queries, but not much smarts.
       (maybe we merge later, but maybe not.)
+- [ ] cache configuration can come later
 - [ ] queries for web caching
 - [ ] and royal road ingestion
 - [ ] and per-chapter text-to-speech production of ogg files

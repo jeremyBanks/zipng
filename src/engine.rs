@@ -56,6 +56,10 @@ impl Engine {
         &self.storage
     }
 
+    fn new_context(&self) -> Context {
+        Context::new(self.storage.clone())
+    }
+
     /// Executes a query, returning either a new `Response` or a cached one from
     /// the backing storage.
     pub async fn execute<Request: crate::Request>(
@@ -64,11 +68,14 @@ impl Engine {
     ) -> Result<Request::Response, never> {
         let request_blip = Blip::new(request);
 
-        let context = Context::new(&request, &self.storage);
+        let context = self.new_context();
 
         let response = request.execute(&mut context).await?;
 
         self.storage.insert_response(&request, &response).await?;
+        for alias in request.aliases() {
+            self.storage.insert_alias(&alias, &request_blip).await?;
+        }
 
         todo!()
     }

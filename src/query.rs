@@ -17,6 +17,7 @@ use crate::blobs::bytes;
 use crate::blobs::Postcard;
 use crate::never;
 use crate::panic;
+use crate::storage::StorageError;
 use crate::Blip;
 use crate::Blob;
 use crate::Blobbable;
@@ -45,10 +46,9 @@ pub enum AnyResponse {
 pub trait Request: Default + Debug + Blobbable + Clone + Sync + Send {
     const TAG: u32;
     type Response: self::Response;
-    type Error: Debug + Into<self::Error> + From<self::Error>;
 
-    async fn execute(&self, context: &mut Context<Self>) -> Result<Self::Response, Self::Error> {
-        Err(Error::NotSupported)?
+    async fn execute(&self, context: &mut Context) -> Result<Self::Response, RequestError> {
+        Err(RequestError::NotSupported)?
     }
 }
 
@@ -58,27 +58,21 @@ pub trait Response: Default + Debug + Blobbable + Clone + Sync + Send {
 }
 
 #[derive(Debug, Error, Diagnostic)]
-pub enum Error {
-    #[error("parse or type error while deserializing")]
-    NotRecognized,
-
-    #[error("the engine does not support this request. results are only available if pre-loaded.")]
-    NotSupported,
-
-    #[error("403 Forbidden")]
-    NotAllowed,
+pub enum RequestError {
+    #[error("Storage Error: {0:?}")]
+    StorageError(#[from] StorageError),
 
     #[error(transparent)]
     OtherFailure(#[from] eyre::Report),
 }
 
-impl From<panic> for Error {
+impl From<panic> for RequestError {
     fn from(_: panic) -> Self {
         unreachable!()
     }
 }
 
-impl From<never> for Error {
+impl From<never> for RequestError {
     fn from(_: never) -> Self {
         unreachable!()
     }

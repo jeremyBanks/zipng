@@ -43,12 +43,22 @@ assert_impl_all!(Blip<Rc<u8>, FlexBuffers>: Sized, Copy, Serialize, Sync, Send);
 assert_impl_all!(Blip<[u8], Cbor>: Sized, Copy, Serialize, Sync, Send);
 assert_impl_all!(Blip<dyn Debug, Postcard>: Sized, Copy, Serialize, Sync, Send);
 
+/// Creates a new [`Blip`] from a reference to any [`Blobbable`] value.
+pub fn blip<T, S, Ref>(value: Ref) -> Blip<T, S>
+where
+    T: Blobbable + ?Sized,
+    Ref: Sized + Borrow<T>,
+    S: BlobSerialization,
+{
+    T::to_blip(value.borrow())
+}
+
 impl<T, S> Blip<T, S>
 where
     T: ?Sized,
     S: BlobSerialization,
 {
-    /// Creates a new Blip from a reference to any blobbable value.
+    /// Creates a new [`Blip`] from a reference to any [`Blobbable`] value.
     pub fn new<Ref>(value: Ref) -> Self
     where
         T: Blobbable,
@@ -112,7 +122,13 @@ where
 {
     /// Returns the Blip representing this Blob.
     pub fn blip(&self) -> Blip<T, S> {
-        self.into()
+        let bytes = self.as_ref();
+        if bytes.len() <= 31 {
+            Blip::try_from_raw_bytes(bytes).unwrap()
+        } else {
+            let bytes = blake3::hash(bytes).as_bytes().to_vec();
+            Blip::try_from_raw_bytes(bytes.as_ref()).unwrap()
+        }
     }
 }
 

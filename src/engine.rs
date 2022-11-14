@@ -5,6 +5,7 @@ use std::sync::RwLock;
 
 use once_cell::sync::Lazy;
 use tokio::runtime::Handle;
+use tracing::info;
 
 use crate::context::Context;
 use crate::default;
@@ -18,12 +19,15 @@ use crate::Storage;
 
 /// A lazy-initialized [`Engine`] instance storing its results in an in-memory
 /// SQLite database. Must be run inside of a [`tokio`] runtime.
-pub static EPHEMERAL: Lazy<Engine> =
-    Lazy::new(|| Engine::new(Arc::new(SqliteStorage::open_in_memory().unwrap())));
+pub static EPHEMERAL: Lazy<Engine> = Lazy::new(|| {
+    info!("Initializing static EPHEMERAL: Lazy<Engine>");
+    Engine::new(Arc::new(SqliteStorage::open_in_memory().unwrap()))
+});
 
 /// A lazy-initialized [`Engine`] instance storing its results in a SQLite
 /// database in the user's home directory.
 pub static PERSISTENT: Lazy<Engine> = Lazy::new(|| {
+    info!("Initializing static PERSISTENT: Lazy<Engine>");
     let mut path = home::home_dir().unwrap_or_default();
     path.push(format!(".{}", env!("CARGO_CRATE_NAME", "fiction")));
     if !path.exists() {

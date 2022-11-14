@@ -1,3 +1,5 @@
+use async_trait::async_trait;
+
 use super::StorageError;
 use super::StorageImpl;
 use super::UnknownResponseItem;
@@ -12,16 +14,17 @@ use crate::Metadata;
 /// No-op dummy storage backend. Retains nothing, without error.
 pub struct NoStorage;
 
+#[async_trait]
 impl StorageImpl for NoStorage {
-    fn insert_blob_impl(&self, blob: &UnknownBlob) -> Result<UnknownBlip, StorageError> {
+    async fn insert_blob_impl(&self, blob: &UnknownBlob) -> Result<UnknownBlip, StorageError> {
         Ok(blob.blip())
     }
 
-    fn get_blob_impl(&self, blip: UnknownBlip) -> Result<Option<UnknownBlob>, StorageError> {
+    async fn get_blob_impl(&self, blip: UnknownBlip) -> Result<Option<UnknownBlob>, StorageError> {
         Ok(None)
     }
 
-    fn insert_response_impl(
+    async fn insert_response_impl(
         &self,
         request: UnknownBlip,
         response: UnknownBlip,
@@ -33,7 +36,7 @@ impl StorageImpl for NoStorage {
         })
     }
 
-    fn get_response_impl(
+    async fn get_response_impl(
         &self,
         request: UnknownBlip,
     ) -> Result<Option<UnknownResponseItem>, StorageError> {

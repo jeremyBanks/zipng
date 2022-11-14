@@ -41,7 +41,9 @@ pub mod storage;
 use std::ops::Deref;
 use std::sync::Arc;
 
+use blobs::blip::blip;
 use query::TextToSpeech;
+use tracing::info;
 
 #[doc(inline)]
 pub use crate::blobs::Blip;
@@ -73,8 +75,6 @@ pub use crate::storage::NoStorage;
 pub use crate::storage::SqliteStorage;
 #[doc(inline)]
 pub use crate::storage::Storage;
-#[doc(inline)]
-pub use crate::storage::WebStorage;
 
 /// `fiction` CLI entry point
 ///
@@ -101,13 +101,31 @@ pub fn main() -> Result<(), panic> {
 
     color_eyre::install()?;
 
+    info!("Initializing tokio runtime...");
+
     let runtime = tokio::runtime::Builder::new_current_thread()
         .enable_all()
         .build()?;
 
+    info!("Starting main task...");
+
     runtime.block_on(async {
+        info!("I'm in ur main task...");
+
         let engine = PERSISTENT.deref();
-        let speech = engine.text_to_speech("hello, world!").await?;
+
+        info!("With ur engine...");
+
+        let request = TextToSpeech {
+            text: blip("Hello, world!"),
+            ..default()
+        };
+
+        info!("Executing request... {request:?}");
+
+        let response = engine.execute(request).await?;
+
+        dbg!(&response);
 
         Ok(())
     })

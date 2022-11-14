@@ -17,9 +17,6 @@ pub(crate) use self::phantom_type::PhantomType;
 /// for convenience within this crate's types.
 pub enum never {}
 
-#[allow(non_camel_case_types)]
-pub type unknown = never;
-
 assert_impl_all!(never: Send, Sync);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]

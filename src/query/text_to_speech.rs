@@ -26,26 +26,9 @@ use crate::*;
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct TextToSpeech {
-    text: Blip<str>,
-    language: Option<Blip<str>>,
-    voice_name: Option<Blip<str>>,
-}
-
-impl Engine {
-    pub async fn text_to_speech(
-        &self,
-        text: impl AsRef<str>,
-    ) -> Result<TextToSpeechResponse, panic> {
-        let text = PostcardBlob::<str>::new(text.as_ref());
-        let text = self.storage().insert_blob(text)?;
-        let request = TextToSpeech {
-            text,
-            language: "en-us".to_blip().into(),
-            voice_name: None,
-        };
-        let response = self.execute(request).await?;
-        Ok(response)
-    }
+    pub text: Blip<str>,
+    pub language: Option<Blip<str>>,
+    pub voice_name: Option<Blip<str>>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]

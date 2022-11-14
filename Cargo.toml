@@ -1,6 +1,6 @@
 [package]
 name = "fiction"
-version = "0.0.20221122"
+version = "0.20221114.0"
 edition = "2021"
 
 [dependencies]

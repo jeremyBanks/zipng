@@ -12,7 +12,6 @@ pub use self::serialization::FlexBuffers;
 pub use self::serialization::Json;
 pub use self::serialization::Postcard;
 pub use self::serialization::Unknown;
-use crate::unknown;
 
 /// [`Blob<T, Json>`][blob::Blob]
 pub type JsonBlob<T> = blob::Blob<T, Json>;

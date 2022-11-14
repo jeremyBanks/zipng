@@ -43,6 +43,16 @@ assert_impl_all!(Blob<Rc<u8>, Cbor>: Sized, Serialize, DeserializeOwned, Sync, S
 assert_impl_all!(Blob<[u8], FlexBuffers>: Sized, Serialize, DeserializeOwned, Sync, Send);
 assert_impl_all!(Blob<dyn Debug, Postcard>: Sized, Serialize, DeserializeOwned, Sync, Send);
 
+/// Creates a new [`Blob`] from a reference to any [`Blobbable`] value.
+pub fn blob<T, S, Ref>(value: Ref) -> Blob<T, S>
+where
+    T: Blobbable + ?Sized,
+    Ref: Sized + Borrow<T>,
+    S: BlobSerialization,
+{
+    T::to_blob(value.borrow())
+}
+
 impl<T, S> Blob<T, S>
 where
     T: ?Sized,

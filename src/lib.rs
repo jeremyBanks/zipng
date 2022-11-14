@@ -33,6 +33,7 @@ mod copyvec;
 /// Supporting types for [`Engine`].
 #[doc(hidden)]
 pub mod engine;
+mod execute;
 /// Supporting types for [`Request`], and [`Response`].
 pub mod query;
 /// Supporting types for [`Storage`]

@@ -1,17 +1,18 @@
 use std::sync::Arc;
 
+use async_trait::async_trait;
 use serde::Deserialize;
 use serde::Serialize;
 use thiserror::Error;
 
 use crate::blobs::UnknownBlip;
+use crate::execute::Execute;
 use crate::never;
 use crate::storage::StorageImpl;
 use crate::AnyRequest;
 use crate::AnyResponse;
 use crate::Blip;
 use crate::Blob;
-#[cfg(doc)]
 use crate::Engine;
 use crate::PhantomType;
 #[cfg(doc)]
@@ -24,12 +25,11 @@ use crate::Storage;
 /// A context is associated with a [`Request`] instance and manages all of its
 /// interactions with the rest of the [`Engine`]. If the request produces a new
 /// [`Response`], the [`Context`] is consumed to produce its [`Metadata`].
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct Context<Request>
 where Request: crate::Request
 {
-    // XXX: this needs a reference to the engine, no?
-    storage: Option<Arc<dyn StorageImpl>>,
+    engine: Arc<Engine>,
     request: Request,
     aliases: Vec<UnknownBlip>,
 }
@@ -82,4 +82,14 @@ where Request: crate::Request
     /// Adds an alias request that will also be associated with this request's
     /// result.
     pub fn populate(&self, request: Request) {}
+}
+
+#[async_trait]
+impl<ContextRequest: crate::Request> Execute for Context<ContextRequest> {
+    async fn execute<Request: crate::Request>(
+        &self,
+        request: &Request,
+    ) -> Result<Request::Response, Request::Error> {
+        todo!()
+    }
 }

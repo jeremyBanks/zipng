@@ -44,16 +44,12 @@ pub static PERSISTENT: Lazy<Engine> = Lazy::new(|| {
 #[derive(Debug)]
 pub struct Engine {
     storage: Arc<dyn StorageImpl>,
-    runtime: tokio::runtime::Handle,
 }
 
 impl Engine {
     /// Creates a new `Engine` with the given storage backend.
     pub fn new(storage: Arc<dyn StorageImpl>) -> Engine {
-        Self {
-            storage,
-            runtime: Handle::current(),
-        }
+        Self { storage }
     }
 
     pub fn storage(&self) -> &Arc<dyn StorageImpl> {
@@ -68,11 +64,11 @@ impl Engine {
     ) -> Result<Request::Response, never> {
         let request_blip = Blip::new(request);
 
-        // let context = Context::new(&request, &self.storage);
+        let context = Context::new(&request, &self.storage);
 
-        // let response = request.execute(&mut context).await?;
+        let response = request.execute(&mut context).await?;
 
-        // self.storage.insert_response(&request, &response).await?;
+        self.storage.insert_response(&request, &response).await?;
 
         todo!()
     }

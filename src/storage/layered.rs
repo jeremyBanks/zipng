@@ -1,11 +1,11 @@
 use std::sync::Arc;
 
-use super::Storage;
+use super::StorageImpl;
 
 /// Storage backed by a configuration of two or more different [`Storage`]
 /// implementations.
 #[derive(Debug, Clone)]
-pub struct LayeredStorage<Inner: Storage, Next: Storage> {
+pub struct LayeredStorage<Inner: StorageImpl, Next: StorageImpl> {
     inner: Arc<Inner>,
     next: Arc<Next>,
 }

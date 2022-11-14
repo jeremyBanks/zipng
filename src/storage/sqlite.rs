@@ -11,7 +11,7 @@ use tracing::info;
 use tracing::instrument;
 use tracing::trace;
 
-use super::Storage;
+use super::StorageImpl;
 
 #[derive(Debug, Clone)]
 /// Storage backed by a SQLite database, which may be either in-memory or
@@ -20,7 +20,7 @@ pub struct SqliteStorage {
     connection: Arc<Mutex<rusqlite::Connection>>,
 }
 
-impl Storage for SqliteStorage {}
+impl StorageImpl for SqliteStorage {}
 
 const APPLICATION_ID: u32 = 0x0F1C_1500;
 

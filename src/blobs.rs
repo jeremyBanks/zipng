@@ -1,3 +1,5 @@
+use std::primitive;
+
 pub mod blip;
 pub mod blob;
 pub mod blobbable;
@@ -9,6 +11,8 @@ pub use self::serialization::Cbor;
 pub use self::serialization::FlexBuffers;
 pub use self::serialization::Json;
 pub use self::serialization::Postcard;
+pub use self::serialization::Unknown;
+use crate::unknown;
 
 /// [`Blob<T, Json>`][blob::Blob]
 pub type JsonBlob<T> = blob::Blob<T, Json>;
@@ -28,26 +32,18 @@ pub type FlexBuffersBlip<T> = blip::Blip<T, FlexBuffers>;
 /// [`Blip<T, Cbor>`][blip::Blip]
 pub type CborBlip<T> = blip::Blip<T, Cbor>;
 
-use std::primitive;
-
 /// [`Blip<T, Postcard>`][blip::Blip], using our default serialization format
 pub type Blip<T> = PostcardBlip<T>;
 /// [`Blob<T, Postcard>`][blob::Blob], using our default serialization format
 pub type Blob<T> = PostcardBlob<T>;
 
-/// [`Blip<bytes, Postcard>`][blip::Blip], representing untyped bytes using our
-/// default serialization format
-pub type ByteBlip = Blip<bytes>;
-/// [`Blip<string, Postcard>`][blip::Blip], representing an otherwise-untyped
-/// UTF-8 string using our default serialization format
-pub type StringBlip = Blip<str>;
+/// [`Blip<Unknown, Unknown>`][blip::Blip], a [`Blip`] representing data of an
+/// unknown type using an unknown serialization format.
+pub type UnknownBlip = blip::Blip<Unknown, Unknown>;
 
-/// [`Blob<bytes, Postcard>`][blob::Blob], containing untyped bytes using our
-/// default serialization format
-pub type ByteBlob = Blob<bytes>;
-/// [`Blob<string, Postcard>`][blob::Blob], containing an otherwise-untyped
-/// UTF-8 string using our default serialization format
-pub type StringBlob = Blob<string>;
+/// [`Blob<Unknown, Unknown>`][blob::Blob], a [`Blob`] containing data of an
+/// unknown type using an unknown serialization format.
+pub type UnknownBlob = blob::Blob<Unknown, Unknown>;
 
 /// [`[u8]`][slice], an externally-/un-sized byte string
 #[allow(non_camel_case_types)]

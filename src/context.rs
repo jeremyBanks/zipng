@@ -4,9 +4,9 @@ use serde::Deserialize;
 use serde::Serialize;
 use thiserror::Error;
 
-use crate::blobs::bytes;
-use crate::blobs::ByteBlip;
+use crate::blobs::UnknownBlip;
 use crate::never;
+use crate::storage::StorageImpl;
 use crate::AnyRequest;
 use crate::AnyResponse;
 use crate::Blip;
@@ -28,20 +28,17 @@ use crate::Storage;
 pub struct Context<Request>
 where Request: crate::Request
 {
-    storage: Option<Arc<dyn Storage>>,
+    // XXX: this needs a reference to the engine, no?
+    storage: Option<Arc<dyn StorageImpl>>,
     request: Request,
-    aliases: Vec<Blip<bytes>>,
+    aliases: Vec<UnknownBlip>,
 }
-
-/// TODO: You really need to stop wasting time on unifying blobs and request
-/// storage. Come back to it later if you want, or do it as an implementation
-/// detail, but this does NOT need to be exposed in the storage interface, at
-/// least at this point. Just make two separate methods, and if you want to
-/// replace one with a default implementation later that's fine.
 
 /// Metadata associated with the production of a given [`Response`].
 #[derive(Debug, Default, Serialize, Deserialize, Clone)]
 pub struct Metadata {
+    validated_at: i64,
+    created_at: i64,
     read: Vec<Blob<AnyRequest>>,
     written: Vec<Blob<AnyRequest>>,
 }

@@ -13,7 +13,7 @@ use crate::blobs::Postcard;
 use crate::blobs::PostcardBlob;
 use crate::never;
 use crate::panic;
-use crate::storage::StorageExt;
+use crate::storage::Storage;
 use crate::Blip;
 use crate::Blob;
 use crate::Blobbable;

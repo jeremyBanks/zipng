@@ -10,6 +10,7 @@ use crate::context::Context;
 use crate::default;
 use crate::never;
 use crate::panic;
+use crate::storage::StorageImpl;
 use crate::Blip;
 use crate::Blob;
 use crate::SqliteStorage;
@@ -38,20 +39,20 @@ pub static PERSISTENT: Lazy<Engine> = Lazy::new(|| {
 /// backend with the query engine.
 #[derive(Debug)]
 pub struct Engine {
-    storage: Arc<dyn Storage>,
+    storage: Arc<dyn StorageImpl>,
     runtime: tokio::runtime::Handle,
 }
 
 impl Engine {
     /// Creates a new `Engine` with the given storage backend.
-    pub fn new(storage: Arc<dyn Storage>) -> Engine {
+    pub fn new(storage: Arc<dyn StorageImpl>) -> Engine {
         Self {
             storage,
             runtime: Handle::current(),
         }
     }
 
-    pub fn storage(&self) -> &Arc<dyn Storage> {
+    pub fn storage(&self) -> &Arc<dyn StorageImpl> {
         &self.storage
     }
 

@@ -23,6 +23,18 @@ pub trait BlobSerialization: Sized {
     fn deserialize_from_bytes<T: DeserializeOwned + Blobbable>(value: &[u8]) -> T;
 }
 
+/// A non-functional/panicking [`BlobSerialization`] implementation for use when
+/// the correct serialization is unknown.
+pub enum Unknown {}
+impl BlobSerialization for Unknown {
+    fn serialize_as_bytes<T: Serialize + Blobbable>(_value: &T) -> Vec<u8> {
+        panic!("Attempted to serialize with an Unknown serialization")
+    }
+    fn deserialize_from_bytes<T: DeserializeOwned + Blobbable>(_value: &[u8]) -> T {
+        panic!("Attempted to deserialize with an Unknown serialization")
+    }
+}
+
 /// [`postcard`]
 pub enum Postcard {}
 impl BlobSerialization for Postcard {

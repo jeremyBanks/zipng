@@ -1,8 +1,10 @@
 use async_trait::async_trait;
 
+use crate::blobs::blip;
 use crate::blobs::blip::blip;
-use crate::blobs::blip::Blip;
-use crate::blobs::blob::Blob;
+use crate::blobs::blob;
+use crate::blobs::Blip;
+use crate::blobs::Blob;
 use crate::blobs::BlobSerialization;
 use crate::query;
 use crate::query::RequestError;
@@ -13,15 +15,16 @@ use crate::Request;
 #[async_trait]
 pub trait Incremental {
     async fn blip<T: Blobbable + ?Sized, S: BlobSerialization>(
-        blob: Blob<T, S>,
-    ) -> Result<Blip<T, S>, StorageError> {
-        let blip = blob.blip();
-        if !blip.is_inline() {
-            // just remove the fucking query alltogether you idiot
-            // it's just a distraction
-            self.set(&blip, &blob);
-        }
-        Ok(blip)
+        blob: blob::Blob<T, S>,
+    ) -> Result<blip::Blip<T, S>, StorageError> {
+        // let blip = blob.blip();
+        // if !blip.is_inline() {
+        //     // just remove the fucking query alltogether you idiot
+        //     // it's just a distraction
+        //     self.set(&blip, &blob);
+        // }
+        // Ok(blip)
+        todo!()
     }
 
     async fn get<Request: crate::Request>(

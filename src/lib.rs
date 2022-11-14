@@ -25,7 +25,7 @@ mod ffmpeg;
 #[doc(hidden)]
 pub mod generic;
 // pub mod queries;
-// pub mod throttle;
+pub mod throttle;
 // pub mod tts;
 /// Supporting types for [`Context`], and [`Metadata`]
 pub mod context;
@@ -46,35 +46,20 @@ use blobs::blip::blip;
 use query::TextToSpeech;
 use tracing::info;
 
-#[doc(inline)]
 pub use crate::blobs::Blip;
-#[doc(inline)]
 pub use crate::blobs::Blob;
-#[doc(inline)]
 pub use crate::blobs::Blobbable;
-#[doc(inline)]
 pub use crate::context::Context;
-#[doc(inline)]
 pub use crate::context::Metadata;
-#[doc(inline)]
 pub use crate::engine::*;
-#[doc(inline)]
 pub use crate::generic::*;
-#[doc(inline)]
 pub use crate::query::AnyRequest;
-#[doc(inline)]
 pub use crate::query::AnyResponse;
-#[doc(inline)]
 pub use crate::query::Request;
-#[doc(inline)]
 pub use crate::query::Response;
-#[doc(inline)]
 pub use crate::storage::LayeredStorage;
-#[doc(inline)]
 pub use crate::storage::NoStorage;
-#[doc(inline)]
 pub use crate::storage::SqliteStorage;
-#[doc(inline)]
 pub use crate::storage::Storage;
 
 /// `fiction` CLI entry point
@@ -111,6 +96,8 @@ pub fn main() -> Result<(), panic> {
     info!("Starting main task...");
 
     runtime.block_on(async {
+        let args: Vec<String> = std::env::args().skip(1).collect();
+
         info!("I'm in ur main task...");
 
         let engine = PERSISTENT.deref();

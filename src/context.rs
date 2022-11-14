@@ -8,6 +8,7 @@ use thiserror::Error;
 use crate::blobs::UnknownBlip;
 use crate::execute::Incremental;
 use crate::never;
+use crate::storage::StorageError;
 use crate::storage::StorageImpl;
 use crate::AnyRequest;
 use crate::AnyResponse;
@@ -42,8 +43,10 @@ pub struct Metadata {
 }
 
 #[derive(Debug, Error)]
-#[error("{self:?}")]
-pub enum ContextError {}
+#[error("{0:?}")]
+pub enum ContextError {
+    StorageError(#[from] StorageError),
+}
 
 impl Context {
     pub fn new(storage: impl Into<Option<Arc<SqliteStorage>>>) -> Self {
@@ -51,33 +54,9 @@ impl Context {
         todo!()
     }
 
-    pub fn query(&mut self, request: AnyRequest) -> Result<AnyResponse, never> {
-        todo!()
-    }
-
-    pub fn get_blob<Rep>(&self, id: impl Into<Blip<Rep>>) -> Result<Option<Blob<Rep>>, never> {
-        todo!()
-    }
-
-    pub fn insert_blob<Rep>(&self, data: impl Into<Blob<Rep>>) -> Result<Blip<Rep>, never> {
-        todo!()
-    }
-
-    pub fn get_responses(&self, request: Request) -> Result<Request::Response, never> {
-        todo!()
-    }
-
-    pub fn insert_response<OtherRequest: crate::Request>(
-        &self,
-        request: OtherRequest,
-        response: OtherRequest::Response,
-    ) {
-        todo!()
-    }
-
     /// Adds an alias request that will also be associated with this request's
     /// result.
-    pub fn populate(&self, request: Request) {}
+    pub fn populate(&self, request: AnyRequest) {}
 }
 
 #[async_trait]
@@ -85,7 +64,7 @@ impl Incremental for Context {
     async fn get<Request: crate::Request>(
         &self,
         request: &Request,
-    ) -> Result<Request::Response, Request::Error> {
+    ) -> Result<Request::Response, ContextError> {
         todo!()
     }
 }

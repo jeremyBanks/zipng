@@ -1,5 +1,6 @@
 //! don't call it The Registry
 use std::fmt::Debug;
+use std::path::Path;
 
 use async_trait::async_trait;
 use derive_more::From;
@@ -29,6 +30,14 @@ use crate::*;
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct KeyValue {
     pub key_path: Vec<Blob<bytes>>,
+}
+
+impl From<&str> for KeyValue {
+    fn from(path: Path) -> Self {
+        Self {
+            key_path: path.into_iter().map(|s| Blob::from(s.as_bytes())).collect(),
+        }
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]

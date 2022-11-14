@@ -689,6 +689,7 @@ dependencies = [
  "hex",
  "home",
  "http",
+ "inherent",
  "miette",
  "once_cell",
  "postcard",
@@ -1195,6 +1196,17 @@ dependencies = [
  "autocfg",
  "hashbrown",
  "serde",
+]
+
+[[package]]
+name = "inherent"
+version = "1.0.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2fb971b57a573f221e77621bea15a412033924a30beb9511fa2867572e41ea0e"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
 ]
 
 [[package]]

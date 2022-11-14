@@ -27,8 +27,6 @@ pub mod generic;
 // pub mod queries;
 pub mod throttle;
 // pub mod tts;
-/// Supporting types for [`Context`], and [`Metadata`]
-pub mod context;
 mod copyvec;
 /// Supporting types for [`Engine`].
 #[doc(hidden)]

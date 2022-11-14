@@ -49,18 +49,24 @@ impl Request for TextToSpeech {
         } = self;
 
         if self.voice_name.is_some() {
-            context.populate(Self {
-                text: *text,
-                language: *language,
-                voice_name: None,
-            });
+            context.alias(
+                Self {
+                    text: *text,
+                    language: *language,
+                    voice_name: None,
+                }
+                .into(),
+            );
         }
         if self.language.is_some() {
-            context.populate(Self {
-                text: *text,
-                language: None,
-                voice_name: None,
-            });
+            context.alias(
+                Self {
+                    text: *text,
+                    language: None,
+                    voice_name: None,
+                }
+                .into(),
+            );
         }
 
         Ok(TextToSpeechResponse { speech: todo!() })

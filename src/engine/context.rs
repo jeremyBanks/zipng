@@ -7,6 +7,7 @@ use thiserror::Error;
 
 use crate::blobs::UnknownBlip;
 use crate::execute::Incremental;
+use crate::execute::IncrementalError;
 use crate::never;
 use crate::storage::StorageError;
 use crate::storage::StorageImpl;
@@ -16,9 +17,7 @@ use crate::Blip;
 use crate::Blob;
 use crate::Engine;
 use crate::PhantomType;
-#[cfg(doc)]
 use crate::Request;
-#[cfg(doc)]
 use crate::Response;
 use crate::SqliteStorage;
 use crate::Storage;
@@ -28,43 +27,28 @@ use crate::Storage;
 /// [`Response`], the [`Context`] is consumed to produce its [`Metadata`].
 #[derive(Debug)]
 pub struct Context {
-    storage: Arc<dyn Storage>,
-    request: Blip<AnyRequest>,
-    aliases: Vec<Blip<AnyRequest>>,
+    /// A Blip representing the request this context is associated with.
+    pub(in crate::engine) request: Blip<AnyRequest>,
+    pub(in crate::engine) engine: Arc<Engine>,
+    pub(in crate::engine) aliases: Vec<Blip<AnyRequest>>,
 }
 
 /// Metadata associated with the production of a given [`Response`].
 #[derive(Debug, Default, Serialize, Deserialize, Clone)]
 pub struct Metadata {
-    validated_at: i64,
-    created_at: i64,
-    read: Vec<Blob<AnyRequest>>,
-    written: Vec<Blob<AnyRequest>>,
-}
-
-#[derive(Debug, Error)]
-#[error("{0:?}")]
-pub enum ContextError {
-    StorageError(#[from] StorageError),
+    pub validated_at: i64,
+    pub created_at: i64,
+    pub read: Vec<Blob<AnyRequest>>,
+    pub written: Vec<Blob<AnyRequest>>,
 }
 
 impl Context {
-    pub fn new(storage: impl Into<Option<Arc<SqliteStorage>>>) -> Self {
-        let storage = storage.into();
-        todo!()
-    }
-
     /// Adds an alias request that will also be associated with this request's
     /// result.
-    pub fn populate(&self, request: AnyRequest) {}
+    pub fn alias(&self, request: AnyRequest) {}
 }
 
 #[async_trait]
 impl Incremental for Context {
-    async fn get<Request: crate::Request>(
-        &self,
-        request: &Request,
-    ) -> Result<Request::Response, ContextError> {
-        todo!()
-    }
+    type Error = IncrementalError;
 }

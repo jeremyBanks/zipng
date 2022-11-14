@@ -1,4 +1,3 @@
-mod key_value;
 mod text_to_speech;
 
 use std::fmt::Debug;
@@ -11,8 +10,6 @@ use serde::Deserialize;
 use serde::Serialize;
 use thiserror::Error;
 
-use self::key_value::KeyValue;
-use self::key_value::KeyValueResponse;
 pub use self::text_to_speech::TextToSpeech;
 pub use self::text_to_speech::TextToSpeechResponse;
 use crate::blobs::bytes;
@@ -32,7 +29,6 @@ use crate::*;
 #[repr(u32)]
 pub enum AnyRequest {
     TextToSpeech(TextToSpeech) = TextToSpeech::TAG,
-    KeyValue(KeyValue) = KeyValue::TAG,
 }
 
 /// An enum that may contain any [`Response`] type.
@@ -40,7 +36,6 @@ pub enum AnyRequest {
 #[repr(u32)]
 pub enum AnyResponse {
     TextToSpeech(TextToSpeechResponse) = TextToSpeech::TAG,
-    KeyValue(KeyValueResponse) = KeyValue::TAG,
 }
 
 #[async_trait]
@@ -63,6 +58,9 @@ pub trait Response: Default + Debug + Blobbable + Clone + Sync + Send {
 pub enum RequestError {
     #[error("Storage Error: {0:?}")]
     StorageError(#[from] StorageError),
+
+    #[error("Not Supported")]
+    NotSupported,
 
     #[error(transparent)]
     OtherFailure(#[from] eyre::Report),

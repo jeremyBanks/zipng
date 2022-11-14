@@ -7,7 +7,10 @@ use once_cell::sync::Lazy;
 use tokio::runtime::Handle;
 use tracing::info;
 
-use crate::context::Context;
+/// Supporting types for [`Context`], and [`Metadata`]
+pub mod context;
+
+use self::context::Context;
 use crate::default;
 use crate::never;
 use crate::panic;
@@ -16,6 +19,11 @@ use crate::Blip;
 use crate::Blob;
 use crate::SqliteStorage;
 use crate::Storage;
+
+// Hmm.
+// Maybe, "Engine" does not exist.
+// Incremental is the only type, and it's merged with StorageExt.
+// Arc<dyn Incremental> is blessed.
 
 /// A lazy-initialized [`Engine`] instance storing its results in an in-memory
 /// SQLite database. Must be run inside of a [`tokio`] runtime.
@@ -48,8 +56,8 @@ pub struct Engine {
 
 impl Engine {
     /// Creates a new `Engine` with the given storage backend.
-    pub fn new(storage: Arc<dyn StorageImpl>) -> Engine {
-        Self { storage }
+    pub fn new(storage: Arc<dyn StorageImpl>) -> Arc<Engine> {
+        Arc::new(Self { storage })
     }
 
     pub fn storage(&self) -> &Arc<dyn StorageImpl> {

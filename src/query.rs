@@ -1,4 +1,4 @@
-mod blob;
+mod key_value;
 mod text_to_speech;
 
 use std::fmt::Debug;
@@ -11,6 +11,8 @@ use serde::Deserialize;
 use serde::Serialize;
 use thiserror::Error;
 
+use self::key_value::KeyValue;
+use self::key_value::KeyValueResponse;
 pub use self::text_to_speech::TextToSpeech;
 pub use self::text_to_speech::TextToSpeechResponse;
 use crate::blobs::bytes;
@@ -29,16 +31,16 @@ use crate::*;
 #[derive(Debug, Serialize, Deserialize, Clone, TryInto, From)]
 #[repr(u32)]
 pub enum AnyRequest {
-    Blob(Blip<bytes>) = Blip::<bytes>::TAG,
     TextToSpeech(TextToSpeech) = TextToSpeech::TAG,
+    KeyValue(KeyValue) = KeyValue::TAG,
 }
 
 /// An enum that may contain any [`Response`] type.
 #[derive(Debug, Serialize, Deserialize, Clone, TryInto, From)]
 #[repr(u32)]
 pub enum AnyResponse {
-    Blob(Blob<bytes>) = Blip::<bytes>::TAG,
     TextToSpeech(TextToSpeechResponse) = TextToSpeech::TAG,
+    KeyValue(KeyValueResponse) = KeyValue::TAG,
 }
 
 #[async_trait]

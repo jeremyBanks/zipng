@@ -34,12 +34,12 @@ pub struct TextToSpeech {
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct TextToSpeechResponse {
-    speech: Blip<bytes>,
+    pub speech: Blob<bytes>,
 }
 
 #[async_trait]
 impl Request for TextToSpeech {
-    const TAG: u32 = 0x31;
+    const TAG: u32 = 's' as _;
     type Response = TextToSpeechResponse;
     async fn execute(&self, context: &mut Context) -> Result<Self::Response, RequestError> {
         let Self {

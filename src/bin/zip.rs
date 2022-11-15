@@ -1,8 +1,10 @@
 #![allow(clippy::unusual_byte_groupings)]
 use std::collections::BTreeMap;
+use std::collections::BTreeSet;
 use std::fmt::Display;
 use std::io::Write;
 use std::iter::repeat;
+use std::ops::Range;
 
 use crc::Algorithm;
 use crc::Crc;
@@ -25,38 +27,55 @@ const LOCAL_FILE_MODIFICATION_DATE: [u8; 2] = 0b_10100_0001_101000_u16.to_le_byt
 const LOCAL_FILE_NAME_LENGTH: [u8; 2] = 64_u16.to_le_bytes();
 const LOCAL_EXTRA_FIELD_LENGTH: [u8; 2] = 0_u16.to_le_bytes();
 
-fn write_aligned_right_pad(buffer: &mut Vec<u8>, bytes: &[u8]) {
+fn write_aligned_right_pad(buffer: &mut Vec<u8>, bytes: &[u8]) -> Range<usize> {
+    let start = buffer.len();
     buffer.extend(bytes);
-    write_aligned_left_pad(buffer, b"")
+    let end = buffer.len();
+    write_aligned_left_pad(buffer, b"");
+    start..end
 }
 
-fn write_aligned_left_pad(buffer: &mut Vec<u8>, bytes: &[u8]) {
-    let offset = buffer.len();
-    let offset_after = offset + bytes.len();
-    if offset_after % ALIGNMENT != 0 {
-        let padding = ALIGNMENT - (offset_after % ALIGNMENT);
+fn write_aligned_left_pad(buffer: &mut Vec<u8>, bytes: &[u8]) -> Range<usize> {
+    let before = buffer.len();
+    let plus_len = before + bytes.len();
+    if plus_len % ALIGNMENT != 0 {
+        let padding = ALIGNMENT - (plus_len % ALIGNMENT);
         buffer.extend(repeat(0).take(padding));
     }
+    let start = buffer.len();
     buffer.extend(bytes);
+    let end = buffer.len();
+    start..end
 }
 
 pub fn write_zip(data: BTreeMap<Vec<Vec<u8>>, Vec<u8>>) -> Result<Vec<u8>, eyre::Report> {
     let mut output = Vec::new();
 
-    let contents = BTreeMap::from_iter(
-        data.values()
-            .map(|content| (blake3::hash(content).to_hex().to_ascii_uppercase(), content)),
-    );
+    // I guess we can sort by contents? Why not.
 
-    //
-    let mut indicies = ();
+    let mut unindexed_blobs = BTreeSet::<&[u8]>::new();
+    unindexed_blobs.insert(b"");
+    unindexed_blobs.extend(data.values().map(|v| v.as_slice()));
+
+    // These are the indexes where the data starts. The local file header for each
+    // of these is exactly 128 bytes earlier.
+    let mut indexed_blobs = BTreeMap::<&[u8], usize>::new();
+
+    // Okay, so given our alignment scheme, we still have most of a kilobyte
+    // available in our file header, if we want it. It has arbitrary values with
+    // two-byte field IDs. Maybe we can put a multihash in there for other
+    // stuff, including our git.
+    // But like, why? And you mess up the compression.
+
+    // Maps from "contents" to their byte indices in the output.
+    // Each of these ranges is preceded by a local file header,
+    // which is always 128 bytes (given our constant-length 64-byte filenames).
+    let mut indices = BTreeMap::<&[u8], Range<usize>>::new();
 
     write_aligned_right_pad(&mut output, &{
-        // Unused empty nameless file, at the beginning of the zip file.
-        // This is only for the benefit of any applications that sniff for the local
-        // file signature at the beginning of the file.
-        let mut header = Vec::new();
-        let length = u32::try_from(contents.len()).unwrap().to_le_bytes();
+        // We always have an empty file at the beginning of the zip file, for the sake
+        // of any programs that are sniffing for a local file signature.
+        let mut empty = Vec::new();
         output.write_all(&LOCAL_FILE_SIGNATURE)?;
         output.write_all(&LOCAL_FILE_FLAGS)?;
         output.write_all(&LOCAL_FILE_COMPRESSION)?;
@@ -65,9 +84,10 @@ pub fn write_zip(data: BTreeMap<Vec<Vec<u8>>, Vec<u8>>) -> Result<Vec<u8>, eyre:
         output.write_all(&crc(b""))?;
         output.write_all(&0_u16.to_le_bytes())?;
         output.write_all(&0_u16.to_le_bytes())?;
-        output.write_all(&0_u16.to_le_bytes())?;
+        output.write_all(&LOCAL_FILE_NAME_LENGTH)?;
         output.write_all(&LOCAL_EXTRA_FIELD_LENGTH)?;
-        header
+        output.write_all(b"AF1349B9F5F9A1A6A0404DEA36DCC9499BCB25C9ADC112B7CC9A93CAE41F3262")?;
+        empty
     });
 
     for (digest, contents) in contents {

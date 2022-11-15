@@ -8,33 +8,131 @@ use std::ops::Range;
 use crc::Crc;
 use crc::CRC_32_ISO_HDLC;
 
+const FILE_ALIGNMENT: usize = 1024;
+
 pub fn main() {
-    let pairs = [
-        ("empty.txt", ""),
-        ("1.txt", "1"),
-        ("2.txt", "22"),
-        ("333.txt", "333"),
-        ("nothing.txt", ""),
-        ("nothing/nothing.txt", ""),
-        ("README.txt", "hello, world!"),
+    let pairs: &[(&[u8], &[u8])] = &[
+        (b"empty.txt", b""),
+        (b"1.txt", b"1"),
+        (b"2.txt", b"22"),
+        (b"333.txt", b"333"),
+        (b"nothing.txt", b""),
+        (b"nothing/nothing.txt", b""),
+        (b"README.txt", b"hello, world!"),
     ];
 
-    // collect into btree map then call zip, then write to target/test.zip in cwd
-    let pairs: BTreeMap<Vec<u8>, Vec<u8>> = pairs
-        .iter()
-        .map(|(k, v)| (k.as_bytes().to_vec(), v.as_bytes().to_vec()))
-        .collect();
-    let file = zip(pairs).unwrap();
+    let file = zip(&pairs);
     std::fs::write("target/test.zip", file).unwrap();
 }
-
-pub const ALIGNMENT: usize = 64; // 1024;
 
 const ZIP_VERSION: [u8; 2] = 20_u16.to_le_bytes();
 const LOCAL_FILE_SIGNATURE: [u8; 4] = *b"PK\x03\x04";
 const CENTRAL_FILE_SIGNATURE: [u8; 4] = *b"PK\x01\x02";
 const ARCHIVE_TERMINATOR_SIGNATURE: [u8; 4] = *b"PK\x05\x06";
 const LOCAL_FILE_HEADER_SIZE: usize = 30;
+
+fn zip(files: &[(&[u8], &[u8])]) -> Vec<u8> {
+    let mut output = Vec::new();
+
+    let mut bodies = BTreeSet::from_iter(files.iter().map(|(_name, body)| *body));
+    bodies.insert(&[]);
+
+    for (i, body) in bodies.iter().enumerate() {
+        let mut name = format!("{i:X}");
+        if name.len() % 2 == 1 {
+            name.insert(0, '0');
+        }
+        write_blob(&mut output, name.as_bytes(), body);
+    }
+
+    output
+}
+
+fn write_blob(buffer: &mut Vec<u8>, name: &[u8], body: &[u8]) -> Range<usize> {
+    let mut header = Vec::new();
+    write_blob_header(&mut header, name, body);
+    let header_range = write_aligned_pad_start(buffer, &header, FILE_ALIGNMENT);
+    let body_range = write_aligned_pad_end(buffer, body, FILE_ALIGNMENT);
+    header_range.start..body_range.end
+}
+
+fn write_blob_header(buffer: &mut Vec<u8>, name: &[u8], data: &[u8]) -> Range<usize> {
+    let index_before = buffer.len();
+    // 0x0000..0x0004: local file header signature
+    buffer.extend_from_slice(b"PK\x03\x04");
+    // 0x0004..0x0006: version needed to extract
+    buffer.extend_from_slice(&2_0_u16.to_le_bytes());
+    // 0x0006..0x0008: general purpose bit flag
+    buffer.extend_from_slice(&[0x00, 0x00]);
+    // 0x0008..0x000A: compression method
+    buffer.extend_from_slice(&[0x00, 0x00]);
+    // 0x000A..0x000C: modification time
+    buffer.extend_from_slice(&[0x00, 0x00]);
+    // 0x000C..0x000E: modification date
+    buffer.extend_from_slice(&[0x00, 0x00]);
+    // 0x000E..0x0012: checksum
+    buffer.extend_from_slice(&zip_crc(data).to_le_bytes());
+    // 0x0012..0x0016: compressed size
+    buffer.extend_from_slice(&data.len().to_le_bytes());
+    // 0x0016..0x001A: uncompressed size
+    buffer.extend_from_slice(&data.len().to_le_bytes());
+    // 0x001A..0x001E: file name length
+    buffer.extend_from_slice(&name.len().to_le_bytes());
+    // 0x001E..0x0022: extra fields length
+    buffer.extend_from_slice(&[0x00, 0x00]);
+    // 0x0022: file name, followed by extra fields (we have none)
+    buffer.extend_from_slice(name);
+    let index_after = buffer.len();
+    index_before..index_after
+}
+
+/// Writes `bytes` to `buffer`, padded with trailing zeroes to the next multiple of `alignment`.
+/// Returns the range that `bytes` was written to in `buffer`, excluding the padding.
+fn write_aligned_pad_end(buffer: &mut Vec<u8>, bytes: &[u8], alignment: usize) -> Range<usize> {
+    let index_before_data = buffer.len();
+
+    buffer.extend_from_slice(bytes);
+
+    let index_after_data = buffer.len();
+
+    if index_after_data % alignment != 0 {
+        let padding = alignment - (index_after_data % alignment);
+        for _ in 0..padding {
+            buffer.push(0);
+        }
+    }
+
+    let _index_after_padding = buffer.len();
+
+    index_before_data..index_after_data
+}
+
+/// Writes `bytes` to `buffer`, padded with leading zeroes to the next multiple of `alignment`.
+/// Returns the range that `bytes` was written to in `buffer`, excluding the padding.
+fn write_aligned_pad_start(buffer: &mut Vec<u8>, bytes: &[u8], alignment: usize) -> Range<usize> {
+    let index_before_padding = buffer.len();
+    let unpadded_index_after_data = index_before_padding + bytes.len();
+    if unpadded_index_after_data % alignment != 0 {
+        let padding = alignment - (unpadded_index_after_data % alignment);
+        for _ in 0..padding {
+            buffer.push(0);
+        }
+    }
+    let index_before_data = buffer.len();
+    buffer.extend_from_slice(bytes);
+    let index_after_data = buffer.len();
+    index_before_data..index_after_data
+}
+
+
+fn zip_crc(bytes: &[u8]) -> u32 {
+    const ZIP_CRC: Crc::<u32> = Crc::<u32>::new(&CRC_32_ISO_HDLC);
+    let mut hasher = ZIP_CRC.digest();
+    hasher.update(bytes);
+    hasher.finalize()
+}
+
+/*
 
 pub fn zip(data: BTreeMap<Vec<u8>, Vec<u8>>) -> Result<Vec<u8>, eyre::Report> {
     let mut output = Vec::new();
@@ -53,11 +151,11 @@ pub fn zip(data: BTreeMap<Vec<u8>, Vec<u8>>) -> Result<Vec<u8>, eyre::Report> {
         rest.write_all(&LOCAL_FILE_SIGNATURE)?;
         rest.write_all(&ZIP_VERSION)?;
         rest.write_all(&[0_u8; 8])?;
-        rest.write_all(&crc(b""))?;
+        rest.write_all(&crc(b"").to_le_bytes())?;
         rest.write_all(&[0_u8; 12])?;
         assert!(rest.is_empty(), "{:?} bytes missing", rest.len());
         header
-    });
+    }, KIBI);
 
     for contents in unindexed_blobs {
         write_aligned_pad_start(&mut output, &{
@@ -67,14 +165,14 @@ pub fn zip(data: BTreeMap<Vec<u8>, Vec<u8>>) -> Result<Vec<u8>, eyre::Report> {
             rest.write_all(&LOCAL_FILE_SIGNATURE)?;
             rest.write_all(&ZIP_VERSION)?;
             rest.write_all(&[0_u8; 8])?;
-            rest.write_all(&crc(&contents))?;
+            rest.write_all(&crc(&contents).to_le_bytes())?;
             rest.write_all(&length)?;
             rest.write_all(&length)?;
             rest.write_all(&[0_u8; 4])?;
             assert!(rest.is_empty(), "{:?} bytes missing", rest.len());
             header
-        });
-        blob_indices.insert(contents, write_aligned_pad_end(&mut output, contents));
+        }, KIBI);
+        blob_indices.insert(contents, write_aligned_pad_end(&mut output, contents, KIBI));
     }
 
     let directory_start = output.len();
@@ -88,7 +186,7 @@ pub fn zip(data: BTreeMap<Vec<u8>, Vec<u8>>) -> Result<Vec<u8>, eyre::Report> {
             rest.write_all(&ZIP_VERSION)?;
             rest.write_all(&ZIP_VERSION)?;
             rest.write_all(&[0_u8; 8])?;
-            rest.write_all(&crc(&contents))?;
+            rest.write_all(&crc(&contents).to_le_bytes())?;
             rest.write_all(&length)?;
             rest.write_all(&length)?;
             rest.write_all(&u16::try_from(name.len()).unwrap().to_le_bytes())?;
@@ -124,48 +222,7 @@ pub fn zip(data: BTreeMap<Vec<u8>, Vec<u8>>) -> Result<Vec<u8>, eyre::Report> {
             .into_iter()
             .chain(terminator.into_iter())
             .collect::<Vec<u8>>()
-    });
+    }, KIBI);
 
     Ok(output)
-}
-
-fn crc(bytes: &[u8]) -> [u8; 4] {
-    let zip_crc = Crc::<u32>::new(&CRC_32_ISO_HDLC);
-    let mut hasher = zip_crc.digest();
-    hasher.update(bytes);
-    hasher.finalize().to_le_bytes()
-}
-
-fn write_aligned_pad_end(buffer: &mut Vec<u8>, bytes: &[u8]) -> Range<usize> {
-    let index_before_data = buffer.len();
-
-    buffer.extend_from_slice(bytes);
-
-    let index_after_data = buffer.len();
-
-    if index_after_data % ALIGNMENT != 0 {
-        let padding = ALIGNMENT - (index_after_data % ALIGNMENT);
-        for _ in 0..padding {
-            buffer.push(0);
-        }
-    }
-
-    let _index_after_padding = buffer.len();
-
-    index_before_data..index_after_data
-}
-
-fn write_aligned_pad_start(buffer: &mut Vec<u8>, bytes: &[u8]) -> Range<usize> {
-    let index_before_padding = buffer.len();
-    let unpadded_index_after_data = index_before_padding + bytes.len();
-    if unpadded_index_after_data % ALIGNMENT != 0 {
-        let padding = ALIGNMENT - (unpadded_index_after_data % ALIGNMENT);
-        for _ in 0..padding {
-            buffer.push(0);
-        }
-    }
-    let index_before_data = buffer.len();
-    buffer.extend_from_slice(bytes);
-    let index_after_data = buffer.len();
-    index_before_data..index_after_data
-}
+} */

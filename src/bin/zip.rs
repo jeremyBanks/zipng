@@ -25,7 +25,13 @@ pub fn main() {
     std::fs::write("target/test.zip", file).unwrap();
 }
 
-pub const ALIGNMENT: usize = 1024;
+pub const ALIGNMENT: usize = 128; // 1024;
+
+const ZIP_VERSION: [u8; 2] = 20_u16.to_le_bytes();
+const LOCAL_FILE_SIGNATURE: [u8; 4] = *b"PK\x03\x04";
+const CENTRAL_FILE_SIGNATURE: [u8; 4] = *b"PK\x01\x02";
+const ARCHIVE_TERMINATOR_SIGNATURE: [u8; 4] = *b"PK\x05\x06";
+const LOCAL_FILE_HEADER_SIZE: usize = 30;
 
 pub fn zip(data: BTreeMap<Vec<u8>, Vec<u8>>) -> Result<Vec<u8>, eyre::Report> {
     let mut output = Vec::new();
@@ -45,8 +51,8 @@ pub fn zip(data: BTreeMap<Vec<u8>, Vec<u8>>) -> Result<Vec<u8>, eyre::Report> {
         rest.write_all(&ZIP_VERSION)?;
         rest.write_all(&[0_u8; 8])?;
         rest.write_all(&crc(b""))?;
-        rest.write_all(&[0_u8; 8])?;
-        assert!(rest.is_empty());
+        rest.write_all(&[0_u8; 12])?;
+        assert!(rest.is_empty(), "{:?} bytes missing", rest.len());
         header
     });
 
@@ -62,7 +68,7 @@ pub fn zip(data: BTreeMap<Vec<u8>, Vec<u8>>) -> Result<Vec<u8>, eyre::Report> {
             rest.write_all(&length)?;
             rest.write_all(&length)?;
             rest.write_all(&[0_u8; 4])?;
-            assert!(rest.is_empty());
+            assert!(rest.is_empty(), "{:?} bytes missing", rest.len());
             header
         });
         blob_indices.insert(contents, write_aligned_pad_end(&mut output, contents));
@@ -145,9 +151,3 @@ fn write_aligned_pad_start(buffer: &mut Vec<u8>, bytes: &[u8]) -> Range<usize> {
     let end = buffer.len();
     start..end
 }
-
-const ZIP_VERSION: [u8; 2] = 20_u16.to_le_bytes();
-const LOCAL_FILE_SIGNATURE: [u8; 4] = *b"PK\x03\x04";
-const CENTRAL_FILE_SIGNATURE: [u8; 4] = *b"PK\x01\x02";
-const ARCHIVE_TERMINATOR_SIGNATURE: [u8; 4] = *b"PK\x05\x06";
-const LOCAL_FILE_HEADER_SIZE: usize = 64;

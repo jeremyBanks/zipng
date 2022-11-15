@@ -11,6 +11,9 @@ use crc::CRC_32_ISO_HDLC;
 pub fn main() {
     let pairs = [
         ("empty.txt", ""),
+        ("1.txt", "1"),
+        ("2.txt", "22"),
+        ("333.txt", "333"),
         ("nothing.txt", ""),
         ("nothing/nothing.txt", ""),
         ("README.txt", "hello, world!"),
@@ -25,7 +28,7 @@ pub fn main() {
     std::fs::write("target/test.zip", file).unwrap();
 }
 
-pub const ALIGNMENT: usize = 128; // 1024;
+pub const ALIGNMENT: usize = 64; // 1024;
 
 const ZIP_VERSION: [u8; 2] = 20_u16.to_le_bytes();
 const LOCAL_FILE_SIGNATURE: [u8; 4] = *b"PK\x03\x04";
@@ -98,14 +101,15 @@ pub fn zip(data: BTreeMap<Vec<u8>, Vec<u8>>) -> Result<Vec<u8>, eyre::Report> {
             rest.write_all(name)?;
         }
 
-        let mut terminator = Vec::new();
-        let mut rest = &mut terminator;
+        let mut terminator = [00_u8; 22];
 
         let offset = u32::try_from(directory_start).unwrap().to_le_bytes();
-        let count = u32::try_from(data.len()).unwrap().to_le_bytes();
-        let length = u32::try_from(central_directory.len())
+        let count = u16::try_from(data.len()).unwrap().to_le_bytes();
+        let length = u32::try_from(central_directory.len() + terminator.len())
             .unwrap()
             .to_le_bytes();
+
+        let mut rest = &mut terminator[..];
 
         rest.write_all(&ARCHIVE_TERMINATOR_SIGNATURE)?;
         rest.write_all(&[0_u8; 4])?;
@@ -113,7 +117,8 @@ pub fn zip(data: BTreeMap<Vec<u8>, Vec<u8>>) -> Result<Vec<u8>, eyre::Report> {
         rest.write_all(&count)?;
         rest.write_all(&length)?;
         rest.write_all(&offset)?;
-        rest.write_all(&[0_u8; 4])?;
+        rest.write_all(&[0_u8; 2])?;
+        assert!(rest.is_empty(), "{:?} bytes missing", rest.len());
 
         central_directory
             .into_iter()
@@ -132,22 +137,35 @@ fn crc(bytes: &[u8]) -> [u8; 4] {
 }
 
 fn write_aligned_pad_end(buffer: &mut Vec<u8>, bytes: &[u8]) -> Range<usize> {
-    let start = buffer.len();
-    buffer.extend(bytes);
-    let end = buffer.len();
-    write_aligned_pad_start(buffer, b"");
-    start..end
+    let index_before_data = buffer.len();
+
+    buffer.extend_from_slice(bytes);
+
+    let index_after_data = buffer.len();
+
+    if index_after_data % ALIGNMENT != 0 {
+        let padding = ALIGNMENT - (index_after_data % ALIGNMENT);
+        for _ in 0..padding {
+            buffer.push(0);
+        }
+    }
+
+    let _index_after_padding = buffer.len();
+
+    index_before_data..index_after_data
 }
 
 fn write_aligned_pad_start(buffer: &mut Vec<u8>, bytes: &[u8]) -> Range<usize> {
-    let before = buffer.len();
-    let plus_len = before + bytes.len();
-    if plus_len % ALIGNMENT != 0 {
-        let padding = ALIGNMENT - (plus_len % ALIGNMENT);
-        buffer.extend(repeat(0).take(padding));
+    let index_before_padding = buffer.len();
+    let unpadded_index_after_data = index_before_padding + bytes.len();
+    if unpadded_index_after_data % ALIGNMENT != 0 {
+        let padding = ALIGNMENT - (unpadded_index_after_data % ALIGNMENT);
+        for _ in 0..padding {
+            buffer.push(0);
+        }
     }
-    let start = buffer.len();
-    buffer.extend(bytes);
-    let end = buffer.len();
-    start..end
+    let index_before_data = buffer.len();
+    buffer.extend_from_slice(bytes);
+    let index_after_data = buffer.len();
+    index_before_data..index_after_data
 }

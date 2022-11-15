@@ -1,3 +1,4 @@
+/*
 //! it's not real
 //!
 //! it's [`fiction`][self]
@@ -22,20 +23,19 @@ use tracing_subscriber::EnvFilter;
 pub mod blobs;
 mod ffmpeg;
 /// Generic supporting types.
-#[doc(hidden)]
 pub mod generic;
 // pub mod queries;
 pub mod throttle;
 // pub mod tts;
+mod backend;
+/// Supporting types for [`Storage`]
+pub mod backends;
+/// Supporting types for [`Context`], and [`Metadata`]
+pub mod context;
 mod copyvec;
-/// Supporting types for [`Engine`].
-#[doc(hidden)]
-pub mod engine;
-mod execute;
 /// Supporting types for [`Request`], and [`Response`].
 pub mod query;
-/// Supporting types for [`Storage`]
-pub mod storage;
+mod zip;
 
 use std::ops::Deref;
 use std::sync::Arc;
@@ -49,16 +49,11 @@ pub use crate::blobs::Blob;
 pub use crate::blobs::Blobbable;
 pub use crate::context::Context;
 pub use crate::context::Metadata;
-pub use crate::engine::*;
 pub use crate::generic::*;
 pub use crate::query::AnyRequest;
 pub use crate::query::AnyResponse;
 pub use crate::query::Request;
 pub use crate::query::Response;
-pub use crate::storage::LayeredStorage;
-pub use crate::storage::NoStorage;
-pub use crate::storage::SqliteStorage;
-pub use crate::storage::Storage;
 
 /// `fiction` CLI entry point
 ///
@@ -98,8 +93,6 @@ pub fn main() -> Result<(), panic> {
 
         info!("I'm in ur main task...");
 
-        let engine = PERSISTENT.deref();
-
         info!("With ur engine...");
 
         let request = TextToSpeech {
@@ -109,10 +102,9 @@ pub fn main() -> Result<(), panic> {
 
         info!("Executing request... {request:?}");
 
-        let response = engine.execute(request).await?;
-
-        dbg!(&response);
+        // dbg!(&response);
 
         Ok(())
     })
 }
+ */

@@ -1,3 +1,7 @@
+//! Zip container file encoder.
+//!
+//! All files are aligned to zero-padded 1024-byte blocks,
+//! as is the size of the overall archive.
 #![allow(clippy::unusual_byte_groupings)]
 use std::io::Write;
 use std::ops::Range;
@@ -33,25 +37,20 @@ fn zip(files: &[(&[u8], &[u8])]) -> Vec<u8> {
     let mut files_with_offsets = Vec::new();
 
     for (name, body) in files.iter() {
-        let digest = blake3::hash(body).to_hex().to_uppercase();
-        let local_name = if !body.is_empty() {
-            &digest.as_bytes()[..2]
-        } else {
-            b"00"
-        };
+        let local_name =  b"PK";
         let mut header = Vec::new();
         // 0x0000..0x0004: local file header signature
         header.extend_from_slice(b"PK\x03\x04");
         // 0x0004..0x0006: version needed to extract
         header.extend_from_slice(&2_0_u16.to_le_bytes());
         // 0x0006..0x0008: general purpose bit flag
-        header.extend_from_slice(&[0x00, 0x00]);
+        header.extend_from_slice(&[0x00; 2]);
         // 0x0008..0x000A: compression method
-        header.extend_from_slice(&[0x00, 0x00]);
+        header.extend_from_slice(&[0x00; 2]);
         // 0x000A..0x000C: modification time
-        header.extend_from_slice(&[0x00, 0x00]);
+        header.extend_from_slice(b"PK");
         // 0x000C..0x000E: modification date
-        header.extend_from_slice(&[0x00, 0x00]);
+        header.extend_from_slice(b"PK");
         // 0x000E..0x0012: checksum
         header.extend_from_slice(&zip_crc(body).to_le_bytes());
         // 0x0012..0x0016: compressed size
@@ -61,7 +60,7 @@ fn zip(files: &[(&[u8], &[u8])]) -> Vec<u8> {
         // 0x001A..0x001E: file name length
         header.extend_from_slice(&u16::try_from(local_name.len()).unwrap().to_le_bytes());
         // 0x001E..0x0022: extra fields length
-        header.extend_from_slice(&[0x00, 0x00]);
+        header.extend_from_slice(&[0x00; 2]);
         // 0x0022: file name, followed by extra fields (we have none)
         header.extend_from_slice(local_name);
         let range = if !body.is_empty() {
@@ -93,9 +92,9 @@ fn zip(files: &[(&[u8], &[u8])]) -> Vec<u8> {
         // 0x000A..0x000C: compression method
         header.extend_from_slice(&[0x00; 2]);
         // 0x000C..0x000E: modification time
-        header.extend_from_slice(&[0x00; 2]);
+        header.extend_from_slice(b"PK");
         // 0x000E..0x0010: modification date
-        header.extend_from_slice(&[0x00; 2]);
+        header.extend_from_slice(b"PK");
         // 0x0010..0x0014: checksum
         header.extend_from_slice(&crc);
         // 0x0014..0x0018: compressed size

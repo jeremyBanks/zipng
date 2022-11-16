@@ -1,8 +1,8 @@
-//! Zip container file encoder.
+//! Zip container encoder.
 //!
-//! All files are aligned to zero-padded 1024-byte blocks,
-//! as is the size of the overall archive.
-#![allow(clippy::unusual_byte_groupings)]
+//! Produces a canonical non-compressed zip file with the given contents.
+//! Files are aligned to 1024-byte blocks.
+use std::collections::BTreeMap;
 use std::io::Write;
 use std::ops::Range;
 
@@ -11,33 +11,16 @@ use crc::CRC_32_ISO_HDLC;
 
 const BLOCK_SIZE: usize = 1024;
 
-pub fn main() {
-    let pairs: &[(&[u8], &[u8])] = &[
-        (b"empty.txt", b""),
-        (b"1.txt", b"1"),
-        (b"2.txt", b"22"),
-        (b"333.txt", b"333"),
-        (b"nothing.txt", b""),
-        (b"nothing/nothing.txt", b""),
-        (b"README.txt", b"hello, world!"),
-    ];
-
-    let file = zip(pairs);
-    std::fs::write("target/test.zip", file).unwrap();
-}
-
-const ZIP_VERSION: [u8; 2] = 20_u16.to_le_bytes();
-
-fn zip(files: &[(&[u8], &[u8])]) -> Vec<u8> {
+pub fn zip(files: BTreeMap<&[u8], &[u8]>) -> Vec<u8> {
     let mut output = Vec::new();
 
-    let mut files = Vec::from_iter(files.iter().copied());
-    files.sort_by_key(|(path, body)| (*body, *path));
-
+    let mut files = Vec::from_iter(files.iter().map(|(path, body)| (*path, *body)));
     let mut files_with_offsets = Vec::new();
 
+    files.sort_by_key(|(path, body)| (*body, *path));
+
     for (name, body) in files.iter() {
-        let local_name =  b"PK";
+        let local_name = b"PK";
         let mut header = Vec::new();
         // 0x0000..0x0004: local file header signature
         header.extend_from_slice(b"PK\x03\x04");
@@ -70,23 +53,26 @@ fn zip(files: &[(&[u8], &[u8])]) -> Vec<u8> {
         } else {
             write_aligned_pad_end(&mut output, &header, BLOCK_SIZE)
         };
-        files_with_offsets.push((name, body, range.start));
+        files_with_offsets.push((*name, *body, range.start));
     }
 
+    let mut files = files_with_offsets;
+    files.sort();
+
     let mut central_directory = Vec::new();
-    for (name, body, header_offset) in files_with_offsets {
+    for (name, body, header_offset) in files.iter() {
         let name = name.to_vec();
         let name_length = u16::try_from(name.len()).unwrap();
         let body_length = u32::try_from(body.len()).unwrap();
-        let header_offset = u32::try_from(header_offset).unwrap();
+        let header_offset = u32::try_from(*header_offset).unwrap();
         let crc = zip_crc(body).to_le_bytes();
         let mut header = Vec::new();
         // 0x0000..0x0004: central file header signature
         header.extend_from_slice(b"PK\x01\x02");
         // 0x0004..0x0006: creator version and platform
-        header.extend_from_slice(&ZIP_VERSION);
+        header.extend_from_slice(&20_u16.to_le_bytes());
         // 0x0006..0x0008: required version
-        header.extend_from_slice(&ZIP_VERSION);
+        header.extend_from_slice(&20_u16.to_le_bytes());
         // 0x0008..0x000A: general purpose bit flag
         header.extend_from_slice(&[0x00; 2]);
         // 0x000A..0x000C: compression method
@@ -124,14 +110,16 @@ fn zip(files: &[(&[u8], &[u8])]) -> Vec<u8> {
     let archive_terminator = [0; 22];
     central_directory.extend_from_slice(&archive_terminator);
 
-    let central_directory_range = write_aligned_pad_start(&mut output, &central_directory, BLOCK_SIZE);
+    let central_directory_range =
+        write_aligned_pad_start(&mut output, &central_directory, BLOCK_SIZE);
 
     let final_len = output.len();
     let mut archive_terminator = &mut output[final_len - archive_terminator.len()..];
 
     let directory_offset = u32::try_from(central_directory_range.start).unwrap();
     let directory_count = u16::try_from(files.len()).unwrap();
-    let directory_length = u32::try_from(central_directory_range.len() - archive_terminator.len()).unwrap();
+    let directory_length =
+        u32::try_from(central_directory_range.len() - archive_terminator.len()).unwrap();
 
     // 0x0000..0x0004: archive terminator signature
     archive_terminator.write_all(b"PK\x05\x06").unwrap();
@@ -140,13 +128,21 @@ fn zip(files: &[(&[u8], &[u8])]) -> Vec<u8> {
     // 0x0006..0x0008: disk number with central directory
     archive_terminator.write_all(&[0x00; 2]).unwrap();
     // 0x0008..0x000A: directory entries on disk
-    archive_terminator.write_all(&directory_count.to_le_bytes()).unwrap();
+    archive_terminator
+        .write_all(&directory_count.to_le_bytes())
+        .unwrap();
     // 0x000A..0x000C: directory entries total
-    archive_terminator.write_all(&directory_count.to_le_bytes()).unwrap();
+    archive_terminator
+        .write_all(&directory_count.to_le_bytes())
+        .unwrap();
     // 0x000C..0x0010: central directory byte length
-    archive_terminator.write_all(&directory_length.to_le_bytes()).unwrap();
+    archive_terminator
+        .write_all(&directory_length.to_le_bytes())
+        .unwrap();
     // 0x0010..0x0014: central directory offset from start of archive
-    archive_terminator.write_all(&directory_offset.to_le_bytes()).unwrap();
+    archive_terminator
+        .write_all(&directory_offset.to_le_bytes())
+        .unwrap();
     // 0x0014..: archive comment length, followed by comment body (we have none)
     archive_terminator.write_all(&[0x00; 2]).unwrap();
     assert!(archive_terminator.is_empty());
@@ -154,10 +150,9 @@ fn zip(files: &[(&[u8], &[u8])]) -> Vec<u8> {
     output
 }
 
-
-
-/// Writes `bytes` to `buffer`, padded with trailing zeroes to the next multiple of `alignment`.
-/// Returns the range that `bytes` was written to in `buffer`, excluding the padding.
+/// Writes `bytes` to `buffer`, padded with trailing zeroes to the next multiple
+/// of `alignment`. Returns the range that `bytes` was written to in `buffer`,
+/// excluding the padding.
 fn write_aligned_pad_end(buffer: &mut Vec<u8>, bytes: &[u8], alignment: usize) -> Range<usize> {
     let index_before_data = buffer.len();
 
@@ -177,8 +172,9 @@ fn write_aligned_pad_end(buffer: &mut Vec<u8>, bytes: &[u8], alignment: usize) -
     index_before_data..index_after_data
 }
 
-/// Writes `bytes` to `buffer`, padded with leading zeroes to the next multiple of `alignment`.
-/// Returns the range that `bytes` was written to in `buffer`, excluding the padding.
+/// Writes `bytes` to `buffer`, padded with leading zeroes to the next multiple
+/// of `alignment`. Returns the range that `bytes` was written to in `buffer`,
+/// excluding the padding.
 fn write_aligned_pad_start(buffer: &mut Vec<u8>, bytes: &[u8], alignment: usize) -> Range<usize> {
     let index_before_padding = buffer.len();
     let unpadded_index_after_data = index_before_padding + bytes.len();
@@ -194,105 +190,9 @@ fn write_aligned_pad_start(buffer: &mut Vec<u8>, bytes: &[u8], alignment: usize)
     index_before_data..index_after_data
 }
 
-
 fn zip_crc(bytes: &[u8]) -> u32 {
-    const ZIP_CRC: Crc::<u32> = Crc::<u32>::new(&CRC_32_ISO_HDLC);
+    const ZIP_CRC: Crc<u32> = Crc::<u32>::new(&CRC_32_ISO_HDLC);
     let mut hasher = ZIP_CRC.digest();
     hasher.update(bytes);
     hasher.finalize()
 }
-
-/*
-
-pub fn zip(data: BTreeMap<Vec<u8>, Vec<u8>>) -> Result<Vec<u8>, eyre::Report> {
-    let mut output = Vec::new();
-
-    let mut unindexed_blobs = BTreeSet::<&[u8]>::new();
-    unindexed_blobs.extend(data.values().map(|v| v.as_slice()));
-    let mut blob_indices = BTreeMap::<&[u8], Range<usize>>::new();
-
-    unindexed_blobs.remove("".as_bytes());
-    blob_indices.insert(b"", LOCAL_FILE_HEADER_SIZE..LOCAL_FILE_HEADER_SIZE);
-    write_aligned_pad_end(&mut output, &{
-        // We always have an empty file at the beginning of the zip file, for the sake
-        // of any programs that are sniffing for a local file signature.
-        let mut header = [00_u8; LOCAL_FILE_HEADER_SIZE];
-        let mut rest = &mut header[..];
-        rest.write_all(&LOCAL_FILE_SIGNATURE)?;
-        rest.write_all(&ZIP_VERSION)?;
-        rest.write_all(&[0_u8; 8])?;
-        rest.write_all(&crc(b"").to_le_bytes())?;
-        rest.write_all(&[0_u8; 12])?;
-        assert!(rest.is_empty(), "{:?} bytes missing", rest.len());
-        header
-    }, KIBI);
-
-    for contents in unindexed_blobs {
-        write_aligned_pad_start(&mut output, &{
-            let length = u32::try_from(contents.len()).unwrap().to_le_bytes();
-            let mut header = [00_u8; LOCAL_FILE_HEADER_SIZE];
-            let mut rest = &mut header[..];
-            rest.write_all(&LOCAL_FILE_SIGNATURE)?;
-            rest.write_all(&ZIP_VERSION)?;
-            rest.write_all(&[0_u8; 8])?;
-            rest.write_all(&crc(&contents).to_le_bytes())?;
-            rest.write_all(&length)?;
-            rest.write_all(&length)?;
-            rest.write_all(&[0_u8; 4])?;
-            assert!(rest.is_empty(), "{:?} bytes missing", rest.len());
-            header
-        }, KIBI);
-        blob_indices.insert(contents, write_aligned_pad_end(&mut output, contents, KIBI));
-    }
-
-    let directory_start = output.len();
-
-    write_aligned_pad_start(&mut output, &{
-        let mut central_directory = Vec::new();
-        let mut rest = &mut central_directory;
-        for (name, contents) in data.iter() {
-            let length = u32::try_from(contents.len()).unwrap().to_le_bytes();
-            rest.write_all(&CENTRAL_FILE_SIGNATURE)?;
-            rest.write_all(&ZIP_VERSION)?;
-            rest.write_all(&ZIP_VERSION)?;
-            rest.write_all(&[0_u8; 8])?;
-            rest.write_all(&crc(&contents).to_le_bytes())?;
-            rest.write_all(&length)?;
-            rest.write_all(&length)?;
-            rest.write_all(&u16::try_from(name.len()).unwrap().to_le_bytes())?;
-            rest.write_all(&[0_u8; 6])?;
-            rest.write_all(
-                &u32::try_from(blob_indices[contents.as_slice()].start - LOCAL_FILE_HEADER_SIZE)
-                    .unwrap()
-                    .to_le_bytes(),
-            )?;
-            rest.write_all(name)?;
-        }
-
-        let mut terminator = [00_u8; 22];
-
-        let offset = u32::try_from(directory_start).unwrap().to_le_bytes();
-        let count = u16::try_from(data.len()).unwrap().to_le_bytes();
-        let length = u32::try_from(central_directory.len() + terminator.len())
-            .unwrap()
-            .to_le_bytes();
-
-        let mut rest = &mut terminator[..];
-
-        rest.write_all(&ARCHIVE_TERMINATOR_SIGNATURE)?;
-        rest.write_all(&[0_u8; 4])?;
-        rest.write_all(&count)?;
-        rest.write_all(&count)?;
-        rest.write_all(&length)?;
-        rest.write_all(&offset)?;
-        rest.write_all(&[0_u8; 2])?;
-        assert!(rest.is_empty(), "{:?} bytes missing", rest.len());
-
-        central_directory
-            .into_iter()
-            .chain(terminator.into_iter())
-            .collect::<Vec<u8>>()
-    }, KIBI);
-
-    Ok(output)
-} */

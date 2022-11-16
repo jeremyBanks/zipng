@@ -1,8 +1,5 @@
 #![allow(clippy::unusual_byte_groupings)]
-use std::collections::BTreeMap;
-use std::collections::BTreeSet;
 use std::io::Write;
-use std::iter::repeat;
 use std::ops::Range;
 
 use crc::Crc;
@@ -21,44 +18,68 @@ pub fn main() {
         (b"README.txt", b"hello, world!"),
     ];
 
-    let file = zip(&pairs);
+    let file = zip(pairs);
     std::fs::write("target/test.zip", file).unwrap();
 }
 
 const ZIP_VERSION: [u8; 2] = 20_u16.to_le_bytes();
-const LOCAL_FILE_SIGNATURE: [u8; 4] = *b"PK\x03\x04";
-const ARCHIVE_TERMINATOR_SIGNATURE: [u8; 4] = *b"PK\x05\x06";
-const LOCAL_FILE_HEADER_SIZE: usize = 30;
 
 fn zip(files: &[(&[u8], &[u8])]) -> Vec<u8> {
     let mut output = Vec::new();
 
-    let mut bodies = BTreeSet::from_iter(files.iter().map(|(_name, body)| *body));
-    bodies.insert(&[]);
+    let mut files = Vec::from_iter(files.iter().copied());
+    files.sort_by_key(|(path, body)| (*body, *path));
 
-    let mut body_offsets = BTreeMap::new();
+    let mut files_with_offsets = Vec::new();
 
-    for (i, body) in bodies.iter().enumerate() {
-        let mut name = Vec::new();
-        static DIGITS: &[u8; 36] = b"0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-        let mut remainder = i;
-        while remainder > 0 {
-            let digit = remainder % DIGITS.len();
-            remainder /= DIGITS.len();
-            name.push(DIGITS[digit]);
-        }
-        while name.len() < 2 {
-            name.insert(0, b'0');
-        }
-        body_offsets.insert(body, write_blob(&mut output, &name, body));
+    for (name, body) in files.iter() {
+        let digest = blake3::hash(body).to_hex().to_uppercase();
+        let local_name = if !body.is_empty() {
+            &digest.as_bytes()[..2]
+        } else {
+            b"00"
+        };
+        let mut header = Vec::new();
+        // 0x0000..0x0004: local file header signature
+        header.extend_from_slice(b"PK\x03\x04");
+        // 0x0004..0x0006: version needed to extract
+        header.extend_from_slice(&2_0_u16.to_le_bytes());
+        // 0x0006..0x0008: general purpose bit flag
+        header.extend_from_slice(&[0x00, 0x00]);
+        // 0x0008..0x000A: compression method
+        header.extend_from_slice(&[0x00, 0x00]);
+        // 0x000A..0x000C: modification time
+        header.extend_from_slice(&[0x00, 0x00]);
+        // 0x000C..0x000E: modification date
+        header.extend_from_slice(&[0x00, 0x00]);
+        // 0x000E..0x0012: checksum
+        header.extend_from_slice(&zip_crc(body).to_le_bytes());
+        // 0x0012..0x0016: compressed size
+        header.extend_from_slice(&u32::try_from(body.len()).unwrap().to_le_bytes());
+        // 0x0016..0x001A: uncompressed size
+        header.extend_from_slice(&u32::try_from(body.len()).unwrap().to_le_bytes());
+        // 0x001A..0x001E: file name length
+        header.extend_from_slice(&u16::try_from(local_name.len()).unwrap().to_le_bytes());
+        // 0x001E..0x0022: extra fields length
+        header.extend_from_slice(&[0x00, 0x00]);
+        // 0x0022: file name, followed by extra fields (we have none)
+        header.extend_from_slice(local_name);
+        let range = if !body.is_empty() {
+            let header_range = write_aligned_pad_start(&mut output, &header, BLOCK_SIZE);
+            let body_range = write_aligned_pad_end(&mut output, body, BLOCK_SIZE);
+            header_range.start..body_range.end
+        } else {
+            write_aligned_pad_end(&mut output, &header, BLOCK_SIZE)
+        };
+        files_with_offsets.push((name, body, range.start));
     }
 
     let mut central_directory = Vec::new();
-    for (name, body) in files {
-        let header_offset = u32::try_from(body_offsets[body].start).unwrap();
+    for (name, body, header_offset) in files_with_offsets {
         let name = name.to_vec();
         let name_length = u16::try_from(name.len()).unwrap();
         let body_length = u32::try_from(body.len()).unwrap();
+        let header_offset = u32::try_from(header_offset).unwrap();
         let crc = zip_crc(body).to_le_bytes();
         let mut header = Vec::new();
         // 0x0000..0x0004: central file header signature
@@ -101,77 +122,40 @@ fn zip(files: &[(&[u8], &[u8])]) -> Vec<u8> {
         central_directory.extend_from_slice(&header);
     }
 
-    let central_directory_range = write_aligned_pad_end(&mut output, &central_directory, BLOCK_SIZE);
+    let archive_terminator = [0; 22];
+    central_directory.extend_from_slice(&archive_terminator);
+
+    let central_directory_range = write_aligned_pad_start(&mut output, &central_directory, BLOCK_SIZE);
+
+    let final_len = output.len();
+    let mut archive_terminator = &mut output[final_len - archive_terminator.len()..];
 
     let directory_offset = u32::try_from(central_directory_range.start).unwrap();
     let directory_count = u16::try_from(files.len()).unwrap();
-    let directory_length = u32::try_from(central_directory_range.len()).unwrap();
+    let directory_length = u32::try_from(central_directory_range.len() - archive_terminator.len()).unwrap();
 
-    let mut archive_terminator = Vec::new();
     // 0x0000..0x0004: archive terminator signature
-    archive_terminator.extend_from_slice(b"PK\x05\x06");
-    // 0x0004..0x0008: disk number
-    archive_terminator.extend_from_slice(&[0x00; 2]);
-    // 0x0008..0x000A: disk number with central directory
-    archive_terminator.extend_from_slice(&[0x00; 2]);
-    // 0x000A..0x000C: directory entries on disk
-    archive_terminator.extend_from_slice(&directory_count.to_le_bytes());
-    // 0x000C..0x000E: directory entries total
-    archive_terminator.extend_from_slice(&directory_count.to_le_bytes());
-    // 0x000E..0x0012: central directory byte length
-    archive_terminator.extend_from_slice(&directory_length.to_le_bytes());
-    // 0x0012..0x0016: central directory offset from start of archive
-    archive_terminator.extend_from_slice(&directory_offset.to_le_bytes());
-    // 0x0016..: archive comment length, followed by comment body (we have none)
-    archive_terminator.extend_from_slice(&[0x00; 2]);
-
-
-    write_aligned_pad_start(&mut output, &archive_terminator, BLOCK_SIZE);
+    archive_terminator.write_all(b"PK\x05\x06").unwrap();
+    // 0x0004..0x0006: disk number
+    archive_terminator.write_all(&[0x00; 2]).unwrap();
+    // 0x0006..0x0008: disk number with central directory
+    archive_terminator.write_all(&[0x00; 2]).unwrap();
+    // 0x0008..0x000A: directory entries on disk
+    archive_terminator.write_all(&directory_count.to_le_bytes()).unwrap();
+    // 0x000A..0x000C: directory entries total
+    archive_terminator.write_all(&directory_count.to_le_bytes()).unwrap();
+    // 0x000C..0x0010: central directory byte length
+    archive_terminator.write_all(&directory_length.to_le_bytes()).unwrap();
+    // 0x0010..0x0014: central directory offset from start of archive
+    archive_terminator.write_all(&directory_offset.to_le_bytes()).unwrap();
+    // 0x0014..: archive comment length, followed by comment body (we have none)
+    archive_terminator.write_all(&[0x00; 2]).unwrap();
+    assert!(archive_terminator.is_empty());
 
     output
 }
 
-fn write_blob(buffer: &mut Vec<u8>, name: &[u8], body: &[u8]) -> Range<usize> {
-    let mut header = Vec::new();
-    write_blob_header(&mut header, name, body);
-    if !body.is_empty() {
-        let header_range = write_aligned_pad_start(buffer, &header, BLOCK_SIZE);
-        let body_range = write_aligned_pad_end(buffer, body, BLOCK_SIZE);
-        header_range.start..body_range.end
-    } else {
-        write_aligned_pad_end(buffer, &header, BLOCK_SIZE)
-    }
-}
 
-fn write_blob_header(buffer: &mut Vec<u8>, name: &[u8], data: &[u8]) -> Range<usize> {
-    let index_before = buffer.len();
-    // 0x0000..0x0004: local file header signature
-    buffer.extend_from_slice(b"PK\x03\x04");
-    // 0x0004..0x0006: version needed to extract
-    buffer.extend_from_slice(&2_0_u16.to_le_bytes());
-    // 0x0006..0x0008: general purpose bit flag
-    buffer.extend_from_slice(&[0x00, 0x00]);
-    // 0x0008..0x000A: compression method
-    buffer.extend_from_slice(&[0x00, 0x00]);
-    // 0x000A..0x000C: modification time
-    buffer.extend_from_slice(&[0x00, 0x00]);
-    // 0x000C..0x000E: modification date
-    buffer.extend_from_slice(&[0x00, 0x00]);
-    // 0x000E..0x0012: checksum
-    buffer.extend_from_slice(&zip_crc(data).to_le_bytes());
-    // 0x0012..0x0016: compressed size
-    buffer.extend_from_slice(&u32::try_from(data.len()).unwrap().to_le_bytes());
-    // 0x0016..0x001A: uncompressed size
-    buffer.extend_from_slice(&u32::try_from(data.len()).unwrap().to_le_bytes());
-    // 0x001A..0x001E: file name length
-    buffer.extend_from_slice(&u16::try_from(name.len()).unwrap().to_le_bytes());
-    // 0x001E..0x0022: extra fields length
-    buffer.extend_from_slice(&[0x00, 0x00]);
-    // 0x0022: file name, followed by extra fields (we have none)
-    buffer.extend_from_slice(name);
-    let index_after = buffer.len();
-    index_before..index_after
-}
 
 /// Writes `bytes` to `buffer`, padded with trailing zeroes to the next multiple of `alignment`.
 /// Returns the range that `bytes` was written to in `buffer`, excluding the padding.

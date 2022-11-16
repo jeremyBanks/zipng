@@ -2,30 +2,55 @@
 //!
 //! Produces a canonical non-compressed zip file with the given contents.
 //! Files are aligned to 1024-byte blocks.
-use std::collections::BTreeMap;
 use std::io::Write;
 use std::ops::Range;
 
+use bstr::ByteSlice;
 use crc::Crc;
 use crc::CRC_32_ISO_HDLC;
 
 const BLOCK_SIZE: usize = 1024;
 
-pub fn zip(files: BTreeMap<&[u8], &[u8]>) -> Vec<u8> {
-    let mut output = Vec::new();
+/// Creates a (non-compressed) zip archive with
+pub fn zip<'files, Files, Names, Contents>(files: Files) -> Vec<u8>
+where
+    Files: IntoIterator<Item = &'files (Names, Contents)>,
+    Names: AsRef<[u8]> + 'files,
+    Contents: AsRef<[u8]> + 'files,
+{
+    let mut files: Vec<(&[u8], &[u8])> = files
+        .into_iter()
+        .map(|(n, c)| (n.as_ref(), c.as_ref()))
+        .collect();
+    files.sort_by_cached_key(|(path, body)| {
+        (
+            path != b"mimetype",
+            path.iter().filter(|&&b| b == b'/').count(),
+            *path,
+            *body,
+        )
+    });
+    zip_with(&files, Vec::new(), b"")
+}
 
-    let mut files = Vec::from_iter(files.iter().map(|(path, body)| (*path, *body)));
-    let mut files_with_offsets = Vec::new();
+/// Creates a zip file from files in the order given, appending to the `prefix`
+/// buffer `Vec` (which does not need to be empty), and ending with the
+/// given `suffix`,
+pub fn zip_with(files: &[(&[u8], &[u8])], prefix: Vec<u8>, suffix: &[u8]) -> Vec<u8> {
+    let mut output = prefix;
 
-    files.sort_by_key(|(path, body)| (*body, *path));
+    if suffix.find(b"PK\x05\x06").is_some() {
+        panic!("Zip file suffix must not contain zip file terminator signature PK\\x05\\x06");
+    }
+
+    let mut files_with_offsets = Vec::with_capacity(files.len());
 
     for (name, body) in files.iter() {
-        let local_name = b"PK";
         let mut header = Vec::new();
         // 0x0000..0x0004: local file header signature
         header.extend_from_slice(b"PK\x03\x04");
         // 0x0004..0x0006: version needed to extract
-        header.extend_from_slice(&2_0_u16.to_le_bytes());
+        header.extend_from_slice(&1_0_u16.to_le_bytes());
         // 0x0006..0x0008: general purpose bit flag
         header.extend_from_slice(&[0x00; 2]);
         // 0x0008..0x000A: compression method
@@ -41,26 +66,26 @@ pub fn zip(files: BTreeMap<&[u8], &[u8]>) -> Vec<u8> {
         // 0x0016..0x001A: uncompressed size
         header.extend_from_slice(&u32::try_from(body.len()).unwrap().to_le_bytes());
         // 0x001A..0x001E: file name length
-        header.extend_from_slice(&u16::try_from(local_name.len()).unwrap().to_le_bytes());
+        header.extend_from_slice(&u16::try_from(name.len()).unwrap().to_le_bytes());
         // 0x001E..0x0022: extra fields length
         header.extend_from_slice(&[0x00; 2]);
         // 0x0022: file name, followed by extra fields (we have none)
-        header.extend_from_slice(local_name);
+        header.extend_from_slice(name);
         let range = if !body.is_empty() {
             let header_range = write_aligned_pad_start(&mut output, &header, BLOCK_SIZE);
             let body_range = write_aligned_pad_end(&mut output, body, BLOCK_SIZE);
             header_range.start..body_range.end
         } else {
-            write_aligned_pad_end(&mut output, &header, BLOCK_SIZE)
+            let before = output.len();
+            output.extend_from_slice(&header);
+            let after = output.len();
+            before..after
         };
         files_with_offsets.push((*name, *body, range.start));
     }
 
-    let mut files = files_with_offsets;
-    files.sort();
-
     let mut central_directory = Vec::new();
-    for (name, body, header_offset) in files.iter() {
+    for (name, body, header_offset) in files_with_offsets.iter() {
         let name = name.to_vec();
         let name_length = u16::try_from(name.len()).unwrap();
         let body_length = u32::try_from(body.len()).unwrap();
@@ -70,9 +95,9 @@ pub fn zip(files: BTreeMap<&[u8], &[u8]>) -> Vec<u8> {
         // 0x0000..0x0004: central file header signature
         header.extend_from_slice(b"PK\x01\x02");
         // 0x0004..0x0006: creator version and platform
-        header.extend_from_slice(&20_u16.to_le_bytes());
+        header.extend_from_slice(&1_0_u16.to_le_bytes());
         // 0x0006..0x0008: required version
-        header.extend_from_slice(&20_u16.to_le_bytes());
+        header.extend_from_slice(&1_0_u16.to_le_bytes());
         // 0x0008..0x000A: general purpose bit flag
         header.extend_from_slice(&[0x00; 2]);
         // 0x000A..0x000C: compression method
@@ -107,7 +132,7 @@ pub fn zip(files: BTreeMap<&[u8], &[u8]>) -> Vec<u8> {
         central_directory.extend_from_slice(&header);
     }
 
-    let archive_terminator = [0; 22];
+    let archive_terminator = vec![0; 22 + suffix.len()];
     central_directory.extend_from_slice(&archive_terminator);
 
     let central_directory_range =
@@ -120,6 +145,7 @@ pub fn zip(files: BTreeMap<&[u8], &[u8]>) -> Vec<u8> {
     let directory_count = u16::try_from(files.len()).unwrap();
     let directory_length =
         u32::try_from(central_directory_range.len() - archive_terminator.len()).unwrap();
+    let suffix_length = u16::try_from(suffix.len()).expect("suffix was too long to fit in zip terminating comment");
 
     // 0x0000..0x0004: archive terminator signature
     archive_terminator.write_all(b"PK\x05\x06").unwrap();
@@ -143,10 +169,9 @@ pub fn zip(files: BTreeMap<&[u8], &[u8]>) -> Vec<u8> {
     archive_terminator
         .write_all(&directory_offset.to_le_bytes())
         .unwrap();
-    // 0x0014..: archive comment length, followed by comment body (we have none)
-    archive_terminator.write_all(&[0x00; 2]).unwrap();
-    assert!(archive_terminator.is_empty());
-
+    // 0x0014..: archive comment (suffix) length, then content
+    archive_terminator.write_all(&suffix_length.to_le_bytes()).unwrap();
+    archive_terminator.write_all(&suffix).unwrap();
     output
 }
 

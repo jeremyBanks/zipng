@@ -108,3 +108,5 @@ pub fn main() -> Result<(), panic> {
     })
 }
  */
+pub mod png;
+pub mod zip;

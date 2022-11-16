@@ -5,9 +5,9 @@ use serde::Deserialize;
 use serde::Serialize;
 use thiserror::Error;
 
-use crate::backend::Backend;
-use crate::backend::BackendError;
-use crate::backend::BackendImpl;
+// use crate::backend::Backend;
+// use crate::backend::BackendError;
+// use crate::backend::BackendImpl;
 use crate::blobs::UnknownBlip;
 use crate::never;
 use crate::AnyRequest;
@@ -43,5 +43,5 @@ impl Context {
     pub fn alias(&self, request: AnyRequest) {}
 }
 
-#[async_trait]
-impl BackendImpl for Context {}
+// #[async_trait]
+// impl BackendImpl for Context {}

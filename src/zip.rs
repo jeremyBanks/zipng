@@ -14,7 +14,7 @@ const BLOCK_SIZE: usize = 1024;
 /// Creates a (non-compressed) zip archive with
 pub fn zip<'files, Files, Names, Contents>(files: Files) -> Vec<u8>
 where
-    Files: IntoIterator<Item = &'files (Names, Contents)>,
+    Files: IntoIterator<Item = (&'files Names, &'files Contents)>,
     Names: AsRef<[u8]> + 'files,
     Contents: AsRef<[u8]> + 'files,
 {
@@ -25,6 +25,7 @@ where
     files.sort_by_cached_key(|(path, body)| {
         (
             path != b"mimetype",
+            body.len() != 0,
             path.iter().filter(|&&b| b == b'/').count(),
             *path,
             *body,
@@ -71,14 +72,17 @@ pub fn zip_with(files: &[(&[u8], &[u8])], prefix: Vec<u8>, suffix: &[u8]) -> Vec
         header.extend_from_slice(&[0x00; 2]);
         // 0x0022: file name, followed by extra fields (we have none)
         header.extend_from_slice(name);
-        let range = if !body.is_empty() {
+        let range = if !body.is_empty() && name != b"mimetype" {
             let header_range = write_aligned_pad_start(&mut output, &header, BLOCK_SIZE);
             let body_range = write_aligned_pad_end(&mut output, body, BLOCK_SIZE);
             header_range.start..body_range.end
         } else {
             let before = output.len();
             output.extend_from_slice(&header);
+            output.extend_from_slice(body);
             let after = output.len();
+            write_aligned_pad_end(&mut output, b"", 0x40);
+            let _after_padding = output.len();
             before..after
         };
         files_with_offsets.push((*name, *body, range.start));
@@ -145,7 +149,8 @@ pub fn zip_with(files: &[(&[u8], &[u8])], prefix: Vec<u8>, suffix: &[u8]) -> Vec
     let directory_count = u16::try_from(files.len()).unwrap();
     let directory_length =
         u32::try_from(central_directory_range.len() - archive_terminator.len()).unwrap();
-    let suffix_length = u16::try_from(suffix.len()).expect("suffix was too long to fit in zip terminating comment");
+    let suffix_length =
+        u16::try_from(suffix.len()).expect("suffix was too long to fit in zip terminating comment");
 
     // 0x0000..0x0004: archive terminator signature
     archive_terminator.write_all(b"PK\x05\x06").unwrap();
@@ -170,7 +175,9 @@ pub fn zip_with(files: &[(&[u8], &[u8])], prefix: Vec<u8>, suffix: &[u8]) -> Vec
         .write_all(&directory_offset.to_le_bytes())
         .unwrap();
     // 0x0014..: archive comment (suffix) length, then content
-    archive_terminator.write_all(&suffix_length.to_le_bytes()).unwrap();
+    archive_terminator
+        .write_all(&suffix_length.to_le_bytes())
+        .unwrap();
     archive_terminator.write_all(&suffix).unwrap();
     output
 }

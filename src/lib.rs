@@ -1,4 +1,3 @@
-/*
 //! it's not real
 //!
 //! it's [`fiction`][self]
@@ -27,33 +26,32 @@ pub mod generic;
 // pub mod queries;
 pub mod throttle;
 // pub mod tts;
-mod backend;
-/// Supporting types for [`Storage`]
-pub mod backends;
+// mod backend;
+// pub mod backends;
 /// Supporting types for [`Context`], and [`Metadata`]
-pub mod context;
+// pub mod context;
 mod copyvec;
 /// Supporting types for [`Request`], and [`Response`].
-pub mod query;
-mod zip;
+// pub mod query;
+pub mod zip;
 
 use std::ops::Deref;
 use std::sync::Arc;
 
 use blobs::blip::blip;
-use query::TextToSpeech;
+// use query::TextToSpeech;
 use tracing::info;
 
 pub use crate::blobs::Blip;
 pub use crate::blobs::Blob;
 pub use crate::blobs::Blobbable;
-pub use crate::context::Context;
-pub use crate::context::Metadata;
+// pub use crate::context::Context;
+// pub use crate::context::Metadata;
 pub use crate::generic::*;
-pub use crate::query::AnyRequest;
-pub use crate::query::AnyResponse;
-pub use crate::query::Request;
-pub use crate::query::Response;
+// pub use crate::query::AnyRequest;
+// pub use crate::query::AnyResponse;
+// pub use crate::query::Request;
+// pub use crate::query::Response;
 
 /// `fiction` CLI entry point
 ///
@@ -95,18 +93,17 @@ pub fn main() -> Result<(), panic> {
 
         info!("With ur engine...");
 
-        let request = TextToSpeech {
-            text: blip("Hello, world!"),
-            ..default()
-        };
+        // let request = TextToSpeech {
+        //     text: blip("Hello, world!"),
+        //     ..default()
+        // };
 
-        info!("Executing request... {request:?}");
+        // info!("Executing request... {request:?}");
 
         // dbg!(&response);
 
         Ok(())
     })
 }
- */
+
 pub mod png;
-pub mod zip;

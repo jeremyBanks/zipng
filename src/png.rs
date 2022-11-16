@@ -6,4 +6,5 @@
 // You could indeed include the PNG in the zip archive itself, by
 // a second PNG header in the comment of the first PNG header.
 
-find a pen and DRAW THIS!!
+// find a pen and DRAW THIS!!
+// or get back to actually doing your TTS like you should

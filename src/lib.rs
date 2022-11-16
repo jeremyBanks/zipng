@@ -20,7 +20,7 @@ use tracing_subscriber::EnvFilter;
 
 /// Supporting types for [`Blobs`][Blob] and [`Blips`][Blip].
 pub mod blobs;
-mod ffmpeg;
+pub mod ffmpeg;
 /// Generic supporting types.
 pub mod generic;
 // pub mod queries;
@@ -30,7 +30,8 @@ pub mod throttle;
 // pub mod backends;
 /// Supporting types for [`Context`], and [`Metadata`]
 // pub mod context;
-mod copyvec;
+pub mod copyvec;
+pub mod micro;
 /// Supporting types for [`Request`], and [`Response`].
 // pub mod query;
 pub mod zip;

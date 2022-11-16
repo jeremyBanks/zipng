@@ -24,10 +24,11 @@ where
         .collect();
     files.sort_by_cached_key(|(path, body)| {
         (
-            // file named "mimetype" goes first, for the sake of package formats including EPUB and ODT.
+            // file named "mimetype" goes first, for the sake of package formats including EPUB and
+            // ODT.
             path != b"mimetype",
-            // followed by any empty files, since they have no associated data and therefor weaker alignment
-            // requirements, so we want to pack them all together.
+            // followed by any empty files, since they have no associated data and therefor weaker
+            // alignment requirements, so we want to pack them all together.
             !body.is_empty(),
             // files before directories
             path.iter().filter(|&&b| b == b'/').count(),

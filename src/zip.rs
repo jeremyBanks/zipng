@@ -68,7 +68,7 @@ pub fn zip_with(files: &[(&[u8], &[u8])], prefix: Vec<u8>, suffix: &[u8]) -> Vec
         // 0x000C..0x000E: modification date
         header.extend_from_slice(b"PK");
         // 0x000E..0x0012: checksum
-        header.extend_from_slice(&zip_crc(body).to_le_bytes());
+        header.extend_from_slice(&crc32_iso(body).to_le_bytes());
         // 0x0012..0x0016: compressed size
         header.extend_from_slice(&u32::try_from(body.len()).unwrap().to_le_bytes());
         // 0x0016..0x001A: uncompressed size
@@ -101,7 +101,7 @@ pub fn zip_with(files: &[(&[u8], &[u8])], prefix: Vec<u8>, suffix: &[u8]) -> Vec
         let name_length = u16::try_from(name.len()).unwrap();
         let body_length = u32::try_from(body.len()).unwrap();
         let header_offset = u32::try_from(*header_offset).unwrap();
-        let crc = zip_crc(body).to_le_bytes();
+        let crc = crc32_iso(body).to_le_bytes();
         let mut header = Vec::new();
         // 0x0000..0x0004: central file header signature
         header.extend_from_slice(b"PK\x01\x02");
@@ -229,9 +229,9 @@ fn write_aligned_pad_start(buffer: &mut Vec<u8>, bytes: &[u8], alignment: usize)
     index_before_data..index_after_data
 }
 
-fn zip_crc(bytes: &[u8]) -> u32 {
-    const ZIP_CRC: Crc<u32> = Crc::<u32>::new(&CRC_32_ISO_HDLC);
-    let mut hasher = ZIP_CRC.digest();
+pub fn crc32_iso(bytes: &[u8]) -> u32 {
+    const CRC32_ISO: Crc<u32> = Crc::<u32>::new(&CRC_32_ISO_HDLC);
+    let mut hasher = CRC32_ISO.digest();
     hasher.update(bytes);
     hasher.finalize()
 }

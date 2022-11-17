@@ -1,18 +1,9 @@
+use std::ops::Range;
+
 use bitvec;
 use fiction::fonts;
 use fiction::png;
-
-// TODO: the PNG should let you see into the actual zip data, in the style of a
-// hex editor like hexyl, by using an 8-bit color pallette.
-// This is cooler than it being a file in the archive itself.
-// Hexyl uses:
-// - null: #242 dark grey
-// - printable: #F0F cyan
-// - whitespace: #0F0 green
-// - non-printable: #F0F red
-// - non-ascii: #FF0 yellow
-// something like that is okay an an overall scheme, but we're going to define
-// unique colors for each of the 256 possible byte value.
+use fiction::zip::crc32_iso;
 
 const WIDTH: usize = 256;
 
@@ -534,7 +525,7 @@ const PALLETTE_8_BIT_GRAYS: &[(u8, u8, u8); 256] = &[
     (0xFF, 0xFF, 0xFF),
 ];
 
-const PALLETTE_8_BIT_RGB: &[(u8, u8, u8)] = &[];
+const PALLETTE_8_BIT_RRRGGBBB: &[(u8, u8, u8)] = &[];
 
 const PALLETTE_1_BIT_GRAYS: &[(u8, u8, u8); 2] = &[(0x00, 0x00, 0x00), (0xFF, 0xFF, 0xFF)];
 
@@ -564,14 +555,42 @@ const BIT_DENSITY_MAP: &[u8; 256] = &[
     0xD7, 0x6F, 0xBE, 0x5F, 0xE7, 0xBB, 0xFC, 0xDF, 0x7F, 0xF7, 0xEF, 0xFB, 0xBF, 0xFD, 0xFE, 0xFF,
 ];
 
-fn main() {
-    let mut canvas = [false; 4096];
-    fonts::PrintOptions::default().print("Hello, world!", &mut canvas);
+pub const PRIVATE_CHUNK_TYPE: &[u8; 4] = b"pkPK";
 
-    for (i, bit) in canvas.into_iter().enumerate() {
-        if i % 64 == 0 {
-            println!();
-        }
-        print!("{}", if bit { "⬛" } else { "⬜" });
-    }
+pub fn write_png_header(buffer: &mut Vec<u8>) -> Range<usize> {
+    let before = buffer.len();
+
+    buffer.extend_from_slice(b"\x89PNG\r\n\x1A\n");
+    write_png_chunk(buffer, b"IHDR", b"");
+
+    let after = buffer.len();
+    before..after
+}
+
+pub fn write_png_footer(buffer: &mut Vec<u8>) -> Range<usize> {
+    write_png_chunk(buffer, b"IEND", b"")
+}
+
+pub fn write_png_chunk(buffer: &mut Vec<u8>, chunk_type: &[u8; 4], data: &[u8]) -> Range<usize> {
+    let before = buffer.len();
+
+    buffer.extend_from_slice(&u32::try_from(data.len()).unwrap().to_be_bytes());
+    buffer.extend_from_slice(chunk_type);
+    buffer.extend_from_slice(data);
+    buffer.extend_from_slice(&crc32_iso(data).to_be_bytes());
+
+    let after = buffer.len();
+    before..after
+}
+
+fn main() {
+    // let mut canvas = [false; 4096];
+    // fonts::PrintOptions::default().print("Hello, world!", &mut canvas);
+
+    // for (i, bit) in canvas.into_iter().enumerate() {
+    //     if i % 64 == 0 {
+    //         println!();
+    //     }
+    //     print!("{}", if bit { "⬛" } else { "⬜" });
+    // }
 }

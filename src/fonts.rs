@@ -1,43 +1,17 @@
 #![allow(clippy::unusual_byte_groupings)]
 
 use std::fmt::Debug;
+use std::sync::Arc;
 
+use once_cell::sync::Lazy;
+use serde::Deserialize;
+use serde::Serialize;
 use static_assertions::assert_obj_safe;
 
 use crate::default;
 
 pub type Canvas = [bool; 4096];
 pub type GlyphBits = u128;
-
-pub struct FontOptions {
-    pub top: usize,
-    pub left: usize,
-    pub width: Option<usize>,
-    pub height: Option<usize>,
-    pub pack_characters: bool,
-    pub pack_lines: bool,
-}
-
-impl FontOptions {
-    pub const fn new() -> Self {
-        Self {
-            top: 0,
-            left: 0,
-            height: None,
-            width: Some(64),
-            pack_characters: true,
-            pack_lines: true,
-        }
-    }
-
-    pub fn print(&self, text: &str, canvas: &mut Canvas) {}
-}
-
-impl Default for FontOptions {
-    fn default() -> Self {
-        Self::new()
-    }
-}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Packing {
@@ -47,15 +21,34 @@ pub enum Packing {
 
 assert_obj_safe!(BitmapFont);
 
-pub trait BitmapFont: Debug {
+pub static FONTS: Lazy<Vec<Box<dyn BitmapFont>>> = Lazy::new(|| {
+    vec![
+        Box::new(Mini5pt),
+        Box::new(SlabSerif9pt),
+        Box::new(SansSerif9Pt),
+        Box::new(Unicase3pt),
+    ]
+});
+
+pub trait BitmapFont: Debug + Send + Sync {
+    fn name(&self) -> &'static str;
+
     /// maximum width of a glyph
     fn width(&self) -> usize;
+
     /// maximum height of a glyph
     fn height(&self) -> usize;
+
+    /// baseline offset from bottom
+    fn baseline(&self) -> usize {
+        0
+    }
+
     /// recommended minimum horizontal margin between glyphs
     fn x_margin(&self) -> usize {
         1
     }
+
     /// whether glyphs should be
     /// - None: monospace based on the entire font
     /// - Global: monospace based on the glyphs in used
@@ -63,10 +56,12 @@ pub trait BitmapFont: Debug {
     fn x_packing(&self) -> Option<Packing> {
         Some(Packing::Local)
     }
+
     /// recommended minimum vertical margin between glyphs
     fn y_margin(&self) -> usize {
         1
     }
+
     /// whether line heights should be
     /// - None: fixed based on the entire font
     /// - Global: fixed based on the glyphs in use
@@ -74,22 +69,27 @@ pub trait BitmapFont: Debug {
     fn y_packing(&self) -> Option<Packing> {
         Some(Packing::Global)
     }
+
     /// map of characters to glyphs, represented as bits
-    fn glyphs(&self) -> &'static [(char, u16)];
+    fn glyphs(&self) -> &'static [(char, GlyphBits)];
 }
 
-// inspiration: https://i.imgur.com/4PmVdak.png
+#[derive(Default, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct Mini5pt;
+impl BitmapFont for Mini5pt {
+    fn name(&self) -> &'static str {
+        "5 point Udzu Mini"
+    }
 
-#[derive(Debug, Clone, Copy, Default)]
-pub struct MicroFont;
-impl BitmapFont for MicroFont {
     fn width(&self) -> usize {
         3
     }
+
     fn height(&self) -> usize {
         5
     }
-    fn glyphs(&self) -> &'static [(char, u16)] {
+
+    fn glyphs(&self) -> &'static [(char, GlyphBits)] {
         &[
             (' ', 0b1000_000_010_000_000),
             ('_', 0b_000_000_000_000_111),
@@ -187,16 +187,22 @@ impl BitmapFont for MicroFont {
     }
 }
 
-#[derive(Debug, Clone, Copy, Default)]
-pub struct NanoFont;
-impl BitmapFont for NanoFont {
+#[derive(Default, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct Unicase3pt;
+impl BitmapFont for Unicase3pt {
+    fn name(&self) -> &'static str {
+        "3 point Udzu Unicase"
+    }
+
     fn width(&self) -> usize {
         3
     }
+
     fn height(&self) -> usize {
         3
     }
-    fn glyphs(&self) -> &'static [(char, u16)] {
+
+    fn glyphs(&self) -> &'static [(char, GlyphBits)] {
         &[
             (' ', 0b1000_010_000),
             ('!', 0b_001_001_001),
@@ -284,5 +290,47 @@ impl BitmapFont for NanoFont {
             ('}', 0b_111_111_111),
             ('�', 0b_110_001_010),
         ]
+    }
+}
+
+#[derive(Default, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct SlabSerif9pt;
+impl BitmapFont for SlabSerif9pt {
+    fn name(&self) -> &'static str {
+        // Not Toronto
+        "9 point Six Slab"
+    }
+
+    fn width(&self) -> usize {
+        9
+    }
+
+    fn height(&self) -> usize {
+        12
+    }
+
+    fn glyphs(&self) -> &'static [(char, GlyphBits)] {
+        &[]
+    }
+}
+
+#[derive(Default, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct SansSerif9Pt;
+impl BitmapFont for SansSerif9Pt {
+    fn name(&self) -> &'static str {
+        // Not Chicago
+        "9 point Windy Sans"
+    }
+
+    fn width(&self) -> usize {
+        9
+    }
+
+    fn height(&self) -> usize {
+        12
+    }
+
+    fn glyphs(&self) -> &'static [(char, GlyphBits)] {
+        &[]
     }
 }

@@ -1,22 +1,12 @@
 #![allow(clippy::unusual_byte_groupings, clippy::useless_conversion)]
 
-use std::collections::BTreeMap;
-use std::io::stdout;
-use std::io::Write;
 use std::ops::Not;
 use std::ops::Range;
 
-use bitvec;
-use bitvec::macros::internal::funty::Numeric;
 use bstr::BString;
-use crc::Crc;
-use derive_more::Into;
-use fiction::fonts;
 use fiction::panic;
-use fiction::png;
 use fiction::zip::crc32_zip;
 use fiction::zip::zip;
-use fiction::zip::CRC_32_ISO_HDLC;
 use simd_adler32::adler32;
 
 #[repr(u8)]
@@ -92,13 +82,6 @@ pub fn write_png_palette(buffer: &mut Vec<u8>, palette: &[u8]) -> Range<usize> {
 
 pub fn write_png_body(buffer: &mut Vec<u8>, data: &[u8]) -> Range<usize> {
     let mut deflated = Vec::new();
-    // ahhhhhh
-    // the data needs to have a "filter byte" prepended at the beginning of each
-    // line so we can't just use arbitrary data as our pixels
-    // nooo
-    // > The filter type byte is not considered part of the image data, but it is
-    // > included in the datastream sent to the compression step. See 9. Filtering.
-
     write_non_deflated(&mut deflated, data);
     write_png_chunk(buffer, b"IDAT", &deflated)
 }
@@ -194,7 +177,18 @@ fn main() -> Result<(), panic> {
         .flat_map(|(a, b, c)| [*a, *b, *c])
         .collect();
     write_png_palette(&mut buffer, &pallette);
-    write_png_body(&mut buffer, &data);
+
+    // We need to insert a 0x00 byte at the start of every line (every `width`
+    // bytes) to indicate that the line is not filtered.
+    let mut filter_laden_bytes = Vec::new();
+    for (i, byte) in data.iter().enumerate() {
+        if i % width as usize == 0 {
+            filter_laden_bytes.push(0x00);
+        }
+        filter_laden_bytes.push(*byte);
+    }
+
+    write_png_body(&mut buffer, &filter_laden_bytes);
     write_png_footer(&mut buffer);
 
     // stdout().write_all(&buffer)?;

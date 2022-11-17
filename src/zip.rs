@@ -7,17 +7,12 @@ use std::ops::Range;
 
 use bstr::ByteSlice;
 use crc::Crc;
-use crc::CRC_32_ISO_HDLC;
 
 const BLOCK_SIZE: usize = 1024;
 
 /// Creates a (non-compressed) zip archive with
-pub fn zip<'files, Files, Names, Contents>(files: Files) -> Vec<u8>
-where
-    Files: IntoIterator<Item = (&'files Names, &'files Contents)>,
-    Names: AsRef<[u8]> + 'files,
-    Contents: AsRef<[u8]> + 'files,
-{
+pub fn zip<'files, Files>(files: Files) -> Vec<u8>
+where Files: 'files + IntoIterator<Item = (&'files [u8], &'files [u8])> {
     let mut files: Vec<(&[u8], &[u8])> = files
         .into_iter()
         .map(|(n, c)| (n.as_ref(), c.as_ref()))
@@ -68,13 +63,25 @@ pub fn zip_with(files: &[(&[u8], &[u8])], prefix: Vec<u8>, suffix: &[u8]) -> Vec
         // 0x000C..0x000E: modification date
         header.extend_from_slice(b"PK");
         // 0x000E..0x0012: checksum
-        header.extend_from_slice(&crc32_iso(body).to_le_bytes());
+        header.extend_from_slice(&crc32_zip(body).to_le_bytes());
         // 0x0012..0x0016: compressed size
-        header.extend_from_slice(&u32::try_from(body.len()).unwrap().to_le_bytes());
+        header.extend_from_slice(
+            &u32::try_from(body.len())
+                .expect("file size larger than 4GiB")
+                .to_le_bytes(),
+        );
         // 0x0016..0x001A: uncompressed size
-        header.extend_from_slice(&u32::try_from(body.len()).unwrap().to_le_bytes());
+        header.extend_from_slice(
+            &u32::try_from(body.len())
+                .expect("file size larger than 4GiB")
+                .to_le_bytes(),
+        );
         // 0x001A..0x001E: file name length
-        header.extend_from_slice(&u16::try_from(name.len()).unwrap().to_le_bytes());
+        header.extend_from_slice(
+            &u16::try_from(name.len())
+                .expect("file name larger than 64KiB")
+                .to_le_bytes(),
+        );
         // 0x001E..0x0022: extra fields length
         header.extend_from_slice(&[0x00; 2]);
         // 0x0022: file name, followed by extra fields (we have none)
@@ -88,8 +95,6 @@ pub fn zip_with(files: &[(&[u8], &[u8])], prefix: Vec<u8>, suffix: &[u8]) -> Vec
             output.extend_from_slice(&header);
             output.extend_from_slice(body);
             let after = output.len();
-            write_aligned_pad_end(&mut output, b"", 0x40);
-            let _after_padding = output.len();
             before..after
         };
         files_with_offsets.push((*name, *body, range.start));
@@ -98,10 +103,10 @@ pub fn zip_with(files: &[(&[u8], &[u8])], prefix: Vec<u8>, suffix: &[u8]) -> Vec
     let mut central_directory = Vec::new();
     for (name, body, header_offset) in files_with_offsets.iter() {
         let name = name.to_vec();
-        let name_length = u16::try_from(name.len()).unwrap();
-        let body_length = u32::try_from(body.len()).unwrap();
-        let header_offset = u32::try_from(*header_offset).unwrap();
-        let crc = crc32_iso(body).to_le_bytes();
+        let name_length = u16::try_from(name.len()).expect("file name larger than 64KiB");
+        let body_length = u32::try_from(body.len()).expect("file size larger than 4GiB");
+        let header_offset = u32::try_from(*header_offset).expect("archive larger than 4GiB");
+        let crc = crc32_zip(body).to_le_bytes();
         let mut header = Vec::new();
         // 0x0000..0x0004: central file header signature
         header.extend_from_slice(b"PK\x01\x02");
@@ -152,12 +157,12 @@ pub fn zip_with(files: &[(&[u8], &[u8])], prefix: Vec<u8>, suffix: &[u8]) -> Vec
     let final_len = output.len();
     let mut archive_terminator = &mut output[final_len - archive_terminator.len()..];
 
-    let directory_offset = u32::try_from(central_directory_range.start).unwrap();
-    let directory_count = u16::try_from(files.len()).unwrap();
+    let directory_offset =
+        u32::try_from(central_directory_range.start).expect("archive larger than 4GiB");
+    let directory_count = u16::try_from(files.len()).expect("more than 64Ki files");
     let directory_length =
         u32::try_from(central_directory_range.len() - archive_terminator.len()).unwrap();
-    let suffix_length =
-        u16::try_from(suffix.len()).expect("suffix was too long to fit in zip terminating comment");
+    let suffix_length = u16::try_from(suffix.len()).expect("comment longer than 64KiB");
 
     // 0x0000..0x0004: archive terminator signature
     archive_terminator.write_all(b"PK\x05\x06").unwrap();
@@ -185,7 +190,7 @@ pub fn zip_with(files: &[(&[u8], &[u8])], prefix: Vec<u8>, suffix: &[u8]) -> Vec
     archive_terminator
         .write_all(&suffix_length.to_le_bytes())
         .unwrap();
-    archive_terminator.write_all(&suffix).unwrap();
+    archive_terminator.write_all(suffix).unwrap();
     output
 }
 
@@ -229,9 +234,9 @@ fn write_aligned_pad_start(buffer: &mut Vec<u8>, bytes: &[u8], alignment: usize)
     index_before_data..index_after_data
 }
 
-pub fn crc32_iso(bytes: &[u8]) -> u32 {
-    const CRC32_ISO: Crc<u32> = Crc::<u32>::new(&CRC_32_ISO_HDLC);
-    let mut hasher = CRC32_ISO.digest();
+pub const CRC_32_ISO_HDLC: Crc<u32> = Crc::<u32>::new(&crc::CRC_32_ISO_HDLC);
+pub fn crc32_zip(bytes: &[u8]) -> u32 {
+    let mut hasher = CRC_32_ISO_HDLC.digest();
     hasher.update(bytes);
     hasher.finalize()
 }

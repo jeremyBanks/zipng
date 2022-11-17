@@ -1,9 +1,23 @@
+#![allow(clippy::unusual_byte_groupings, clippy::useless_conversion)]
+
+use std::collections::BTreeMap;
+use std::io::stdout;
+use std::io::Write;
+use std::ops::Not;
 use std::ops::Range;
 
 use bitvec;
+use bitvec::macros::internal::funty::Numeric;
+use bstr::BString;
+use crc::Crc;
+use derive_more::Into;
 use fiction::fonts;
+use fiction::panic;
 use fiction::png;
-use fiction::zip::crc32_iso;
+use fiction::zip::crc32_zip;
+use fiction::zip::zip;
+use fiction::zip::CRC_32_ISO_HDLC;
+use simd_adler32::adler32;
 
 const WIDTH: usize = 256;
 
@@ -555,16 +569,116 @@ const BIT_DENSITY_MAP: &[u8; 256] = &[
     0xD7, 0x6F, 0xBE, 0x5F, 0xE7, 0xBB, 0xFC, 0xDF, 0x7F, 0xF7, 0xEF, 0xFB, 0xBF, 0xFD, 0xFE, 0xFF,
 ];
 
-pub const PRIVATE_CHUNK_TYPE: &[u8; 4] = b"pkPK";
+#[repr(u8)]
+pub enum ColorDepth {
+    OneBit = 1,
+    TwoBit = 2,
+    FourBit = 4,
+    EightBit = 8,
+    SixteenBit = 16,
+}
 
-pub fn write_png_header(buffer: &mut Vec<u8>) -> Range<usize> {
+use self::ColorDepth::*;
+use self::ColorType::*;
+
+impl From<ColorDepth> for u8 {
+    fn from(depth: ColorDepth) -> Self {
+        depth as u8
+    }
+}
+
+#[repr(u8)]
+pub enum ColorType {
+    Lightness = 0,
+    RedGreenBlue = 2,
+    Index = 3,
+    LightnessAlpha = 4,
+    RedGreenBlueAlpha = 6,
+}
+
+impl From<ColorType> for u8 {
+    fn from(val: ColorType) -> Self {
+        val as u8
+    }
+}
+
+pub fn write_png_header(
+    buffer: &mut Vec<u8>,
+    width: u32,
+    height: u32,
+    color_depth: ColorDepth,
+    color_type: ColorType,
+) -> Range<usize> {
     let before = buffer.len();
 
     buffer.extend_from_slice(b"\x89PNG\r\n\x1A\n");
-    write_png_chunk(buffer, b"IHDR", b"");
+    write_png_chunk(buffer, b"IHDR", &{
+        let mut data = Vec::new();
+        // pixel width
+        data.extend_from_slice(&u32::from(width).to_be_bytes());
+        // pixel height
+        data.extend_from_slice(&u32::from(height).to_be_bytes());
+        // color bit depth
+        data.extend_from_slice(&u8::from(color_depth).to_be_bytes());
+        // color type: grayscale
+        data.extend_from_slice(&u8::from(color_type).to_be_bytes());
+        // compression method: deflate
+        data.extend_from_slice(&u8::from(0_u8).to_be_bytes());
+        // filter method: basic
+        data.extend_from_slice(&u8::from(0_u8).to_be_bytes());
+        // interlace method: none
+        data.extend_from_slice(&u8::from(0_u8).to_be_bytes());
+
+        data
+    });
 
     let after = buffer.len();
     before..after
+}
+
+pub fn write_png_palette(buffer: &mut Vec<u8>, palette: &[u8]) -> Range<usize> {
+    write_png_chunk(buffer, b"PLTE", palette)
+}
+
+pub fn write_png_body(buffer: &mut Vec<u8>, data: &[u8]) -> Range<usize> {
+    let mut deflated = Vec::new();
+    write_non_deflated(&mut deflated, data);
+    write_png_chunk(buffer, b"IDAT", &deflated)
+}
+
+pub fn write_non_deflated(buffer: &mut Vec<u8>, data: &[u8]) -> Range<usize> {
+    if data.len() > 0xFFFF {
+        panic!("deflate block larger than 64KiB");
+    }
+
+    // zlib compression mode: deflate in 32KiB
+    let cmf = 0b_0111_1000;
+    buffer.push(cmf);
+    // zlib flag bits: no preset dictionary, compression level 0
+    let mut flg: u8 = 0b_00_0_00000;
+    // zlib flag and check bits
+    flg |= 0b_1_00000 - ((((cmf as u16) << 8) | (flg as u16)) % 0b_1_00000) as u8;
+    buffer.push(flg);
+
+    // deflate flag bits: last block, no compression
+    buffer.push(0b00_1);
+    // deflate block length
+    buffer.extend_from_slice(&u16::try_from(data.len()).unwrap().to_le_bytes());
+    // deflate block length check complement
+    buffer.extend_from_slice(&u16::try_from(data.len()).unwrap().not().to_le_bytes());
+
+    let before = buffer.len();
+    buffer.extend_from_slice(data);
+    let after = buffer.len();
+
+    // adler-32 checksum of the uncompressed data
+    buffer.extend_from_slice(&adler32(&data).to_le_bytes());
+
+    before..after
+}
+
+pub fn write_non_png_chunk(buffer: &mut Vec<u8>, data: &[u8]) -> Range<usize> {
+    write_png_chunk(buffer, b"pkPK", data)
 }
 
 pub fn write_png_footer(buffer: &mut Vec<u8>) -> Range<usize> {
@@ -574,16 +688,60 @@ pub fn write_png_footer(buffer: &mut Vec<u8>) -> Range<usize> {
 pub fn write_png_chunk(buffer: &mut Vec<u8>, chunk_type: &[u8; 4], data: &[u8]) -> Range<usize> {
     let before = buffer.len();
 
-    buffer.extend_from_slice(&u32::try_from(data.len()).unwrap().to_be_bytes());
+    buffer.extend_from_slice(
+        &u32::try_from(data.len())
+            .expect("png chunk larger than 2GiB")
+            .to_be_bytes(),
+    );
     buffer.extend_from_slice(chunk_type);
     buffer.extend_from_slice(data);
-    buffer.extend_from_slice(&crc32_iso(data).to_be_bytes());
+    buffer.extend_from_slice(
+        &crc32_zip(
+            &[chunk_type.as_slice(), data]
+                .into_iter()
+                .flatten()
+                .copied()
+                .collect::<Vec<_>>(),
+        )
+        .to_be_bytes(),
+    );
 
     let after = buffer.len();
     before..after
 }
 
-fn main() {
+fn main() -> Result<(), panic> {
+    let files: [(&[u8], &[u8]); 3] = [
+        (b"mimetype".as_ref(), b"zip/zip".as_ref()),
+        (b"README.md".as_ref(), b"welcome".as_ref()),
+        (
+            b"assets/icon.png".as_ref(),
+            include_bytes!("../../icon.png"),
+        ),
+    ];
+    let data = BString::new(zip(files));
+
+    // stdout().write_all(&data)?;
+
+    let mut buffer = BString::default();
+    let width = 256;
+    write_png_header(
+        &mut buffer,
+        width,
+        (data.len() / width as usize).try_into()?,
+        EightBit,
+        Index,
+    );
+    let pallette: Vec<u8> = PALLETTE_8_BIT_DATA
+        .iter()
+        .flat_map(|(a, b, c)| [*a, *b, *c])
+        .collect();
+    write_png_palette(&mut buffer, &pallette);
+    write_png_body(&mut buffer, &data);
+    write_png_footer(&mut buffer);
+
+    // stdout().write_all(&buffer)?;
+    std::fs::write("target/test.png", buffer)?;
     // let mut canvas = [false; 4096];
     // fonts::PrintOptions::default().print("Hello, world!", &mut canvas);
 
@@ -593,4 +751,6 @@ fn main() {
     //     }
     //     print!("{}", if bit { "⬛" } else { "⬜" });
     // }
+
+    Ok(())
 }

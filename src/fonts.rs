@@ -6,18 +6,6 @@ use static_assertions::assert_obj_safe;
 
 use crate::default;
 
-pub enum OneBitColor {
-    Background = 0,
-    Foreground = 1,
-}
-
-pub enum TwoBitColor {
-    Background = 0,
-    Light = 1,
-    Mid = 2,
-    Foreground = 3,
-}
-
 pub type Canvas = [bool; 4096];
 pub type GlyphBits = u128;
 
@@ -60,25 +48,34 @@ pub enum Packing {
 assert_obj_safe!(BitmapFont);
 
 pub trait BitmapFont: Debug {
+    /// maximum width of a glyph
     fn width(&self) -> usize;
+    /// maximum height of a glyph
     fn height(&self) -> usize;
-    fn glyphs(&self) -> &'static [(char, u16)];
-
+    /// recommended minimum horizontal margin between glyphs
     fn x_margin(&self) -> usize {
         1
     }
-
+    /// whether glyphs should be
+    /// - None: monospace based on the entire font
+    /// - Global: monospace based on the glyphs in used
+    /// - Local: packed/kerned in as much as possible while respecting x_margin
     fn x_packing(&self) -> Option<Packing> {
         Some(Packing::Local)
     }
-
+    /// recommended minimum vertical margin between glyphs
     fn y_margin(&self) -> usize {
         1
     }
-
+    /// whether line heights should be
+    /// - None: fixed based on the entire font
+    /// - Global: fixed based on the glyphs in use
+    /// - Local: packed/kerned in as much as possible while respecting y_margin
     fn y_packing(&self) -> Option<Packing> {
         Some(Packing::Global)
     }
+    /// map of characters to glyphs, represented as bits
+    fn glyphs(&self) -> &'static [(char, u16)];
 }
 
 // inspiration: https://i.imgur.com/4PmVdak.png
@@ -286,170 +283,6 @@ impl BitmapFont for NanoFont {
             ('|', 0b_111_111_111),
             ('}', 0b_111_111_111),
             ('�', 0b_110_001_010),
-        ]
-    }
-}
-
-/// encodes ASCII characters as their corresponding bit pattern in
-/// a 2x4 grid.
-#[derive(Debug, Clone, Copy, Default)]
-pub struct AsciiBits;
-impl BitmapFont for AsciiBits {
-    fn width(&self) -> usize {
-        2
-    }
-    fn height(&self) -> usize {
-        4
-    }
-
-    fn x_packing(&self) -> Option<Packing> {
-        None
-    }
-
-    fn x_margin(&self) -> usize {
-        0
-    }
-
-    fn y_packing(&self) -> Option<Packing> {
-        None
-    }
-
-    fn y_margin(&self) -> usize {
-        0
-    }
-
-    fn glyphs(&self) -> &'static [(char, u16)] {
-        &[
-            // for 0 through 0x7F
-            (0 as char, 0),
-            (1 as char, 1),
-            (2 as char, 2),
-            (3 as char, 3),
-            (4 as char, 4),
-            (5 as char, 5),
-            (6 as char, 6),
-            (7 as char, 7),
-            (8 as char, 8),
-            (9 as char, 9),
-            (10 as char, 10),
-            (11 as char, 11),
-            (12 as char, 12),
-            (13 as char, 13),
-            (14 as char, 14),
-            (15 as char, 15),
-            (16 as char, 16),
-            (17 as char, 17),
-            (18 as char, 18),
-            (19 as char, 19),
-            (20 as char, 20),
-            (21 as char, 21),
-            (22 as char, 22),
-            (23 as char, 23),
-            (24 as char, 24),
-            (25 as char, 25),
-            (26 as char, 26),
-            (27 as char, 27),
-            (28 as char, 28),
-            (29 as char, 29),
-            (30 as char, 30),
-            (31 as char, 31),
-            (32 as char, 32),
-            (33 as char, 33),
-            (34 as char, 34),
-            (35 as char, 35),
-            (36 as char, 36),
-            (37 as char, 37),
-            (38 as char, 38),
-            (39 as char, 39),
-            (40 as char, 40),
-            (41 as char, 41),
-            (42 as char, 42),
-            (43 as char, 43),
-            (44 as char, 44),
-            (45 as char, 45),
-            (46 as char, 46),
-            (47 as char, 47),
-            (48 as char, 48),
-            (49 as char, 49),
-            (50 as char, 50),
-            (51 as char, 51),
-            (52 as char, 52),
-            (53 as char, 53),
-            (54 as char, 54),
-            (55 as char, 55),
-            (56 as char, 56),
-            (57 as char, 57),
-            (58 as char, 58),
-            (59 as char, 59),
-            (60 as char, 60),
-            (61 as char, 61),
-            (62 as char, 62),
-            (63 as char, 63),
-            (64 as char, 64),
-            (65 as char, 65),
-            (66 as char, 66),
-            (67 as char, 67),
-            (68 as char, 68),
-            (69 as char, 69),
-            (70 as char, 70),
-            (71 as char, 71),
-            (72 as char, 72),
-            (73 as char, 73),
-            (74 as char, 74),
-            (75 as char, 75),
-            (76 as char, 76),
-            (77 as char, 77),
-            (78 as char, 78),
-            (79 as char, 79),
-            (80 as char, 80),
-            (81 as char, 81),
-            (82 as char, 82),
-            (83 as char, 83),
-            (84 as char, 84),
-            (85 as char, 85),
-            (86 as char, 86),
-            (87 as char, 87),
-            (88 as char, 88),
-            (89 as char, 89),
-            (90 as char, 90),
-            (91 as char, 91),
-            (92 as char, 92),
-            (93 as char, 93),
-            (94 as char, 94),
-            (95 as char, 95),
-            (96 as char, 96),
-            (97 as char, 97),
-            (98 as char, 98),
-            (99 as char, 99),
-            (100 as char, 100),
-            (101 as char, 101),
-            (102 as char, 102),
-            (103 as char, 103),
-            (104 as char, 104),
-            (105 as char, 105),
-            (106 as char, 106),
-            (107 as char, 107),
-            (108 as char, 108),
-            (109 as char, 109),
-            (110 as char, 110),
-            (111 as char, 111),
-            (112 as char, 112),
-            (113 as char, 113),
-            (114 as char, 114),
-            (115 as char, 115),
-            (116 as char, 116),
-            (117 as char, 117),
-            (118 as char, 118),
-            (119 as char, 119),
-            (120 as char, 120),
-            (121 as char, 121),
-            (122 as char, 122),
-            (123 as char, 123),
-            (124 as char, 124),
-            (125 as char, 125),
-            (126 as char, 126),
-            (127 as char, 127),
-            ('�', 153),
         ]
     }
 }

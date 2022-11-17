@@ -642,6 +642,13 @@ pub fn write_png_palette(buffer: &mut Vec<u8>, palette: &[u8]) -> Range<usize> {
 
 pub fn write_png_body(buffer: &mut Vec<u8>, data: &[u8]) -> Range<usize> {
     let mut deflated = Vec::new();
+    // ahhhhhh
+    // the data needs to have a "filter byte" prepended at the beginning of each
+    // line so we can't just use arbitrary data as our pixels
+    // nooo
+    // > The filter type byte is not considered part of the image data, but it is
+    // > included in the datastream sent to the compression step. See 9. Filtering.
+
     write_non_deflated(&mut deflated, data);
     write_png_chunk(buffer, b"IDAT", &deflated)
 }
@@ -657,7 +664,7 @@ pub fn write_non_deflated(buffer: &mut Vec<u8>, data: &[u8]) -> Range<usize> {
     // zlib flag bits: no preset dictionary, compression level 0
     let mut flg: u8 = 0b_00_0_00000;
     // zlib flag and check bits
-    flg |= 0b_1_00000 - ((((cmf as u16) << 8) | (flg as u16)) % 0b_1_00000) as u8;
+    flg |= 0b_11111 - ((((cmf as u16) << 8) | (flg as u16)) % 0b_11111) as u8;
     buffer.push(flg);
 
     // deflate flag bits: last block, no compression

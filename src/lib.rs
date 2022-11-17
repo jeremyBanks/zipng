@@ -31,7 +31,7 @@ pub mod throttle;
 /// Supporting types for [`Context`], and [`Metadata`]
 // pub mod context;
 pub mod copyvec;
-pub mod micro;
+pub mod fonts;
 /// Supporting types for [`Request`], and [`Response`].
 // pub mod query;
 pub mod zip;

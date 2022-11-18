@@ -1,7 +1,3 @@
-# zipng
+## zipng [ [crates.io](https://crates.io/crates/zipng), [docs.rs](https://docs.rs/zipng), [github.com](https://github.com/jeremyBanks/zipng) ]
 
-https://crates.io/zipng
-
-https://docs.rs/zipng
-
-https://cohost.org/jeb/post/343518-zipng
+zipng is a PNG/ZIP polyglot encoder.

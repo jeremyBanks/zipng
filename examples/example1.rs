@@ -11,13 +11,10 @@ fn main() -> Result<(), panic> {
     let files: [(&[u8], &[u8]); 4] = [
         (b"mimetype".as_ref(), b"zip/zip".as_ref()),
         (b"README.md".as_ref(), b"welcome".as_ref()),
-        (
-            b"assets/icon.png".as_ref(),
-            include_bytes!("../../../icon.png"),
-        ),
+        (b"assets/icon.png".as_ref(), include_bytes!("../icon.png")),
         (
             b"assets/png.exe".as_ref(),
-            include_bytes!("../../../target/debug/examples/example1.exe"),
+            include_bytes!("../target/debug/examples/example1.exe"),
         ),
     ];
     let files = IndexMap::from_iter(files.iter().map(|(k, v)| (k.to_vec(), v.to_vec())));
@@ -26,27 +23,30 @@ fn main() -> Result<(), panic> {
 
     let mut buffer = Vec::new();
 
-    let color_depth = EightBit;
+    let bit_depth = EightBit;
     let color_type = Indexed;
     let palette = Some(PALLETTE_8_BIT_DATA.as_slice());
 
-    let color_depth = EightBit;
+    let bit_depth = EightBit;
     let color_type = RedGreenBlue;
     let palette = None;
 
+    let bits_per_pixel = bit_depth.bits_per_sample() * color_type.samples_per_pixel();
+    let pixels = data.len() * 8 / bits_per_pixel;
+
     let width = 1024;
-    let height = (data.len() / width as usize).try_into()?;
+    let height = pixels as u32 / width;
     write_png(
         &mut buffer,
         &data,
         width,
         height,
-        color_depth,
+        bit_depth,
         color_type,
         palette,
     );
 
-    std::fs::write("../../target/test.png", buffer)?;
+    std::fs::write("target/test.png", buffer)?;
 
     Ok(())
 }

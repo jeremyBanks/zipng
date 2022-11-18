@@ -1,22 +1,16 @@
-//! Zip container encoder.
-//!
-//! Produces a canonical non-compressed zip file with the given contents.
-//! Files are aligned to 1024-byte blocks.
 use std::io::Write;
-use std::ops::Range;
 
 use bstr::ByteSlice;
-use crc::Crc;
+
+use crate::checksums::crc32;
+use crate::padding::write_aligned_pad_end;
+use crate::padding::write_aligned_pad_start;
 
 const BLOCK_SIZE: usize = 1024;
 
-/// Creates a (non-compressed) zip archive with
 pub fn zip<'files, Files>(files: Files) -> Vec<u8>
 where Files: 'files + IntoIterator<Item = (&'files [u8], &'files [u8])> {
-    let mut files: Vec<(&[u8], &[u8])> = files
-        .into_iter()
-        .map(|(n, c)| (n.as_ref(), c.as_ref()))
-        .collect();
+    let mut files: Vec<(&[u8], &[u8])> = files.into_iter().collect();
     files.sort_by_cached_key(|(path, body)| {
         (
             // file named "mimetype" goes first, for the sake of package formats including EPUB and
@@ -63,7 +57,7 @@ pub fn zip_with(files: &[(&[u8], &[u8])], prefix: Vec<u8>, suffix: &[u8]) -> Vec
         // 0x000C..0x000E: modification date
         header.extend_from_slice(b"PK");
         // 0x000E..0x0012: checksum
-        header.extend_from_slice(&crc32_zip(body).to_le_bytes());
+        header.extend_from_slice(&crc32(body).to_le_bytes());
         // 0x0012..0x0016: compressed size
         header.extend_from_slice(
             &u32::try_from(body.len())
@@ -106,7 +100,7 @@ pub fn zip_with(files: &[(&[u8], &[u8])], prefix: Vec<u8>, suffix: &[u8]) -> Vec
         let name_length = u16::try_from(name.len()).expect("file name larger than 64KiB");
         let body_length = u32::try_from(body.len()).expect("file size larger than 4GiB");
         let header_offset = u32::try_from(*header_offset).expect("archive larger than 4GiB");
-        let crc = crc32_zip(body).to_le_bytes();
+        let crc = crc32(body).to_le_bytes();
         let mut header = Vec::new();
         // 0x0000..0x0004: central file header signature
         header.extend_from_slice(b"PK\x01\x02");
@@ -192,51 +186,4 @@ pub fn zip_with(files: &[(&[u8], &[u8])], prefix: Vec<u8>, suffix: &[u8]) -> Vec
         .unwrap();
     archive_terminator.write_all(suffix).unwrap();
     output
-}
-
-/// Writes `bytes` to `buffer`, padded with trailing zeroes to the next multiple
-/// of `alignment`. Returns the range that `bytes` was written to in `buffer`,
-/// excluding the padding.
-fn write_aligned_pad_end(buffer: &mut Vec<u8>, bytes: &[u8], alignment: usize) -> Range<usize> {
-    let index_before_data = buffer.len();
-
-    buffer.extend_from_slice(bytes);
-
-    let index_after_data = buffer.len();
-
-    if index_after_data % alignment != 0 {
-        let padding = alignment - (index_after_data % alignment);
-        for _ in 0..padding {
-            buffer.push(0);
-        }
-    }
-
-    let _index_after_padding = buffer.len();
-
-    index_before_data..index_after_data
-}
-
-/// Writes `bytes` to `buffer`, padded with leading zeroes to the next multiple
-/// of `alignment`. Returns the range that `bytes` was written to in `buffer`,
-/// excluding the padding.
-fn write_aligned_pad_start(buffer: &mut Vec<u8>, bytes: &[u8], alignment: usize) -> Range<usize> {
-    let index_before_padding = buffer.len();
-    let unpadded_index_after_data = index_before_padding + bytes.len();
-    if unpadded_index_after_data % alignment != 0 {
-        let padding = alignment - (unpadded_index_after_data % alignment);
-        for _ in 0..padding {
-            buffer.push(0);
-        }
-    }
-    let index_before_data = buffer.len();
-    buffer.extend_from_slice(bytes);
-    let index_after_data = buffer.len();
-    index_before_data..index_after_data
-}
-
-pub const CRC_32_ISO_HDLC: Crc<u32> = Crc::<u32>::new(&crc::CRC_32_ISO_HDLC);
-pub fn crc32_zip(bytes: &[u8]) -> u32 {
-    let mut hasher = CRC_32_ISO_HDLC.digest();
-    hasher.update(bytes);
-    hasher.finalize()
 }

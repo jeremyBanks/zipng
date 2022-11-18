@@ -112,10 +112,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "fiction"
-version = "0.20221111.0"
-
-[[package]]
 name = "flate2"
 version = "1.0.24"
 source = "registry+https://github.com/rust-lang/crates.io-index"

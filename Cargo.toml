@@ -4,7 +4,7 @@ description = "Polyglot encoder for ZIP-and/or-PNG files."
 edition = "2021"
 license = "MIT OR Apache-2.0"
 name = "zipng"
-repository = "jeremyBanks/zipng"
+repository = "https://github.com/jeremyBanks/zipng"
 version = "0.20221122.0-dev.0"
 
 [features]

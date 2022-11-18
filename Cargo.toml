@@ -1,5 +1,6 @@
 [package]
 name = "zipng"
+description = "Polyglot encoder for ZIP-and/or-PNG files."
 authors = ["Jeremy Banks <_@jeremy.ca>"]
 version = "0.20221111.0-dev.0"
 edition = "2021"

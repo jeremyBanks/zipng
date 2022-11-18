@@ -73,7 +73,7 @@ pub fn write_png_header(
     width: u32,
     height: u32,
     color_depth: BitDepth,
-    color_type: ColorMode,
+    color_mode: ColorMode,
 ) -> Range<usize> {
     let before = buffer.len();
 
@@ -87,7 +87,7 @@ pub fn write_png_header(
         // color bit depth
         data.extend_from_slice(&u8::from(color_depth).to_be_bytes());
         // color type: grayscale
-        data.extend_from_slice(&u8::from(color_type).to_be_bytes());
+        data.extend_from_slice(&u8::from(color_mode).to_be_bytes());
         // compression method: deflate
         data.extend_from_slice(&u8::from(0_u8).to_be_bytes());
         // filter method: basic
@@ -196,10 +196,10 @@ pub fn write_png(
     width: u32,
     height: u32,
     bit_depth: BitDepth,
-    color_type: ColorMode,
+    color_mode: ColorMode,
     palette: Option<&[u8]>,
 ) {
-    write_png_header(buffer, width, height, bit_depth, color_type);
+    write_png_header(buffer, width, height, bit_depth, color_mode);
     if let Some(palette) = palette {
         write_png_palette(buffer, palette);
     }
@@ -207,7 +207,7 @@ pub fn write_png(
     // bytes) to indicate that the line is not filtered.
     let mut filtered_data = Vec::new();
 
-    let bits_per_pixel = bit_depth.bits_per_sample() * color_type.samples_per_pixel();
+    let bits_per_pixel = bit_depth.bits_per_sample() * color_mode.samples_per_pixel();
     let bits_per_line = width * bits_per_pixel as u32;
     let bytes_per_line = (bits_per_line + 7) / 8;
 

@@ -8,25 +8,25 @@
 
 use derive_more::From;
 use derive_more::Into;
-use generic::default;
-use generic::noop_mut;
 use indexmap::IndexMap;
-use png::BitDepth;
-use png::ColorMode;
-use png::EightBit;
-use png::FourBit;
-use png::Indexed;
-use png::Lightness;
-use png::OneBit;
-use png::RedGreenBlue;
-use png::RedGreenBlueAlpha;
-use png::TwoBit;
-use png::PALLETTE_8_BIT_DATA;
 use tap::Tap;
 use tracing::warn;
 
 #[doc(hidden)]
 use crate as zipng;
+use crate::generic::default;
+use crate::generic::noop_mut;
+use crate::png::BitDepth;
+use crate::png::ColorMode;
+use crate::png::EightBit;
+use crate::png::FourBit;
+use crate::png::Indexed;
+use crate::png::Lightness;
+use crate::png::OneBit;
+use crate::png::RedGreenBlue;
+use crate::png::RedGreenBlueAlpha;
+use crate::png::TwoBit;
+use crate::png::PALLETTE_8_BIT_DATA;
 #[doc(hidden)]
 pub use crate::zipng::r#impl::*;
 
@@ -35,7 +35,6 @@ pub mod r#impl {
     //!
     //! This isn't actually behind a feature gate, but you'll need to import it
     //! as `zipng::r#impl` because `impl` is a keyword.
-
     #![doc(cfg(all(internal, unstable)))]
     #![path = "."]
     #![allow(missing_docs)]
@@ -45,6 +44,7 @@ pub mod r#impl {
     pub mod generic;
     pub mod padding;
     pub mod png;
+    pub mod text;
     pub mod zip;
     pub mod zlib;
 }

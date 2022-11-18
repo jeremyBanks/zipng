@@ -31,12 +31,17 @@ fn main() -> Result<(), panic> {
             .to_le_bytes()
             .as_bits::<Lsb0>()
             .iter()
-            .take(bits)
+            .take(bits + 1)
             .map(|bit| if *bit { 0xFFu8 } else { 0x00 })
             .collect();
         v.reverse();
+        let invisible = v.remove(0) != 0;
 
+        if invisible {
+            v.fill(0);
+        }
         data.extend(v);
+        data.extend(vec![0; width]);
         data.extend(vec![0; width]);
     }
 

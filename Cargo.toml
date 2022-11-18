@@ -1,17 +1,17 @@
 [package]
-name = "zipng"
-description = "Polyglot encoder for ZIP-and/or-PNG files."
 authors = ["Jeremy Banks <_@jeremy.ca>"]
-version = "0.20221111.0-dev.0"
+description = "Polyglot encoder for ZIP-and/or-PNG files."
 edition = "2021"
 license = "MIT OR Apache-2.0"
+name = "zipng"
+repository = "jeremyBanks/zipng"
+version = "0.20221122.0-dev.0"
 
 [features]
-default = ["brotli", "deflate", "std"]
-std = ["indexmap/std", "brotli?/std"]
 brotli = ["dep:brotli"]
+default = ["brotli", "deflate", "std"]
 deflate = ["dep:flate2"]
-
+std = ["indexmap/std", "brotli?/std"]
 DEV = []
 EDITOR = []
 

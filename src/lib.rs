@@ -1,10 +1,5 @@
 #![feature(doc_cfg)]
-//! A limited but fun encoder for ZIP-inclusive-or-PNG files.
-//!
-//! This crate doesn't implement any compression. Both for simplicity, and
-//! because in most cases it will be most efficient to compress the resulting
-//! ZIP as a whole, rather than compressing the constituent parts individually.
-//! We provide some wrapper functions doing so with `brotli` for convenience.
+#![doc = include_str!("../README.md")]
 
 use derive_more::From;
 use derive_more::Into;

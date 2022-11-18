@@ -1,4 +1,10 @@
+use bitvec::prelude::Msb0;
+use bitvec::vec::BitVec;
+use bitvec::view::AsBits;
 use indexmap::IndexMap;
+use zipng::font::Font;
+use zipng::font::Mini5pt;
+use zipng::font::FONTS;
 use zipng::generic::panic;
 use zipng::png::write_png;
 use zipng::png::BitDepth::EightBit;
@@ -6,20 +12,21 @@ use zipng::png::BitDepth::OneBit;
 use zipng::png::ColorMode::Indexed;
 use zipng::png::ColorMode::RedGreenBlue;
 use zipng::png::PALLETTE_8_BIT_DATA;
-use zipng::text::Font;
-use zipng::text::Mini5pt;
-use zipng::text::FONTS;
 use zipng::zip;
 use zipng::PngOptions;
 use zipng::ZipngOptions;
 
 fn main() -> Result<(), panic> {
-    let mut data = [0u8; 1024];
+    let mut data = Vec::new();
 
-    let font = FONTS[0];
+    let font = Mini5pt;
+    let width = font.width();
     for (character, bitmap) in font.glyphs() {
-        dbg!(character, bitmap);
-        // this is where we start using bitvec?
+        let bits = font.width() * font.height();
+        data.extend(bitmap.to_be_bytes());
+        data.extend([0x00; 1]);
+        data.extend([0xFF; 1]);
+        data.extend([0x00; 1]);
     }
 
     let mut buffer = Vec::new();
@@ -30,7 +37,7 @@ fn main() -> Result<(), panic> {
                 bit_depth,
                 color_mode,
                 color_palette,
-                width,
+                // width,
                 ..
             },
         ..

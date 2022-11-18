@@ -41,6 +41,7 @@ pub mod r#impl {
     pub mod brotli;
     pub mod checksums;
     pub mod deflate;
+    pub mod font;
     pub mod generic;
     pub mod padding;
     pub mod png;

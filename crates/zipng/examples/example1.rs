@@ -3,6 +3,7 @@ use zipng::generic::panic;
 use zipng::png::write_png;
 use zipng::png::BitDepth::EightBit;
 use zipng::png::ColorMode::Indexed;
+use zipng::png::ColorMode::RedGreenBlue;
 use zipng::png::PALLETTE_8_BIT_DATA;
 use zipng::zip;
 
@@ -24,15 +25,25 @@ fn main() -> Result<(), panic> {
     let data = zip(&files.into());
 
     let mut buffer = Vec::new();
+
+    let color_depth = EightBit;
+    let color_type = Indexed;
+    let palette = Some(PALLETTE_8_BIT_DATA.as_slice());
+
+    let color_depth = EightBit;
+    let color_type = RedGreenBlue;
+    let palette = None;
+
     let width = 1024;
+    let height = (data.len() / width as usize).try_into()?;
     write_png(
         &mut buffer,
         &data,
         width,
-        (data.len() / width as usize).try_into()?,
-        EightBit,
-        Indexed,
-        Some(PALLETTE_8_BIT_DATA),
+        height,
+        color_depth,
+        color_type,
+        palette,
     );
 
     std::fs::write("../../target/test.png", buffer)?;

@@ -3,6 +3,11 @@
 use std::ops::Not;
 use std::ops::Range;
 
+pub use self::BitDepth::*;
+pub use self::ColorMode::*;
+use crate::checksums::adler32;
+use crate::checksums::crc32;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
 #[repr(u8)]
 pub enum BitDepth {
@@ -14,10 +19,15 @@ pub enum BitDepth {
     SixteenBit = 16,
 }
 
-pub use self::BitDepth::*;
-pub use self::ColorMode::*;
-use crate::checksums::adler32;
-use crate::checksums::crc32;
+impl BitDepth {
+    pub fn bits_per_sample(&self) -> usize {
+        self.u8().into()
+    }
+
+    pub fn u8(&self) -> u8 {
+        (*self).into()
+    }
+}
 
 impl From<BitDepth> for u8 {
     fn from(depth: BitDepth) -> Self {
@@ -34,6 +44,22 @@ pub enum ColorMode {
     Indexed = 3,
     LightnessAlpha = 4,
     RedGreenBlueAlpha = 6,
+}
+
+impl ColorMode {
+    pub fn samples_per_pixel(&self) -> usize {
+        match self {
+            Lightness => 1,
+            RedGreenBlue => 3,
+            Indexed => 1,
+            LightnessAlpha => 2,
+            RedGreenBlueAlpha => 4,
+        }
+    }
+
+    pub fn u8(&self) -> u8 {
+        (*self).into()
+    }
 }
 
 impl From<ColorMode> for u8 {
@@ -123,7 +149,7 @@ pub fn write_non_deflated(buffer: &mut Vec<u8>, data: &[u8]) -> Range<usize> {
     }
 
     // adler-32 checksum of the uncompressed data
-    buffer.extend_from_slice(&adler32(&data).to_le_bytes());
+    buffer.extend_from_slice(&adler32(data).to_le_bytes());
 
     let after = after.unwrap_or(buffer.len());
     let before = before.unwrap_or(after);
@@ -169,19 +195,24 @@ pub fn write_png(
     data: &[u8],
     width: u32,
     height: u32,
-    color_depth: BitDepth,
+    bit_depth: BitDepth,
     color_type: ColorMode,
     palette: Option<&[u8]>,
 ) {
-    write_png_header(buffer, width, height, color_depth, color_type);
+    write_png_header(buffer, width, height, bit_depth, color_type);
     if let Some(palette) = palette {
         write_png_palette(buffer, palette);
     }
     // We need to insert a 0x00 byte at the start of every line (every `width`
     // bytes) to indicate that the line is not filtered.
     let mut filtered_data = Vec::new();
+
+    let bits_per_pixel = bit_depth.bits_per_sample() * color_type.samples_per_pixel();
+    let bits_per_line = width * bits_per_pixel as u32;
+    let bytes_per_line = (bits_per_line + 7) / 8;
+
     for (i, byte) in data.iter().enumerate() {
-        if i % width as usize == 0 {
+        if i % (bytes_per_line as usize) == 0 {
             filtered_data.push(0x00);
         }
         filtered_data.push(*byte);

@@ -1,17 +1,15 @@
 #![feature(doc_cfg)]
-//! A limited but fun encoder for ZIPs and PNGs.
+//! A limited but fun encoder for ZIP-inclusive-or-PNG files.
 //!
 //! This crate doesn't implement any compression. Both for simplicity, and
 //! because in most cases it will be most efficient to compress the resulting
 //! ZIP as a whole, rather than compressing the constituent parts individually.
 //! We provide some wrapper functions doing so with `brotli` for convenience.
-//!
-//! Internal modules are exposed under the `unstable` feature flag for
-//! experimentation, but aren't meant for general use.
 
 use derive_more::From;
 use derive_more::Into;
 use generic::default;
+use generic::noop_mut;
 use indexmap::IndexMap;
 use png::BitDepth;
 use png::ColorMode;
@@ -27,62 +25,93 @@ use png::PALLETTE_8_BIT_DATA;
 use tap::Tap;
 use tracing::warn;
 
-#[cfg(not(any(doc, feature = "unstable")))]
-macro_rules! mods { ($(mod $i:ident;)*) => ($(
-    mod $i;
-)*) }
-#[cfg(any(doc, feature = "unstable"))]
-macro_rules! mods { ($(mod $i:ident;)*) => ($(
-    #[doc(cfg(feature = "unstable"))]
-    pub mod $i;
-)*) }
+#[doc(hidden)]
+use crate as zipng;
+#[doc(hidden)]
+pub use crate::zipng::r#impl::*;
 
-mods! {
-    mod brotli;
-    mod checksums;
-    mod deflate;
-    mod generic;
-    mod padding;
-    mod png;
-    mod zip;
-    mod zlib;
+pub mod r#impl {
+    //! Unstable implementation details. For entertainment use only.
+    //!
+    //! This isn't actually behind a feature gate, but you'll need to import it
+    //! as `zipng::r#impl` because `impl` is a keyword.
+
+    #![doc(cfg(all(internal, unstable)))]
+    #![path = "."]
+    #![allow(missing_docs)]
+    pub mod brotli;
+    pub mod checksums;
+    pub mod deflate;
+    pub mod generic;
+    pub mod padding;
+    pub mod png;
+    pub mod zip;
+    pub mod zlib;
 }
 
-fn noopt<T>(_: &mut T) {}
+/// Creates a zip file.
+pub fn zip(files: &Files) -> Vec<u8> {
+    zip_with(files, noop_mut)
+}
+
+/// Creates a zip file using custom options.
+pub fn zip_with(files: &Files, opts: Opts<ZipOptions>) -> Vec<u8> {
+    let _opts = ZipOptions::default().tap_mut(opts);
+    zip::zip(files.files.iter().map(|(k, v)| (k.as_ref(), v.as_ref())))
+}
+
+/// Creates a "transparent zipng" zip file with the given files, in the given
+/// order.
+pub fn zipng(files: &Files) -> Vec<u8> {
+    zipng_with(files, noop_mut)
+}
+
 type Opts<Options> = fn(&mut Options);
 
-pub fn zipng(files: &Files) -> Vec<u8> {
-    zipng_with(files, noopt)
-}
-
+/// Creates a "transparent zipng" zip file using custom options, with the
+/// given files, in the given order.1
 pub fn zipng_with(files: &Files, opts: Opts<ZipngOptions>) -> Vec<u8> {
     let opts = ZipngOptions::default_for_data(&[]).tap_mut(opts);
     todo!()
 }
-
-pub fn zip(files: &Files) -> Vec<u8> {
-    zip_with(files, noopt)
+/// Creates a zip file wherein all files are stored un-compressed, directly in
+/// the zip file as-is.
+pub fn sliceable_zip(files: &Files) -> Vec<u8> {
+    sliceable_zip_with(files, noop_mut)
 }
 
-pub fn zip_with(files: &Files, opts: Opts<ZipOptions>) -> Vec<u8> {
+/// Creates a zip file using custom options wherein all files are stored
+/// un-compressed, directly in the zip file as-is.
+pub fn sliceable_zip_with(files: &Files, opts: Opts<ZipOptions>) -> Vec<u8> {
     let opts = ZipOptions::default().tap_mut(opts);
     todo!()
 }
 
+/// Creates a PNG file with the given image data.
+///
+/// If you have a real image, you probably want to use [`png_with`] instead
+/// so you can specify the actual image dimensions and color information,
+/// instead of using this function's arbitrary choices.
 pub fn png(body: &[u8]) -> Vec<u8> {
-    png_with(body, noopt)
+    png_with(body, noop_mut)
 }
 
+/// Creates a PNG file with the given image data and options.
 pub fn png_with(body: &[u8], opts: Opts<PngOptions>) -> Vec<u8> {
     let opts = PngOptions::default().tap_mut(opts);
     todo!()
 }
 
+/// Creates a "transparent zipng" zip file with the given files, in the given
+/// order, and then compresses it with `brotli`.
 pub fn zipngbr(files: &Files) -> Vec<u8> {
-    zipngbr_with(files, noopt)
+    zipngbr_with(files, noop_mut)
 }
 
+/// Creates a "transparent zipng" zip file using custom options, with the
+/// given files, in the given order, and then compresses it with `brotli`.
 pub fn zipngbr_with(files: &Files, opts: Opts<ZipngBrOptions>) -> Vec<u8> {
+    let _opts = ZipngBrOptions::default().tap_mut(opts);
     brotli::compress(zipng(files).as_slice()).to_vec()
 }
 

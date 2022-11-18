@@ -16,7 +16,7 @@ fn main() -> Result<(), panic> {
         ),
         (
             b"assets/png.exe".as_ref(),
-            include_bytes!("../../../target/debug/png.exe"),
+            include_bytes!("../../../target/debug/examples/example1.exe"),
         ),
     ];
     let files = IndexMap::from_iter(files.iter().map(|(k, v)| (k.to_vec(), v.to_vec())));
@@ -35,7 +35,7 @@ fn main() -> Result<(), panic> {
         Some(PALLETTE_8_BIT_DATA),
     );
 
-    std::fs::write("target/test.png", buffer)?;
+    std::fs::write("../../target/test.png", buffer)?;
 
     Ok(())
 }

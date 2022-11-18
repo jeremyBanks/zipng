@@ -11,6 +11,7 @@ use static_assertions::assert_impl_all;
 
 pub(crate) use self::phantom_type::PhantomType;
 
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 #[allow(non_camel_case_types)]
 /// An uninhabited [`!`]-like "never" type, with trait implementations as needed

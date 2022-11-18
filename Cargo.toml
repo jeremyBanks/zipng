@@ -1,7 +1,7 @@
 [package]
 name = "zipng"
 authors = ["Jeremy Banks <_@jeremy.ca>"]
-version = "0.20221111.0"
+version = "0.20221111.0-dev.0"
 edition = "2021"
 license = "MIT OR Apache-2.0"
 

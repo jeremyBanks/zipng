@@ -37,6 +37,7 @@ fn main() -> Result<(), panic> {
         v.reverse();
 
         data.extend(v);
+        data.extend(vec![0; width]);
     }
 
     let mut buffer = Vec::new();

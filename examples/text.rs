@@ -1,3 +1,4 @@
+use bitvec::prelude::Lsb0;
 use bitvec::prelude::Msb0;
 use bitvec::vec::BitVec;
 use bitvec::view::AsBits;
@@ -21,11 +22,21 @@ fn main() -> Result<(), panic> {
 
     let font = Mini5pt;
     let width = font.width();
+    let bits = font.width() * font.height();
     for (character, bitmap) in font.glyphs() {
-        data.extend(bitmap.to_be_bytes());
-        data.extend([0x00; 1]);
-        data.extend([0xFF; 1]);
-        data.extend([0x00; 1]);
+        // if *character != 'A' {
+        //     continue;
+        // }
+        let mut v: Vec<_> = bitmap
+            .to_le_bytes()
+            .as_bits::<Lsb0>()
+            .iter()
+            .take(bits)
+            .map(|bit| if *bit { 0xFFu8 } else { 0x00 })
+            .collect();
+        v.reverse();
+
+        data.extend(v);
     }
 
     let mut buffer = Vec::new();

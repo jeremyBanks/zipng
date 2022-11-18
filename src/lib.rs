@@ -160,11 +160,10 @@ impl ZipngOptions {
 
         match data.len() {
             len @ 0x0..=0x20 => {
-                warn!("zip data size is weirdly low ({len} bytes)");
                 opts.png.color_palette = None;
                 opts.png.bit_depth = OneBit;
                 opts.png.color_mode = Lightness;
-                opts.png.width = 16;
+                opts.png.width = 16.min(len * 8);
             },
             0x21..=0x100 => {
                 opts.png.color_palette = None;

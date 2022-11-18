@@ -1,0 +1,71 @@
+use indexmap::IndexMap;
+use zipng::generic::panic;
+use zipng::png::write_png;
+use zipng::png::BitDepth::EightBit;
+use zipng::png::BitDepth::OneBit;
+use zipng::png::ColorMode::Indexed;
+use zipng::png::ColorMode::RedGreenBlue;
+use zipng::png::PALLETTE_8_BIT_DATA;
+use zipng::text::Font;
+use zipng::text::Mini5pt;
+use zipng::text::FONTS;
+use zipng::zip;
+use zipng::PngOptions;
+use zipng::ZipngOptions;
+
+fn main() -> Result<(), panic> {
+    let mut data = [0u8; 1024];
+
+    let font = FONTS[0];
+    for (character, bitmap) in font.glyphs() {
+        dbg!(character, bitmap);
+        // this is where we start using bitvec?
+    }
+
+    let mut buffer = Vec::new();
+
+    let ZipngOptions {
+        png:
+            PngOptions {
+                bit_depth,
+                color_mode,
+                color_palette,
+                width,
+                ..
+            },
+        ..
+    } = ZipngOptions::default_for_data(&data);
+    let color_palette = color_palette.as_deref();
+
+    // let bit_depth = EightBit;
+    // let color_mode = Indexed;
+    // let color_palette = Some(PALLETTE_8_BIT_DATA.as_slice());
+
+    // let bit_depth = EightBit;
+    // let color_mode = RedGreenBlue;
+    // let color_palette = None::<&[u8]>;
+
+    let bit_depth = OneBit;
+    let color_mode = Indexed;
+    let color_palette = [0xFF_u8, 0xFF, 0xEE, 0x11, 0x11, 0x33];
+    let color_palette = Some(&color_palette[..]);
+
+    let bits_per_pixel = bit_depth.bits_per_sample() * color_mode.samples_per_pixel();
+    let pixels = data.len() * 8 / bits_per_pixel;
+
+    let height = (pixels / width).max(1);
+
+    write_png(
+        &mut buffer,
+        &data,
+        width as u32,
+        height as u32,
+        bit_depth,
+        color_mode,
+        color_palette,
+    );
+
+    std::fs::write("target/test.png", buffer)?;
+
+    Ok(())
+}

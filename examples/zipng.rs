@@ -10,10 +10,15 @@ use zipng::PngOptions;
 use zipng::ZipngOptions;
 
 fn main() -> Result<(), panic> {
-    let files: [(&[u8], &[u8]); 4] = [
-        (b"mimetype".as_ref(), b"zip/zip".as_ref()),
-        (b"README.md".as_ref(), b"welcome".as_ref()),
-        (b"assets/icon.png".as_ref(), include_bytes!("../icon.png")),
+    let files: [(&[u8], &[u8]); 3] = [
+        (
+            b"assets/Cargo.toml".as_ref(),
+            include_bytes!("../Cargo.toml"),
+        ),
+        (
+            b"assets/Cargo.lock".as_ref(),
+            include_bytes!("../Cargo.lock"),
+        ),
         (b"assets/a.png".as_ref(), include_bytes!("../icon.png")),
     ];
     let files = IndexMap::from_iter(files.iter().map(|(k, v)| (k.to_vec(), v.to_vec())));
@@ -35,13 +40,13 @@ fn main() -> Result<(), panic> {
     } = ZipngOptions::default_for_data(&data);
     let color_palette = color_palette.as_deref();
 
-    let bit_depth = EightBit;
-    let color_mode = Indexed;
-    let color_palette = Some(PALLETTE_8_BIT_DATA.as_slice());
+    // let bit_depth = EightBit;
+    // let color_mode = Indexed;
+    // let color_palette = Some(PALLETTE_8_BIT_DATA.as_slice());
 
-    let bit_depth = EightBit;
-    let color_mode = RedGreenBlue;
-    let color_palette = None::<&[u8]>;
+    // let bit_depth = EightBit;
+    // let color_mode = RedGreenBlue;
+    // let color_palette = None::<&[u8]>;
 
     let bits_per_pixel = bit_depth.bits_per_sample() * color_mode.samples_per_pixel();
     let pixels = data.len() * 8 / bits_per_pixel;

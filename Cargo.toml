@@ -15,6 +15,7 @@ DEV = []
 EDITOR = []
 
 [dependencies]
+bitvec = "1.0.1"
 brotli = { version = "3.3.4", optional = true, default-features = false }
 bstr = { version = "1.0.1" }
 crc = "3.0.0"
@@ -22,6 +23,7 @@ derive_more = "0.99.17"
 flate2 = { version = "1.0.24", optional = true }
 indexmap = { version = "1.9.2" }
 once_cell = "1.16.0"
+rand = "0.8.5"
 simd-adler32 = "0.3.4"
 static_assertions = "1.1.0"
 tap = "1.0.1"

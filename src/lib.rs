@@ -1,3 +1,4 @@
+/*
 //! it's not real
 //!
 //! it's [`fiction`][self]
@@ -108,3 +109,4 @@ pub fn main() -> Result<(), panic> {
 }
 
 pub mod png;
+ */

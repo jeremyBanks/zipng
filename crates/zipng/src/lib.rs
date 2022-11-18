@@ -11,13 +11,25 @@
 
 use derive_more::From;
 use derive_more::Into;
+use generic::default;
 use indexmap::IndexMap;
 use png::BitDepth;
+use png::ColorMode;
+use png::EightBit;
+use png::FourBit;
+use png::Indexed;
+use png::Lightness;
+use png::OneBit;
+use png::RedGreenBlue;
+use png::RedGreenBlueAlpha;
+use png::TwoBit;
+use png::PALLETTE_8_BIT_DATA;
 use tap::Tap;
+use tracing::warn;
 
 #[cfg(not(any(doc, feature = "unstable")))]
 macro_rules! mods { ($(mod $i:ident;)*) => ($(
-    pub(in crate) mod $i;
+    mod $i;
 )*) }
 #[cfg(any(doc, feature = "unstable"))]
 macro_rules! mods { ($(mod $i:ident;)*) => ($(
@@ -38,16 +50,13 @@ mods! {
 
 fn noopt<T>(_: &mut T) {}
 type Opts<Options> = fn(&mut Options);
-fn get_opts<Options: Default>(f: Opts<Options>) -> Options {
-    Options::default().tap_mut(f)
-}
 
 pub fn zipng(files: &Files) -> Vec<u8> {
     zipng_with(files, noopt)
 }
 
 pub fn zipng_with(files: &Files, opts: Opts<ZipngOptions>) -> Vec<u8> {
-    let opts = get_opts(opts);
+    let opts = ZipngOptions::default_for_data(&[]).tap_mut(opts);
     todo!()
 }
 
@@ -56,7 +65,7 @@ pub fn zip(files: &Files) -> Vec<u8> {
 }
 
 pub fn zip_with(files: &Files, opts: Opts<ZipOptions>) -> Vec<u8> {
-    let opts = get_opts(opts);
+    let opts = ZipOptions::default().tap_mut(opts);
     todo!()
 }
 
@@ -65,7 +74,7 @@ pub fn png(body: &[u8]) -> Vec<u8> {
 }
 
 pub fn png_with(body: &[u8], opts: Opts<PngOptions>) -> Vec<u8> {
-    let opts = get_opts(opts);
+    let opts = PngOptions::default().tap_mut(opts);
     todo!()
 }
 
@@ -93,9 +102,10 @@ pub struct ZipOptions {}
 #[non_exhaustive]
 pub struct PngOptions {
     pub width: usize,
-    pub height: usize,
+    pub max_height: usize,
     pub bit_depth: BitDepth,
     pub color_mode: ColorMode,
+    pub color_palette: Option<Vec<u8>>,
 }
 
 /// Brotli compression options.
@@ -108,6 +118,67 @@ pub struct BrotliOptions {}
 pub struct ZipngOptions {
     pub png: PngOptions,
     pub zip: ZipOptions,
+}
+
+impl ZipngOptions {
+    pub fn default_for_data(data: &[u8]) -> Self {
+        let mut opts = Self::default();
+
+        opts.png.bit_depth = EightBit;
+        opts.png.color_mode = Indexed;
+        opts.png.color_palette = Some(PALLETTE_8_BIT_DATA.to_vec());
+        opts.png.max_height = 8192;
+
+        match data.len() {
+            len @ 0x0..=0x20 => {
+                warn!("zip data size is weirdly low ({len} bytes)");
+                opts.png.color_palette = None;
+                opts.png.bit_depth = OneBit;
+                opts.png.color_mode = Lightness;
+                opts.png.width = 16;
+            },
+            0x21..=0x100 => {
+                opts.png.color_palette = None;
+                opts.png.bit_depth = TwoBit;
+                opts.png.color_mode = Lightness;
+                opts.png.width = 16;
+            },
+            0x101..=0x200 => {
+                opts.png.width = 16;
+            },
+            0x201..=0x800 => {
+                opts.png.width = 32;
+            },
+            0x801..=0x2000 => {
+                opts.png.width = 64;
+            },
+            0x2001..=0x8000 => {
+                opts.png.width = 128;
+            },
+            0x8001..=0x20000 => {
+                opts.png.width = 256;
+            },
+            0x20001..=0x80000 => {
+                opts.png.width = 512;
+            },
+            0x80001..=0x200000 => {
+                opts.png.width = 1024;
+            },
+            0x200001..=0x800000 => {
+                opts.png.width = 1024;
+                opts.png.color_palette = None;
+                opts.png.color_mode = RedGreenBlue;
+            },
+            len => {
+                opts.png.width = 1024;
+                opts.png.color_palette = None;
+                opts.png.color_mode = RedGreenBlueAlpha;
+                warn!("zip data size is too damn high ({len} bytes)");
+            },
+        }
+
+        opts
+    }
 }
 
 #[derive(Debug, Default, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Into, From)]

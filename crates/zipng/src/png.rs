@@ -14,6 +14,7 @@ pub enum BitDepth {
     SixteenBit = 16,
 }
 
+
 pub use self::BitDepth::*;
 pub use self::ColorMode::*;
 use crate::checksums::adler32;

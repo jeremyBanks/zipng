@@ -1,44 +1,43 @@
-#![allow(clippy::unusual_byte_groupings, clippy::useless_conversion)]
+#![allow(clippy::unusual_byte_groupings)]
 
 use std::ops::Not;
 use std::ops::Range;
 
-use bstr::BString;
-use simd_adler32::adler32;
-
-use crate::panic;
-use crate::zip::crc32_zip;
-use crate::zip::zip;
-
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
 #[repr(u8)]
-pub enum ColorDepth {
+pub enum BitDepth {
     OneBit = 1,
     TwoBit = 2,
     FourBit = 4,
+    #[default]
     EightBit = 8,
     SixteenBit = 16,
 }
 
-use self::ColorDepth::*;
-use self::ColorType::*;
+pub use self::BitDepth::*;
+pub use self::ColorMode::*;
+use crate::checksums::adler32;
+use crate::checksums::crc32;
 
-impl From<ColorDepth> for u8 {
-    fn from(depth: ColorDepth) -> Self {
+impl From<BitDepth> for u8 {
+    fn from(depth: BitDepth) -> Self {
         depth as u8
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
 #[repr(u8)]
-pub enum ColorType {
+pub enum ColorMode {
+    #[default]
     Lightness = 0,
     RedGreenBlue = 2,
-    Index = 3,
+    Indexed = 3,
     LightnessAlpha = 4,
     RedGreenBlueAlpha = 6,
 }
 
-impl From<ColorType> for u8 {
-    fn from(val: ColorType) -> Self {
+impl From<ColorMode> for u8 {
+    fn from(val: ColorMode) -> Self {
         val as u8
     }
 }
@@ -47,8 +46,8 @@ pub fn write_png_header(
     buffer: &mut Vec<u8>,
     width: u32,
     height: u32,
-    color_depth: ColorDepth,
-    color_type: ColorType,
+    color_depth: BitDepth,
+    color_type: ColorMode,
 ) -> Range<usize> {
     let before = buffer.len();
 
@@ -151,7 +150,7 @@ pub fn write_png_chunk(buffer: &mut Vec<u8>, chunk_type: &[u8; 4], data: &[u8]) 
     buffer.extend_from_slice(chunk_type);
     buffer.extend_from_slice(data);
     buffer.extend_from_slice(
-        &crc32_zip(
+        &crc32(
             &[chunk_type.as_slice(), data]
                 .into_iter()
                 .flatten()
@@ -170,8 +169,8 @@ pub fn write_png(
     data: &[u8],
     width: u32,
     height: u32,
-    color_depth: ColorDepth,
-    color_type: ColorType,
+    color_depth: BitDepth,
+    color_type: ColorMode,
     palette: Option<&[u8]>,
 ) {
     write_png_header(buffer, width, height, color_depth, color_type);

@@ -22,8 +22,8 @@ fn main() -> Result<(), panic> {
             include_bytes!("../../icon.png"),
         ),
         (
-            b"assets/sqlite_zstd.dll".as_ref(),
-            include_bytes!("../../sqlite_zstd.dll"),
+            b"assets/png.exe".as_ref(),
+            include_bytes!("../../target/debug/png.exe"),
         ),
     ];
     let data = zip(files);

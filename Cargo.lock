@@ -668,7 +668,7 @@ dependencies = [
 
 [[package]]
 name = "fiction"
-version = "0.20221114.0"
+version = "0.20221111.0"
 dependencies = [
  "ammonia",
  "async-trait",
@@ -1185,9 +1185,9 @@ checksum = "ce23b50ad8242c51a442f3ff322d56b02f08852c77e4c0b4d3fd684abc89c683"
 
 [[package]]
 name = "indexmap"
-version = "1.9.1"
+version = "1.9.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "10a35a97730320ffe8e2d410b5d3b69279b98d2c14bdb8b70ea89ecf7888d41e"
+checksum = "1885e79c1fc4b10f0e172c475f458b7f7b93061064d98c3293e98c5ba0c8b399"
 dependencies = [
  "autocfg",
  "hashbrown",
@@ -3301,3 +3301,19 @@ name = "xml-rs"
 version = "0.8.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d2d7d3948613f75c98fd9328cfdcc45acc4d360655289d0a7d4ec931392200a3"
+
+[[package]]
+name = "zipng"
+version = "0.20221111.0"
+dependencies = [
+ "brotli",
+ "bstr",
+ "crc",
+ "derive_more",
+ "flate2",
+ "indexmap",
+ "serde",
+ "simd-adler32",
+ "static_assertions",
+ "tap",
+]

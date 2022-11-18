@@ -9,3 +9,5 @@
 ]
 
 ---
+
+It would be nice if we could have no non-optional dependencies, including `std`.

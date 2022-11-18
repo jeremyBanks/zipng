@@ -1,8 +1,12 @@
-#![feature(doc_cfg)]
+#![feature(doc_cfg, doc_auto_cfg)]
 #![doc = include_str!("../README.md")]
+//!
+//! ## Feature flags
+#![doc = document_features!()]
 
 use derive_more::From;
 use derive_more::Into;
+use document_features::document_features;
 use indexmap::IndexMap;
 use tap::Tap;
 use tracing::warn;
@@ -33,7 +37,10 @@ pub mod r#impl {
     #![doc(cfg(all(internal, unstable)))]
     #![path = "."]
     #![allow(missing_docs)]
+
+    #[cfg(feature = "brotli")]
     pub mod brotli;
+
     pub mod checksums;
     pub mod deflate;
     pub mod font;
@@ -98,12 +105,14 @@ pub fn png_with(body: &[u8], opts: Opts<PngOptions>) -> Vec<u8> {
     todo!()
 }
 
+#[cfg(feature = "brotli")]
 /// Creates a "transparent zipng" zip file with the given files, in the given
 /// order, and then compresses it with `brotli`.
 pub fn zipngbr(files: &Files) -> Vec<u8> {
     zipngbr_with(files, noop_mut)
 }
 
+#[cfg(feature = "brotli")]
 /// Creates a "transparent zipng" zip file using custom options, with the
 /// given files, in the given order, and then compresses it with `brotli`.
 pub fn zipngbr_with(files: &Files, opts: Opts<ZipngBrOptions>) -> Vec<u8> {
@@ -133,6 +142,7 @@ pub struct PngOptions {
     pub color_palette: Option<Vec<u8>>,
 }
 
+#[cfg(feature = "brotli")]
 /// Brotli compression options.
 #[derive(Debug, Default, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[non_exhaustive]
@@ -205,6 +215,7 @@ impl ZipngOptions {
     }
 }
 
+#[cfg(feature = "brotli")]
 #[derive(Debug, Default, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Into, From)]
 #[non_exhaustive]
 pub struct ZipngBrOptions {

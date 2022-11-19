@@ -21,6 +21,7 @@ derive_more = "0.99.17"
 flate2 = { version = "1.0.24" }
 heapless = "0.7.16"
 once_cell = "1.16.0"
+qrcodegen = "1.8.0"
 simd-adler32 = "0.3.4"
 static_assertions = "1.1.0"
 tap = "1.0.1"

@@ -3,6 +3,7 @@ use bitvec::slice::BitSlice;
 use bitvec::vec::BitVec;
 
 use crate::font;
+use crate::font::Font;
 
 pub struct Canvas {
     pub pixels_per_line: usize,
@@ -32,4 +33,4 @@ impl Canvas {
     }
 }
 
-pub fn print(buffer: &mut BitVec, foreground_pixel: &BitSlice, background_pixel: &BitSlice) {}
+pub fn print(canvas: &mut BitVec, text: &str, font: &dyn Font) {}

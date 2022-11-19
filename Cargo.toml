@@ -8,28 +8,18 @@ repository = "https://github.com/jeremyBanks/zipng"
 version = "0.20221122.0-dev.2"
 
 [features]
-default = ["brotli", "std"]
-
-## Include external [`brotli`] compression.
-brotli = ["dep:brotli"]
-
-## Include use of the full [`std`] standard library.
-std = ["indexmap/std", "brotli?/std"]
-
+default = []
 DEV = []
 EDITOR = []
 
 [dependencies]
-alloc-no-stdlib = "2.0.4"
 bitvec = "1.0.1"
-brotli = { version = "3.3.4", optional = true, default-features = false }
+brotli = { version = "3.3.4" }
 bstr = { version = "1.0.1" }
 crc = "3.0.0"
 derive_more = "0.99.17"
-document-features = "0.2.6"
-flate2 = { version = "1.0.24", optional = true }
+flate2 = { version = "1.0.24" }
 heapless = "0.7.16"
-indexmap = { version = "1.9.2" }
 once_cell = "1.16.0"
 simd-adler32 = "0.3.4"
 static_assertions = "1.1.0"

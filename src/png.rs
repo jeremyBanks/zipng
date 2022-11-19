@@ -3,11 +3,38 @@
 use std::ops::Not;
 use std::ops::Range;
 
+use bitvec::vec::BitVec;
+use tracing::warn;
+
 pub use self::BitDepth::*;
-pub use self::ColorMode::*;
+pub use self::ColorType::*;
 use crate::checksums::adler32;
 use crate::checksums::crc32;
+use crate::generic::panic;
 
+/// In-memory representation of a PNG image (_not_ an image file).
+#[derive(Debug, Clone, Default)]
+pub struct PngImage {
+    pub width: u32,
+    pub height: u32,
+    pub bit_depth: BitDepth,
+    pub color_type: ColorType,
+    pub pixel_data: Vec<u8>,
+    pub palette_data: Option<Vec<u8>>,
+    pub transparency_data: Option<Vec<u8>>,
+}
+
+/// The bit depth of an image, as defined in the PNG specification.
+///
+/// > **bit depth**: for indexed-colour images, the number of bits per palette
+/// > index. For other images, the number of bits per sample in the image. This
+/// > is the value that appears in the `IHDR` Image header chunk.
+///
+/// > **sample**: intersection of a channel and a pixel in an image.
+///
+/// > **channel**: array of all per-pixel information of a particular kind
+/// > within a reference image. There are five kinds of information: red, green,
+/// > blue, greyscale, and alpha.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
 #[repr(u8)]
 pub enum BitDepth {
@@ -19,13 +46,37 @@ pub enum BitDepth {
     SixteenBit = 16,
 }
 
+/// The color type of an image, as defined in the PNG specification.
+///
+/// > There are five types of PNG image. Corresponding to each type is a
+/// > **colour type**, which is the sum of the following values: 1 (palette
+/// > used), 2 (truecolour used) and 4 (alpha used). Greyscale and truecolour
+/// > images may have an explicit alpha channel. The PNG image types and
+/// > corresponding colour types are listed in Table 8.
+///
+/// > **greyscale**: image representation in which each pixel is defined by a
+/// > single sample of colour information, representing overall luminance (on a
+/// > scale from black to white)
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
+#[repr(u8)]
+pub enum ColorType {
+    #[default]
+    Luminance = 0,
+    RedGreenBlue = 2,
+    Indexed = 3,
+    LuminanceAlpha = 4,
+    RedGreenBlueAlpha = 6,
+}
+
+impl PngImage {
+    pub fn to_bytes(&self) -> Vec<u8> {
+        todo!()
+    }
+}
+
 impl BitDepth {
     pub fn bits_per_sample(&self) -> usize {
-        self.u8().into()
-    }
-
-    pub fn u8(&self) -> u8 {
-        (*self).into()
+        u8::from(*self).into()
     }
 }
 
@@ -35,35 +86,20 @@ impl From<BitDepth> for u8 {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
-#[repr(u8)]
-pub enum ColorMode {
-    #[default]
-    Lightness = 0,
-    RedGreenBlue = 2,
-    Indexed = 3,
-    LightnessAlpha = 4,
-    RedGreenBlueAlpha = 6,
-}
-
-impl ColorMode {
+impl ColorType {
     pub fn samples_per_pixel(&self) -> usize {
         match self {
-            Lightness => 1,
+            Luminance => 1,
             RedGreenBlue => 3,
             Indexed => 1,
-            LightnessAlpha => 2,
+            LuminanceAlpha => 2,
             RedGreenBlueAlpha => 4,
         }
     }
-
-    pub fn u8(&self) -> u8 {
-        (*self).into()
-    }
 }
 
-impl From<ColorMode> for u8 {
-    fn from(val: ColorMode) -> Self {
+impl From<ColorType> for u8 {
+    fn from(val: ColorType) -> Self {
         val as u8
     }
 }
@@ -73,7 +109,7 @@ pub fn write_png_header(
     width: u32,
     height: u32,
     color_depth: BitDepth,
-    color_mode: ColorMode,
+    color_mode: ColorType,
 ) -> Range<usize> {
     let before = buffer.len();
 
@@ -196,7 +232,7 @@ pub fn write_png(
     width: u32,
     height: u32,
     bit_depth: BitDepth,
-    color_mode: ColorMode,
+    color_mode: ColorType,
     palette: Option<&[u8]>,
 ) {
     write_png_header(buffer, width, height, bit_depth, color_mode);
@@ -219,6 +255,61 @@ pub fn write_png(
     }
     write_png_body(buffer, &filtered_data);
     write_png_footer(buffer);
+}
+
+pub fn default_for_data(data: &[u8]) {
+
+    // opts.bit_depth = EightBit;
+    // opts.color_mode = Indexed;
+    // opts.color_palette = Some(PALLETTE_8_BIT_DATA.to_vec());
+    // opts.max_height = 8192;
+
+    // match data.len() {
+    //     len @ 0x0..=0x20 => {
+    //         opts.color_palette = None;
+    //         opts.bit_depth = OneBit;
+    //         opts.color_mode = Luminance;
+    //         opts.width = 16.min(len * 8);
+    //     },
+    //     0x21..=0x100 => {
+    //         opts.color_palette = None;
+    //         opts.bit_depth = TwoBit;
+    //         opts.color_mode = Luminance;
+    //         opts.width = 16;
+    //     },
+    //     0x101..=0x200 => {
+    //         opts.width = 16;
+    //     },
+    //     0x201..=0x800 => {
+    //         opts.width = 32;
+    //     },
+    //     0x801..=0x2000 => {
+    //         opts.width = 64;
+    //     },
+    //     0x2001..=0x8000 => {
+    //         opts.width = 128;
+    //     },
+    //     0x8001..=0x20000 => {
+    //         opts.width = 256;
+    //     },
+    //     0x20001..=0x80000 => {
+    //         opts.width = 512;
+    //     },
+    //     0x80001..=0x200000 => {
+    //         opts.width = 1024;
+    //     },
+    //     0x200001..=0x800000 => {
+    //         opts.width = 1024;
+    //         opts.color_palette = None;
+    //         opts.color_mode = RedGreenBlue;
+    //     },
+    //     len => {
+    //         opts.width = 1024;
+    //         opts.color_palette = None;
+    //         opts.color_mode = RedGreenBlueAlpha;
+    //         warn!("zip data size is too damn high ({len} bytes)");
+    //     },
+    // }
 }
 
 pub const PALLETTE_8_BIT_DATA: &[u8; 256 * 3] = &[

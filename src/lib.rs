@@ -83,7 +83,7 @@ pub fn text_png(text: &str) -> Vec<u8> {
 
     let font = FONTS[0];
 
-    font.render(text, &mut canvas);
+    font.render(&mut canvas, text).unwrap();
 
     canvas.to_bytes()
 }

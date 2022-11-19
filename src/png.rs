@@ -25,6 +25,23 @@ pub struct Png {
     pub transparency_data: Option<Vec<u8>>,
 }
 
+impl Png {
+    pub fn to_bytes(&self) -> Vec<u8> {
+        todo!()
+    }
+
+    pub fn from_bytes(bytes: &[u8]) -> Result<Self, panic> {
+        todo!()
+    }
+
+    /// Sets the pixel at the given coordinates to the given color.
+    /// The required length of the color data may vary depending on the
+    /// color type and bit depth of the image.
+    pub fn set_pixel(&mut self, x: u32, y: u32, color: &[u8]) -> Result<(), ()> {
+        todo!()
+    }
+}
+
 /// The bit depth of an image, as defined in the PNG specification.
 ///
 /// > **bit depth**: for indexed-colour images, the number of bits per palette
@@ -67,16 +84,6 @@ pub enum ColorType {
     Indexed = 3,
     LuminanceAlpha = 4,
     RedGreenBlueAlpha = 6,
-}
-
-impl Png {
-    pub fn to_bytes(&self) -> Vec<u8> {
-        todo!()
-    }
-
-    pub fn from_bytes(bytes: &[u8]) -> Result<Self, panic> {
-        todo!()
-    }
 }
 
 impl BitDepth {

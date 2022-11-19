@@ -1,23 +1,37 @@
-use bitvec::prelude::Lsb0;
-use bitvec::prelude::Msb0;
-use bitvec::vec::BitVec;
-use bitvec::view::AsBits;
-use indexmap::IndexMap;
-use zipng::font::Font;
-use zipng::font::Mini5pt;
-use zipng::font::FONTS;
-use zipng::generic::panic;
-use zipng::png::write_png;
-use zipng::png::BitDepth::EightBit;
-use zipng::png::BitDepth::OneBit;
-use zipng::png::ColorType::Indexed;
-use zipng::png::ColorType::RedGreenBlue;
-use zipng::png::PALLETTE_8_BIT_DATA;
-use zipng::zip;
-use zipng::PngOptions;
-use zipng::ZipngOptions;
+use {
+    bitvec::{
+        prelude::{Lsb0, Msb0},
+        vec::BitVec,
+        view::AsBits,
+    },
+    zipng::{
+        r#impl::{
+            font::{Font, Mini5pt, FONTS},
+            generic::panic,
+            png::{
+                write_png,
+                BitDepth::{Eight, One},
+                ColorType::{Indexed, RedGreenBlue},
+                PALLETTE_8_BIT_DATA,
+            },
+        },
+        text_png,
+    },
+};
 
 fn main() -> Result<(), panic> {
+    let text = "Hello, world!";
+    let bytes = text_png(text);
+
+    eprintln!(
+        "Rendered {} characters of text in {} bytes of PNG.",
+        text.chars().count(),
+        bytes.len()
+    );
+
+    std::fs::write("target/out.png", bytes)?;
+
+    /*
     let mut data = Vec::new();
 
     let font = Mini5pt;
@@ -89,6 +103,7 @@ fn main() -> Result<(), panic> {
     );
 
     std::fs::write("target/test.png", buffer)?;
+     */
 
     Ok(())
 }

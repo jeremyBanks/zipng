@@ -1,20 +1,21 @@
 #![allow(clippy::unusual_byte_groupings)]
 
-use std::ops::Not;
-use std::ops::Range;
+use {
+    crate::{
+        checksums::{adler32, crc32},
+        generic::panic,
+    },
+    bitvec::vec::BitVec,
+    std::ops::{Not, Range},
+    tracing::warn,
+};
 
-use bitvec::vec::BitVec;
-use tracing::warn;
+pub use self::{BitDepth::*, ColorType::*};
 
-pub use self::BitDepth::*;
-pub use self::ColorType::*;
-use crate::checksums::adler32;
-use crate::checksums::crc32;
-use crate::generic::panic;
-
-/// In-memory representation of a PNG image (_not_ an image file).
-#[derive(Debug, Clone, Default)]
-pub struct PngImage {
+/// In-memory representation of a PNG file's essential image contents.
+#[derive(Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord, Default)]
+#[non_exhaustive]
+pub struct Png {
     pub width: u32,
     pub height: u32,
     pub bit_depth: BitDepth,
@@ -38,12 +39,12 @@ pub struct PngImage {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
 #[repr(u8)]
 pub enum BitDepth {
-    OneBit = 1,
-    TwoBit = 2,
-    FourBit = 4,
+    One = 1,
+    Two = 2,
+    Four = 4,
     #[default]
-    EightBit = 8,
-    SixteenBit = 16,
+    Eight = 8,
+    Sixteen = 16,
 }
 
 /// The color type of an image, as defined in the PNG specification.
@@ -68,8 +69,12 @@ pub enum ColorType {
     RedGreenBlueAlpha = 6,
 }
 
-impl PngImage {
+impl Png {
     pub fn to_bytes(&self) -> Vec<u8> {
+        todo!()
+    }
+
+    pub fn from_bytes(bytes: &[u8]) -> Result<Self, panic> {
         todo!()
     }
 }

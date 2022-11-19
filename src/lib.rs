@@ -1,35 +1,10 @@
 #![feature(doc_cfg, doc_auto_cfg)]
 #![doc = include_str!("../README.md")]
 
-use derive_more::From;
-use derive_more::Into;
-use tracing::warn;
-
-#[doc(hidden)]
-use crate as zipng;
-
-macro_rules! splatt {
-    ($({$tt:tt}),* $(,)?) => {
-        $($tt)*
-    };
-}
-
-
-macro_rules! if_cfg_unstable {
-    ( $then:item $(else $else:item )?) => {
-        splatt!{{#}, {[cfg(feature = env!("CARGO_PKG_VERSION"))]}, { $then } }
-    }
-}
-
-if_cfg_unstable!{
-    pub fn main() {
-        println!("hello, world!")
-    }
-    else
-    pub fn main() {
-        println!("oh no!")
-    }
-}
+use {
+    crate::{generic::*, r#impl::*},
+    derive_more::{From, Into},
+};
 
 pub mod r#impl {
     //! Unstable internal implementation details.
@@ -42,21 +17,25 @@ pub mod r#impl {
     pub mod generic;
     pub mod padding;
     pub mod png;
-    pub mod text;
     pub mod zip;
     pub mod zlib;
 }
 
 #[doc(inline)]
-pub use crate::png::BitDepth;
-#[doc(inline)]
-pub use crate::png::ColorType;
-#[doc(inline)]
-pub(crate) use crate::r#impl::*;
+pub use crate::{
+    font::{Font, FONTS},
+    png::{BitDepth, ColorType, Png},
+    zip::Zip,
+};
 
 /// Creates a ZIP archive with this crate's suggested/canonical settings.
 pub fn zip(files: &Files) -> Vec<u8> {
     todo!()
+}
+
+/// Reads the archive contents of a ZIP file.
+pub fn unzip(data: &[u8]) -> Result<Zip, panic> {
+    Zip::from_bytes(data)
 }
 
 /// Creates a normal ZIP archive with nothing extraneous included.
@@ -82,9 +61,31 @@ pub fn zipng_uncovered(files: &Files) -> Vec<u8> {
     todo!()
 }
 
-/// Creates a PNG file with the given image data and metadata.
+/// Creates a PNG file with the given image data.
 pub fn png(body: &[u8], _meta: ()) -> Vec<u8> {
     todo!()
+}
+
+/// Reads the image data from a PNG file.
+pub fn unpng(data: &[u8]) -> Result<Png, panic> {
+    Png::from_bytes(data)
+}
+
+/// Creates a PNG file with a render of the given text.
+pub fn text_png(text: &str) -> Vec<u8> {
+    let mut canvas = Png {
+        width: 0,
+        height: 0,
+        color_type: ColorType::RedGreenBlue,
+        bit_depth: BitDepth::Eight,
+        ..default()
+    };
+
+    let font = FONTS[0];
+
+    font.render(text, &mut canvas);
+
+    canvas.to_bytes()
 }
 
 #[doc(hidden)]

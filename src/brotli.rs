@@ -1,10 +1,8 @@
-use brotli::enc::BrotliEncoderParams;
-use bstr::BStr;
-use bstr::BString;
-use bstr::ByteSlice;
-use bstr::Bytes;
-
-use crate::generic::default;
+use {
+    crate::generic::default,
+    brotli::enc::BrotliEncoderParams,
+    bstr::{BStr, BString, ByteSlice, Bytes},
+};
 
 pub fn compress(bytes: &[u8]) -> Vec<u8> {
     let mut bytes = bytes.as_bytes();

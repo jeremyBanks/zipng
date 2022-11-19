@@ -1,10 +1,17 @@
 #![allow(clippy::unusual_byte_groupings)]
 
-use std::fmt::Debug;
+use {
+    crate::{panic, Png},
+    bitvec::{
+        order::{Lsb0, Msb0},
+        view::AsBits,
+    },
+    std::fmt::Debug,
+};
 
 type GlyphBits = u16;
 
-/// A bitmap font.
+/// A bitmap font that can be used to render text onto a PNG image.
 pub trait Font: Send + Sync {
     fn name(&self) -> &'static str;
 
@@ -43,6 +50,72 @@ pub trait Font: Send + Sync {
 
     /// map of characters to glyphs, represented as bits
     fn glyphs(&self) -> &'static [(char, GlyphBits)];
+
+    /// the good stuff?
+    fn render(&self, png: &mut Png, text: &str) -> Result<(), panic> {
+        let width = self.width();
+        let height = self.height();
+        let x_margin = self.x_margin();
+        let y_margin = self.y_margin();
+        let x_packing = self.x_packing();
+        let y_packing = self.y_packing();
+        let glyphs = self.glyphs();
+
+        let mut x = 0;
+        let mut y = 0;
+        let mut max_y = 0;
+        let mut last_char = None;
+        for character in text.chars() {
+            let (glyph, glyph_width) = match glyphs.iter().find(|(c, _)| *c == character) {
+                Some((_, glyph)) => (glyph, width),
+                None => {
+                    eprintln!("Unknown character: {}", character);
+                    continue;
+                },
+            };
+
+            let glyph_height = height;
+            let glyph_x = x;
+            let glyph_y = y;
+
+            let mut glyph_bits = glyph.to_le_bytes().as_bits::<Lsb0>();
+            let mut glyph_bits = glyph_bits.iter().take(glyph_width * glyph_height + 1);
+            let invisible = glyph_bits.next().unwrap().into();
+
+            if invisible {
+                glyph_bits = std::iter::repeat(false);
+            }
+
+            for _ in 0..glyph_height {
+                for _ in 0..glyph_width {
+                    let bit = glyph_bits.next().unwrap().into();
+                    png.set_pixel(glyph_x, glyph_y, bit);
+                }
+            }
+
+            let x_advance = match x_packing {
+                Some(Packing::Local) => glyph_width,
+                Some(Packing::Global) => width,
+                None => glyph_width,
+            };
+            let y_advance = match y_packing {
+                Some(Packing::Local) => glyph_height,
+                Some(Packing::Global) => height,
+                None => glyph_height,
+            };
+
+            x += x_advance + x_margin;
+            max_y = max_y.max(y + y_advance);
+            if x + x_advance + x_margin > png.width as _ {
+                x = 0;
+                y = max_y + y_margin;
+            }
+
+            last_char = Some(character);
+        }
+
+        Ok(())
+    }
 }
 
 /// How aggressively to pack text.
@@ -52,7 +125,7 @@ pub enum Packing {
     Global,
 }
 
-/// List of all built-in fonts.
+/// Built-in bitmap fonts.
 pub const FONTS: &[&dyn Font] = &[
     Mini5pt::DYN,
     Slab9pt::DYN,

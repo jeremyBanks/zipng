@@ -1,10 +1,28 @@
-use std::io::Write;
+use {
+    super::generic::panic,
+    crate::{
+        checksums::crc32,
+        padding::{write_aligned_pad_end, write_aligned_pad_start},
+    },
+    bstr::ByteSlice,
+    std::io::Write,
+};
 
-use bstr::ByteSlice;
+/// In-memory representation of a ZIP file's essential archive contents.
+#[derive(Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
+pub struct Zip {
+    pub files: Vec<(Vec<u8>, Vec<u8>)>,
+}
 
-use crate::checksums::crc32;
-use crate::padding::write_aligned_pad_end;
-use crate::padding::write_aligned_pad_start;
+impl Zip {
+    pub fn to_bytes(&self) -> Vec<u8> {
+        todo!()
+    }
+
+    pub fn from_bytes(bytes: &[u8]) -> Result<Self, panic> {
+        todo!()
+    }
+}
 
 const BLOCK_SIZE: usize = 1024;
 

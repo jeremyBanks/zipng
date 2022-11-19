@@ -1,9 +1,10 @@
-use std::fmt::Debug;
-use std::fmt::Display;
-use std::process::ExitCode;
-use std::process::Termination;
-
-use static_assertions::assert_impl_all;
+use {
+    static_assertions::assert_impl_all,
+    std::{
+        fmt::{Debug, Display},
+        process::{ExitCode, Termination},
+    },
+};
 
 pub fn default<T>() -> T
 where T: Default {
@@ -80,10 +81,7 @@ impl Termination for never {
     }
 }
 
-use std::cmp::Ordering;
-use std::fmt;
-use std::hash::Hash;
-use std::marker::PhantomData;
+use std::{cmp::Ordering, fmt, hash::Hash, marker::PhantomData};
 
 /// This is a convenience wrapper for `PhantomData<fn(T) -> T>`, which
 /// seems to be the right way to defined a `PhantomData` without affecting

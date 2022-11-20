@@ -6,7 +6,10 @@ use {
         generic::panic,
     },
     bitvec::vec::BitVec,
-    std::ops::{Not, Range},
+    std::{
+        borrow::Cow,
+        ops::{Not, Range},
+    },
     tracing::warn,
 };
 
@@ -25,13 +28,24 @@ pub struct Png {
     pub transparency_data: Option<Vec<u8>>,
 }
 
+/// A [`Png`] or input that can be converted to one.
+pub trait ToPng {
+    fn to_png(&self) -> Cow<Png>;
+}
+
+impl ToPng for Png {
+    fn to_png(&self) -> Cow<Png> {
+        Cow::Borrowed(self)
+    }
+}
+
 impl Png {
     pub fn to_bytes(&self) -> Vec<u8> {
         todo!()
     }
 
     pub fn from_bytes(bytes: &[u8]) -> Result<Self, panic> {
-        todo!()
+        unimplemented!()
     }
 
     /// Sets the pixel at the given coordinates to the given color.

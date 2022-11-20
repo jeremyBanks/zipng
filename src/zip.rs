@@ -5,7 +5,7 @@ use {
         padding::{write_aligned_pad_end, write_aligned_pad_start},
     },
     bstr::ByteSlice,
-    std::io::Write,
+    std::{borrow::Cow, io::Write},
 };
 
 /// In-memory representation of a ZIP file's essential archive contents.
@@ -21,6 +21,17 @@ impl Zip {
 
     pub fn from_bytes(bytes: &[u8]) -> Result<Self, panic> {
         todo!()
+    }
+}
+
+/// A [`Zip`] or input that can be converted to one.
+pub trait ToZip {
+    fn to_zip(&self) -> Cow<Zip>;
+}
+
+impl ToZip for Zip {
+    fn to_zip(&self) -> Cow<Zip> {
+        Cow::Borrowed(self)
     }
 }
 

@@ -17,15 +17,16 @@ pub mod r#impl {
     pub mod generic;
     pub mod padding;
     pub mod png;
+    pub mod poly;
     pub mod zip;
     pub mod zlib;
 }
 
 #[doc(inline)]
 pub use crate::{
-    font::{Font, FONTS},
-    png::{BitDepth, ColorType, Png},
-    zip::Zip,
+    font::Font,
+    png::{BitDepth, ColorType, Png, ToPng},
+    zip::{ToZip, Zip},
 };
 
 /// Creates a ZIP archive with this crate's suggested/canonical settings.
@@ -81,9 +82,9 @@ pub fn text_png(text: &str) -> Vec<u8> {
         ..default()
     };
 
-    let font = FONTS[0];
+    // let font = FONTS[0];
 
-    font.render(&mut canvas, text).unwrap();
+    // font.render(&mut canvas, text).unwrap();
 
     canvas.to_bytes()
 }

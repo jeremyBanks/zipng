@@ -24,9 +24,8 @@ pub mod r#impl {
 
 #[doc(inline)]
 pub use crate::{
-    font::Font,
-    png::{BitDepth, ColorType, Png, ToPng},
-    zip::{ToZip, Zip},
+    brotli::*, checksums::*, deflate::*, font::*, generic::*, padding::*, png::*, poly::*, zip::*,
+    zlib::*,
 };
 
 /// Creates a ZIP archive with this crate's suggested/canonical settings.

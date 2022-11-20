@@ -6,7 +6,7 @@ use {
     },
     zipng::{
         r#impl::{
-            font::{Font, Mini5pt, FONTS},
+            font::Font,
             generic::panic,
             png::{
                 write_png,

@@ -27,7 +27,7 @@ impl Png {
     }
 
     /// Serializes this [`Png`] as a PNG image file.
-    pub fn write(&self, output: &impl Write) -> Result<usize, panic> {
+    pub fn write(&self, output: &mut impl Write) -> Result<usize, panic> {
         todo!()
     }
 
@@ -51,7 +51,7 @@ impl Png {
     /// Sets the pixel at the given coordinates to the given color.
     /// The required length of the color data may vary depending on the
     /// color type and bit depth of the image.
-    pub fn set_pixel(&mut self, x: u32, y: u32, color: &[u8]) -> Result<(), ()> {
+    pub fn set_pixel(&mut self, x: u32, y: u32, color: &[u8]) -> Result<(), never> {
         todo!()
     }
 }

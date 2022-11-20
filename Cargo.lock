@@ -575,7 +575,7 @@ dependencies = [
 
 [[package]]
 name = "zipng"
-version = "0.20221122.0-dev.2"
+version = "0.20221122.0-dev.3"
 dependencies = [
  "bitvec",
  "brotli",

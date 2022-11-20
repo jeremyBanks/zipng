@@ -5,7 +5,7 @@ edition = "2021"
 license = "MIT OR Apache-2.0"
 name = "zipng"
 repository = "https://github.com/jeremyBanks/zipng"
-version = "0.20221122.0-dev.2"
+version = "0.20221122.0-dev.3"
 
 [dependencies]
 bitvec = "1.0.1"

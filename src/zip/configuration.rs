@@ -3,22 +3,45 @@ use {
     std::{cmp::Ordering, fmt::Debug},
 };
 
+/// A reference to an entry in a [`Zip`] archive.
 #[non_exhaustive]
-pub struct FileEntry<'name, 'body> {
+pub struct ZipEntry<'name, 'body> {
     pub name: &'name [u8],
     pub body: &'body [u8],
 }
 
-type FilePredicate = fn(&FileEntry) -> bool;
-type FileComparison = fn(&FileEntry, &FileEntry) -> Ordering;
+/// Predicate function used for selecting entries in a [`Zip`] archive.
+pub type ZipEntryPredicate = fn(&ZipEntry) -> bool;
 
-pub static SORT_BY_NAME: FileComparison = |a, b| (a.name, a.body).cmp(&(b.name, b.body));
-pub static SORT_BY_BODY: FileComparison = |a, b| (a.body, a.name).cmp(&(b.body, b.name));
+/// Comparison function used for ordering entries in a [`Zip`] archive.
+pub type ZipEntryComparison = fn(&ZipEntry, &ZipEntry) -> Ordering;
 
-/// Picks the `mimetype` magic header file used by EPUB and OpenDocument.
-pub static PICK_MIMETYPE: FilePredicate =
+/// Sort file by name, first based on the number of slash `/` path separator
+/// characters, then lexicographically.
+pub static SORT_BY_NAME: ZipEntryComparison = |a, b| {
+    (
+        a.name.iter().filter(|&&c| c == b'/').collect::<Vec<_>>(),
+        a.name,
+    )
+        .cmp(&(
+            b.name.iter().filter(|&&c| c == b'/').collect::<Vec<_>>(),
+            b.name,
+        ))
+};
+
+/// Sorts files lexicographically based on their content, then applies
+/// [`SORT_BY_NAME`].
+pub static SORT_BY_BODY: ZipEntryComparison = |a, b| {
+    (a.body, a.name)
+        .cmp(&(b.body, b.name))
+        .then_with(|| SORT_BY_NAME(a, b))
+};
+
+/// Pins the `mimetype` magic header file used by EPUB and OpenDocument.
+pub static PIN_MIMETYPE: ZipEntryPredicate =
     |file| file.name == b"mimetype" && file.body.is_ascii() && file.body.len() <= 0xFF;
 
+/// Configuration determining how the [`Zip`] archive is serialized.
 #[derive(Clone)]
 #[non_exhaustive]
 pub struct ZipConfiguration {
@@ -27,12 +50,12 @@ pub struct ZipConfiguration {
     /// Align and pad all body data into blocks of this many bytes.
     pub body_alignment: usize,
     /// Comparison function used to determine file body ordering.
-    pub sort_body_by: Option<FileComparison>,
+    pub sort_body_by: Option<ZipEntryComparison>,
     /// Comparison function used to determine file metadata ordering.
-    pub sort_meta_by: Option<FileComparison>,
+    pub sort_meta_by: Option<ZipEntryComparison>,
     /// Predicate function used to determine files that should be pinned to the
     /// top of the archive without alignment or padding.
-    pub pick_header_with: Option<FilePredicate>,
+    pub pin_header_with: Option<ZipEntryPredicate>,
 }
 
 impl ZipConfiguration {
@@ -68,7 +91,7 @@ impl Default for ZipConfiguration {
             body_alignment: 1024,
             sort_body_by: SORT_BY_BODY.into(),
             sort_meta_by: SORT_BY_NAME.into(),
-            pick_header_with: PICK_MIMETYPE.into(),
+            pin_header_with: PIN_MIMETYPE.into(),
         }
     }
 }

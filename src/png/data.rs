@@ -1,7 +1,11 @@
 use {
-    crate::{generic::never, panic, ToPng},
+    crate::{never, panic, ToPng},
+    serde::{Deserialize, Serialize},
     std::io::{Read, Write},
 };
+
+#[doc(hidden)]
+pub use self::{BitDepth::*, ColorType::*};
 
 /// In-memory representation of a PNG file's essential image contents.
 #[derive(Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord, Default)]
@@ -93,8 +97,6 @@ pub enum BitDepth {
     SixteenBit = 16,
 }
 
-pub use BitDepth::*;
-
 /// The color type of an image, as defined in the PNG specification.
 ///
 /// > There are five types of PNG image. Corresponding to each type is a
@@ -116,9 +118,6 @@ pub enum ColorType {
     LuminanceAlpha = 4,
     RedGreenBlueAlpha = 6,
 }
-
-use serde::{Deserialize, Serialize};
-pub use ColorType::*;
 
 impl BitDepth {
     pub fn bits_per_sample(&self) -> usize {

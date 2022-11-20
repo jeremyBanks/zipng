@@ -3,7 +3,11 @@ use std::ops::Range;
 /// Writes `bytes` to `buffer`, padded with trailing zeroes to the next multiple
 /// of `alignment`. Returns the range that `bytes` was written to in `buffer`,
 /// excluding the padding.
-pub fn write_aligned_pad_end(buffer: &mut Vec<u8>, bytes: &[u8], alignment: usize) -> Range<usize> {
+pub(crate) fn write_aligned_pad_end(
+    buffer: &mut Vec<u8>,
+    bytes: &[u8],
+    alignment: usize,
+) -> Range<usize> {
     let index_before_data = buffer.len();
 
     buffer.extend_from_slice(bytes);
@@ -25,7 +29,7 @@ pub fn write_aligned_pad_end(buffer: &mut Vec<u8>, bytes: &[u8], alignment: usiz
 /// Writes `bytes` to `buffer`, padded with leading zeroes to the next multiple
 /// of `alignment`. Returns the range that `bytes` was written to in `buffer`,
 /// excluding the padding.
-pub fn write_aligned_pad_start(
+pub(crate) fn write_aligned_pad_start(
     buffer: &mut Vec<u8>,
     bytes: &[u8],
     alignment: usize,

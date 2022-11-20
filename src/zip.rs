@@ -1,41 +1,73 @@
 use {
-    super::generic::panic,
     crate::{
         checksums::crc32,
+        never,
         padding::{write_aligned_pad_end, write_aligned_pad_start},
+        panic,
     },
     bstr::ByteSlice,
-    std::{borrow::Cow, io::Write},
+    serde::{Deserialize, Serialize},
+    std::io::{Read, Write},
 };
+mod configuration;
+mod to_zip;
+
+pub use self::{configuration::*, to_zip::*};
 
 /// In-memory representation of a ZIP file's essential archive contents.
-#[derive(Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, Default)]
 pub struct Zip {
+    pub configuration: ZipConfiguration,
     pub files: Vec<(Vec<u8>, Vec<u8>)>,
 }
 
 impl Zip {
-    pub fn to_bytes(&self) -> Vec<u8> {
+    /// Creates a new [`Zip`] from the given data.
+    pub fn new(data: &impl ToZip) -> Self {
+        data.to_zip().into_owned()
+    }
+
+    /// Serializes this [`Zip`] as a ZIP archive file.
+    pub fn write(&self, output: &mut impl Write) -> Result<usize, panic> {
         todo!()
     }
 
-    pub fn from_bytes(bytes: &[u8]) -> Result<Self, panic> {
+    /// Deserializes a ZIP archive file into a [`Zip`].
+    pub fn read(input: &impl Read) -> Result<Self, panic> {
         todo!()
     }
-}
 
-/// A [`Zip`] or input that can be converted to one.
-pub trait ToZip {
-    fn to_zip(&self) -> Cow<Zip>;
-}
+    /// Serializes this [`Zip`] into a byte vector as a ZIP archive file.
+    pub fn write_vec(&self) -> Result<Vec<u8>, never> {
+        let mut output = Vec::new();
+        self.write(&mut output)?;
+        Ok(output)
+    }
 
-impl ToZip for Zip {
-    fn to_zip(&self) -> Cow<Zip> {
-        Cow::Borrowed(self)
+    /// Deserialize a ZIP archive file into a [`Zip`] from a byte vector.
+    pub fn read_slice(input: &[u8]) -> Result<Self, never> {
+        Ok(Self::read(&input)?)
     }
 }
 
-const BLOCK_SIZE: usize = 1024;
+impl Serialize for Zip {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where S: serde::Serializer {
+        serializer.serialize_bytes(
+            &self
+                .write_vec()
+                .expect("serializing Zip to bytes should not fail"),
+        )
+    }
+}
+
+impl<'de> Deserialize<'de> for Zip {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where D: serde::Deserializer<'de> {
+        let bytes: &[u8] = serde_bytes::deserialize(deserializer)?;
+        Self::read_slice(bytes).map_err(serde::de::Error::custom)
+    }
+}
 
 pub fn zip<'files, Files>(files: Files) -> Vec<u8>
 where Files: 'files + IntoIterator<Item = (&'files [u8], &'files [u8])> {
@@ -59,10 +91,12 @@ where Files: 'files + IntoIterator<Item = (&'files [u8], &'files [u8])> {
     zip_with(&files, Vec::new(), b"")
 }
 
+const BLOCK_SIZE: usize = 1024;
+
 /// Creates a zip file from files in the order given, appending to the `prefix`
 /// buffer `Vec` (which does not need to be empty), and ending with the
 /// given `suffix`,
-pub fn zip_with(files: &[(&[u8], &[u8])], prefix: Vec<u8>, suffix: &[u8]) -> Vec<u8> {
+pub(crate) fn zip_with(files: &[(&[u8], &[u8])], prefix: Vec<u8>, suffix: &[u8]) -> Vec<u8> {
     let mut output = prefix;
 
     if suffix.find(b"PK\x05\x06").is_some() {

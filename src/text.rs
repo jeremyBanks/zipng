@@ -1,5 +1,7 @@
 #![allow(clippy::unusual_byte_groupings)]
 
+pub mod fonts;
+
 use {
     crate::{panic, Png},
     bitvec::{

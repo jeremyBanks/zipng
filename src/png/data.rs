@@ -1,4 +1,7 @@
-use crate::{panic, ToPng};
+use {
+    crate::{generic::never, panic, ToPng},
+    std::io::{Read, Write},
+};
 
 /// In-memory representation of a PNG file's essential image contents.
 #[derive(Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord, Default)]
@@ -14,16 +17,31 @@ pub struct Png {
 }
 
 impl Png {
-    pub fn new(data: impl ToPng) -> Self {
+    /// Creates a new [`Png`] from the given data.
+    pub fn new(data: &impl ToPng) -> Self {
         data.to_png().into_owned()
     }
 
-    pub fn to_bytes(&self) -> Vec<u8> {
+    /// Serializes this [`Png`] as a PNG image file.
+    pub fn write(&self, output: &impl Write) -> Result<usize, panic> {
         todo!()
     }
 
-    pub fn from_bytes(bytes: &[u8]) -> Result<Self, panic> {
-        unimplemented!()
+    /// Deserializes a PNG image file into a [`Png`].
+    pub fn read(input: &impl Read) -> Result<Self, panic> {
+        todo!()
+    }
+
+    /// Serializes this [`Png`] into a byte vector as a PNG image file.
+    pub fn write_vec(&self) -> Result<Vec<u8>, never> {
+        let mut output = Vec::new();
+        self.write(&mut output)?;
+        Ok(output)
+    }
+
+    /// Deserialize a PNG image file into a [`Png`] from a byte vector.
+    pub fn read_slice(input: &[u8]) -> Result<Self, never> {
+        Ok(Self::read(&input)?)
     }
 
     /// Sets the pixel at the given coordinates to the given color.
@@ -31,6 +49,25 @@ impl Png {
     /// color type and bit depth of the image.
     pub fn set_pixel(&mut self, x: u32, y: u32, color: &[u8]) -> Result<(), ()> {
         todo!()
+    }
+}
+
+impl Serialize for Png {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where S: serde::Serializer {
+        serializer.serialize_bytes(
+            &self
+                .write_vec()
+                .expect("serializing Png to bytes should not fail"),
+        )
+    }
+}
+
+impl<'de> Deserialize<'de> for Png {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where D: serde::Deserializer<'de> {
+        let bytes: &[u8] = serde_bytes::deserialize(deserializer)?;
+        Self::read_slice(&bytes).map_err(serde::de::Error::custom)
     }
 }
 
@@ -48,13 +85,15 @@ impl Png {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
 #[repr(u8)]
 pub enum BitDepth {
-    One = 1,
-    Two = 2,
-    Four = 4,
+    OneBit = 1,
+    TwoBit = 2,
+    FourBit = 4,
     #[default]
-    Eight = 8,
-    Sixteen = 16,
+    EightBit = 8,
+    SixteenBit = 16,
 }
+
+pub use BitDepth::*;
 
 /// The color type of an image, as defined in the PNG specification.
 ///
@@ -77,6 +116,9 @@ pub enum ColorType {
     LuminanceAlpha = 4,
     RedGreenBlueAlpha = 6,
 }
+
+use serde::{Deserialize, Serialize};
+pub use ColorType::*;
 
 impl BitDepth {
     pub fn bits_per_sample(&self) -> usize {

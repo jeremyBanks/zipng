@@ -4,32 +4,20 @@ use {
         vec::BitVec,
         view::AsBits,
     },
-    zipng::{
-        r#impl::{
-            font::Font,
-            generic::panic,
-            png::{
-                write_png,
-                BitDepth::{Eight, One},
-                ColorType::{Indexed, RedGreenBlue},
-                PALLETTE_8_BIT_DATA,
-            },
-        },
-        text_png,
-    },
+    zipng::*,
 };
 
 fn main() -> Result<(), panic> {
     let text = "Hello, world!";
-    let bytes = text_png(text);
+    // let bytes = text_png(text);
 
-    eprintln!(
-        "Rendered {} characters of text in {} bytes of PNG.",
-        text.chars().count(),
-        bytes.len()
-    );
+    // eprintln!(
+    //     "Rendered {} characters of text in {} bytes of PNG.",
+    //     text.chars().count(),
+    //     bytes.len()
+    // );
 
-    std::fs::write("target/out.png", bytes)?;
+    // std::fs::write("target/out.png", bytes)?;
 
     /*
     let mut data = Vec::new();

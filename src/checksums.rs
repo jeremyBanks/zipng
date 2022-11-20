@@ -1,6 +1,6 @@
 use crc::Crc;
 
-/// CRC-32 configured as per ISO 3309
+/// Compute the CRC-32 checksum of a byte slice as per ISO 3309
 pub fn crc32(bytes: &[u8]) -> u32 {
     const CRC_32_ISO_HDLC: Crc<u32> = Crc::<u32>::new(&crc::CRC_32_ISO_HDLC);
     let mut hasher = CRC_32_ISO_HDLC.digest();
@@ -8,7 +8,7 @@ pub fn crc32(bytes: &[u8]) -> u32 {
     hasher.finalize()
 }
 
-// Adler-32
+/// Compute the Adler-32 checksum of a byte slice
 pub fn adler32(bytes: &[u8]) -> u32 {
     simd_adler32::adler32(&bytes)
 }

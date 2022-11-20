@@ -6,48 +6,22 @@ use {
     },
 };
 
-pub fn default<T>() -> T
+pub(crate) fn default<T>() -> T
 where T: Default {
     T::default()
 }
 
-/// equivalent to [`core::mem::drop`]
-pub fn noop_move<T>(_x: T) {}
-/// equivalent to [`core::convert::identity`]
-pub fn noop_move_move<T>(x: T) -> T {
-    x
-}
-pub fn noop_ref<T>(_x: &T) {}
-pub fn noop_ref_ref<T>(x: &T) -> &T {
-    x
-}
-pub fn noop_mut<T>(_x: &mut T) {}
-pub fn noop_mut_mut<T>(x: &mut T) -> &mut T {
-    x
-}
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[allow(non_camel_case_types)]
+#[doc(hidden)]
 /// An uninhabited [`!`]-like "never" type, with trait implementations as needed
 /// for convenience within this crate's types.
 pub enum never {}
-
 assert_impl_all!(never: Send, Sync);
-assert_impl_all!(panic: Send, Sync);
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-#[allow(non_camel_case_types)]
-/// An uninhabited [`!`]-like "never" type that provides a panicking
-/// implementation of `From` for any `Display + Debug` error type,
-/// with trait implementations as needed for convenience within this crate's.
-pub enum panic {}
-
-impl<Err> From<Err> for panic
-where Err: Display + Debug
-{
-    #[track_caller]
-    fn from(error: Err) -> Self {
-        panic!("{error}")
+impl Display for never {
+    fn fmt(&self, _: &mut fmt::Formatter<'_>) -> fmt::Result {
+        unreachable!()
     }
 }
 
@@ -63,19 +37,31 @@ impl From<panic> for never {
     }
 }
 
-impl From<never> for panic {
-    fn from(_: never) -> panic {
-        unreachable!()
-    }
-}
-
-impl Termination for panic {
+impl Termination for never {
     fn report(self) -> ExitCode {
         unreachable!()
     }
 }
 
-impl Termination for never {
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[allow(non_camel_case_types)]
+/// An uninhabited [`!`]-like "never" type that provides a panicking
+/// implementation of `From` for any `Display + Debug` error type,
+/// with trait implementations as needed for convenience within this crate's.
+#[doc(hidden)]
+pub enum panic {}
+assert_impl_all!(panic: Send, Sync);
+
+impl<Err> From<Err> for panic
+where Err: Display + Debug
+{
+    #[track_caller]
+    fn from(error: Err) -> Self {
+        panic!("{error}")
+    }
+}
+
+impl Termination for panic {
     fn report(self) -> ExitCode {
         unreachable!()
     }

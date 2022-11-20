@@ -1,6 +1,9 @@
 use {
-    super::palettes::PALLETTE_8_BIT_DATA,
-    crate::{BitDepth, ColorType, Luminance, One, Png, RedGreenBlue, RedGreenBlueAlpha, Two},
+    super::palettes::EIGHT_BIT_DATA,
+    crate::{
+        default, BitDepth, ColorType, Luminance, OneBit, Png, RedGreenBlue, RedGreenBlueAlpha,
+        TwoBit,
+    },
     bytemuck::{bytes_of, cast},
     std::borrow::Cow::{self, Borrowed, Owned},
     tracing::warn,
@@ -24,21 +27,21 @@ impl ToPng for [u8] {
     ///
     /// Data beyond the first 32MiB may be ignored.
     fn to_png(&self) -> Cow<Png> {
-        let mut bit_depth = BitDepth::Eight;
+        let mut bit_depth = BitDepth::EightBit;
         let mut color_type = ColorType::Indexed;
-        let mut palette_data = Some(PALLETTE_8_BIT_DATA.to_vec());
+        let mut palette_data = Some(bytes_of(&EIGHT_BIT_DATA).to_vec());
         let transparency_data = None;
         let width;
         match self.len() {
             len @ 0x0..=0x20 => {
                 palette_data = None;
-                bit_depth = One;
+                bit_depth = OneBit;
                 color_type = Luminance;
                 width = 16.min(len * 8);
             },
             0x21..=0x100 => {
                 palette_data = None;
-                bit_depth = Two;
+                bit_depth = TwoBit;
                 color_type = Luminance;
                 width = 16;
             },
@@ -99,12 +102,55 @@ impl<const WIDTH: usize, const HEIGHT: usize> ToPng for [[u8; WIDTH]; HEIGHT] {
         Owned(Png {
             width: WIDTH as u32,
             height: HEIGHT as u32,
-            bit_depth: BitDepth::Eight,
+            bit_depth: BitDepth::EightBit,
             color_type: RedGreenBlue,
             palette_data: None,
             transparency_data: None,
             pixel_data,
         })
+    }
+}
+
+impl<const WIDTH: usize, const HEIGHT: usize> ToPng for [[[u8; 3]; WIDTH]; HEIGHT] {
+    /// Create a [`Png`] from a 2D array of RGB pixel arrays.
+    fn to_png(&self) -> Cow<Png> {
+        todo!()
+    }
+}
+
+impl<const WIDTH: usize, const HEIGHT: usize> ToPng for [[[u8; 4]; WIDTH]; HEIGHT] {
+    /// Create a [`Png`] from a 2D array of RGBA pixel arrays.
+    fn to_png(&self) -> Cow<Png> {
+        todo!()
+    }
+}
+
+impl<const WIDTH: usize, const HEIGHT: usize> ToPng for [[u32; WIDTH]; HEIGHT] {
+    /// Create a [`Png`] from a 2D array of `u32` RGBA pixels.
+    fn to_png(&self) -> Cow<Png> {
+        todo!()
+    }
+}
+
+impl<const WIDTH: usize, const HEIGHT: usize> ToPng for [[(u8, u8, u8); WIDTH]; HEIGHT] {
+    /// Create a [`Png`] from a 2D array of RGB pixel tuples.
+    fn to_png(&self) -> Cow<Png> {
+        Owned(
+            self.map(|row| row.map(|(r, g, b)| [r, g, b]))
+                .to_png()
+                .into_owned(),
+        )
+    }
+}
+
+impl<const WIDTH: usize, const HEIGHT: usize> ToPng for [[(u8, u8, u8, u8); WIDTH]; HEIGHT] {
+    /// Create a [`Png`] from a 2D array of RGBA pixel tuples.
+    fn to_png(&self) -> Cow<Png> {
+        Owned(
+            self.map(|row| row.map(|(r, g, b, a)| [r, g, b, a]))
+                .to_png()
+                .into_owned(),
+        )
     }
 }
 
@@ -115,23 +161,49 @@ impl ToPng for str {
     }
 }
 
-impl<const WIDTH: usize, const HEIGHT: usize> ToPng for [[(u8, u8, u8); WIDTH]; HEIGHT] {
-    /// Create a [`Png`] from a 2D array of `(u8, u8, u8)` RGB pixels.
+impl ToPng for (usize, usize) {
+    /// Create a new 8-bit RGB [`Png`] from a `(width, height)` usize tuple.
     fn to_png(&self) -> Cow<Png> {
         todo!()
     }
 }
 
-impl<const WIDTH: usize, const HEIGHT: usize> ToPng for [[(u8, u8, u8, u8); WIDTH]; HEIGHT] {
-    /// Create a [`Png`] from a 2D array of `(u8, u8, u8, u8)` RGBA pixels.
+impl ToPng for ((usize, usize), (BitDepth, ColorType)) {
+    /// Create a new [`Png`] from a `((width, height), (BitDepth, ColorType))`
+    /// usize tuple.
     fn to_png(&self) -> Cow<Png> {
         todo!()
     }
 }
 
-impl<const WIDTH: usize, const HEIGHT: usize> ToPng for [[u32; WIDTH]; HEIGHT] {
-    /// Create a [`Png`] from a 2D array of `u32` RGBA pixels.
+impl ToPng for ((usize, usize), (BitDepth, &[u8])) {
+    /// Create a new [`Png`] from a `((width, height), (BitDepth, palette))`
+    /// usize tuple.
     fn to_png(&self) -> Cow<Png> {
         todo!()
+    }
+}
+
+impl ToPng for ((usize, usize), &[u8]) {
+    /// Create a new [`Png`] from a `((width, height), pixel data)`
+    /// usize tuple.
+    fn to_png(&self) -> Cow<Png> {
+        todo!()
+    }
+}
+
+impl ToPng for fn(&mut Png) {
+    /// Create a [`Png`] from a function that mutates a [`Png::default`].
+    fn to_png(&self) -> Cow<Png> {
+        let mut png = default();
+        self(&mut png);
+        Owned(png)
+    }
+}
+
+impl ToPng for fn(Png) -> Png {
+    /// Create a [`Png`] from a function that mutates a [`Png::default`].
+    fn to_png(&self) -> Cow<Png> {
+        Owned(self(default()))
     }
 }

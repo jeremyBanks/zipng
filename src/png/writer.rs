@@ -16,19 +16,19 @@ pub fn write_png_header(
     write_png_chunk(buffer, b"IHDR", &{
         let mut data = Vec::new();
         // pixel width
-        data.extend_from_slice(&u32::from(width).to_be_bytes());
+        data.extend_from_slice(&width.to_be_bytes());
         // pixel height
-        data.extend_from_slice(&u32::from(height).to_be_bytes());
+        data.extend_from_slice(&height.to_be_bytes());
         // color bit depth
         data.extend_from_slice(&u8::from(color_depth).to_be_bytes());
         // color type: grayscale
         data.extend_from_slice(&u8::from(color_mode).to_be_bytes());
         // compression method: deflate
-        data.extend_from_slice(&u8::from(0_u8).to_be_bytes());
+        data.extend_from_slice(&0_u8.to_be_bytes());
         // filter method: basic
-        data.extend_from_slice(&u8::from(0_u8).to_be_bytes());
+        data.extend_from_slice(&0_u8.to_be_bytes());
         // interlace method: none
-        data.extend_from_slice(&u8::from(0_u8).to_be_bytes());
+        data.extend_from_slice(&0_u8.to_be_bytes());
 
         data
     });
@@ -54,9 +54,9 @@ pub fn write_non_deflated(buffer: &mut Vec<u8>, data: &[u8]) -> Range<usize> {
     let cmf = 0b_0111_1000;
     buffer.push(cmf);
     // zlib flag bits: no preset dictionary, compression level 0
-    let mut flg: u8 = 0b_00_0_00000;
+    let mut flg: u8 = 0b0000_0000;
     // zlib flag and check bits
-    flg |= 0b_11111 - ((((cmf as u16) << 8) | (flg as u16)) % 0b_11111) as u8;
+    flg |= 0b1_1111 - ((((cmf as u16) << 8) | (flg as u16)) % 0b1_1111) as u8;
     buffer.push(flg);
 
     let mut before = None;

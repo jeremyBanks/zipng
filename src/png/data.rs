@@ -1,5 +1,6 @@
 use {
-    crate::{never, panic, ToPng},
+    crate::{never, palettes::EIGHT_BIT_HEAT, panic, ToPng},
+    bytemuck::bytes_of,
     serde::{Deserialize, Serialize},
     std::io::{Read, Write},
 };
@@ -12,8 +13,8 @@ pub use self::{BitDepth::*, ColorType::*};
 #[non_exhaustive]
 pub struct Png {
     pub pixel_data: Vec<u8>,
-    pub width: u32,
-    pub height: u32,
+    pub width: usize,
+    pub height: usize,
     pub bit_depth: BitDepth,
     pub color_type: ColorType,
     pub palette_data: Option<Vec<u8>>,
@@ -26,18 +27,174 @@ impl Png {
         data.to_png().into_owned()
     }
 
+    /// Create a new indexed-color [`Png`] with the given dimensions, bit depth,
+    /// and color palette.
+    pub fn new_indexed(width: usize, height: usize, bit_depth: BitDepth, palette: &[u8]) -> Self {
+        let palette_data = Some(palette.to_vec());
+        let pixel_count = width * height;
+        let pixel_data =
+            vec![
+                0;
+                pixel_count * bit_depth.bits_per_sample() * ColorType::Indexed.samples_per_pixel()
+                    / 8
+            ];
+        Png {
+            width,
+            height,
+            bit_depth,
+            color_type: ColorType::Indexed,
+            palette_data,
+            transparency_data: None,
+            pixel_data,
+        }
+    }
+
+    /// Create a new greyscale [`Png`] with the given dimensions and bit depth.
+    pub fn new_grayscale(width: usize, height: usize, bit_depth: BitDepth) -> Self {
+        let color_type = Luminance;
+        let pixel_data = vec![0u8; width * height * color_type.samples_per_pixel()];
+        Png {
+            pixel_data,
+            width,
+            height,
+            bit_depth,
+            color_type,
+            palette_data: None,
+            transparency_data: None,
+        }
+    }
+
+    /// Creates a new 24-bit RGB [`Png`] with the given dimensions.
+    pub fn new_rgb(width: usize, height: usize) -> Self {
+        let bit_depth = EightBit;
+        let color_type = RedGreenBlue;
+        let pixel_data = vec![0u8; width * height * color_type.samples_per_pixel()];
+        Png {
+            pixel_data,
+            width,
+            height,
+            bit_depth,
+            color_type,
+            palette_data: None,
+            transparency_data: None,
+        }
+    }
+
+    /// Creates a new 32-bit RGBA [`Png`] with the given dimensions.
+    pub fn new_rgba(width: usize, height: usize) -> Self {
+        let bit_depth = EightBit;
+        let color_type = RedGreenBlueAlpha;
+        let pixel_data = vec![0u8; width * height * color_type.samples_per_pixel()];
+        Png {
+            pixel_data,
+            width,
+            height,
+            bit_depth,
+            color_type,
+            palette_data: None,
+            transparency_data: None,
+        }
+    }
+
+    /// Create a [`Png`] from unstructured image data bytes.
+    ///
+    /// Data beyond the first 32MiB may be ignored.
+    pub fn from_unstructured_bytes(bytes: &[u8]) -> Self {
+        let mut bit_depth = BitDepth::EightBit;
+        let mut color_type = ColorType::Indexed;
+        let mut palette_data = Some(bytes_of(&EIGHT_BIT_HEAT).to_vec());
+        let transparency_data = None;
+        let width;
+        match bytes.len() {
+            len @ 0x0..=0x20 => {
+                palette_data = None;
+                bit_depth = OneBit;
+                color_type = Luminance;
+                width = 16.min(len * 8);
+            },
+            0x21..=0x100 => {
+                palette_data = None;
+                bit_depth = TwoBit;
+                color_type = Luminance;
+                width = 16;
+            },
+            0x101..=0x200 => {
+                width = 16;
+            },
+            0x201..=0x800 => {
+                width = 32;
+            },
+            0x801..=0x2000 => {
+                width = 64;
+            },
+            0x2001..=0x8000 => {
+                width = 128;
+            },
+            0x8001..=0x20000 => {
+                width = 256;
+            },
+            0x20001..=0x80000 => {
+                width = 512;
+            },
+            0x80001..=0x200000 => {
+                width = 1024;
+            },
+            0x200001..=0x800000 => {
+                width = 1024;
+                palette_data = None;
+                color_type = RedGreenBlue;
+            },
+            _ => {
+                width = 1024;
+                palette_data = None;
+                color_type = RedGreenBlueAlpha;
+            },
+        }
+        let pixel_count =
+            bytes.len() / (bit_depth.bits_per_sample() * color_type.samples_per_pixel());
+
+        let width = 1024.min(width);
+        let height = 8192.min((pixel_count + width - 1) / width);
+
+        Png {
+            width,
+            height,
+            bit_depth,
+            color_type,
+            palette_data,
+            transparency_data,
+            pixel_data: bytes.to_vec(),
+        }
+    }
+
+    /// Returns the number of bits per pixel in the image data of this [`Png`].
+    ///
+    /// This does not relate to the color palette (if one is present).
     pub fn bits_per_pixel(&self) -> usize {
         self.bit_depth.bits_per_sample() * self.color_type.samples_per_pixel()
+    }
+
+    /// Returns the number of bytes per row of pixels in the image data of this
+    /// [`Png`].
+    pub fn image_bytes_per_row(&self) -> usize {
+        (self.width * self.bits_per_pixel() + 7) / 8
+    }
+
+    /// Returns the total number of image bytes that we expect the image to
+    /// contain based on its metadata. **This may not be the actual size of
+    /// the image data in this [`Png`]**, but in most cases it should be.
+    pub fn image_bytes_expected(&self) -> usize {
+        self.image_bytes_per_row() * self.height
     }
 
     /// Serializes this [`Png`] as a PNG image file.
     pub fn write(&self, output: &mut impl Write) -> Result<(), panic> {
         let mut buffer = Vec::new();
-        crate::png::write::write_png(
+        crate::png::writer::write_png(
             &mut buffer,
             self.pixel_data.as_slice(),
-            self.width,
-            self.height,
+            self.width.try_into()?,
+            self.height.try_into()?,
             self.bit_depth,
             self.color_type,
             self.palette_data.as_deref(),
@@ -46,8 +203,8 @@ impl Png {
     }
 
     /// Deserializes a PNG image file into a [`Png`].
-    pub fn read(input: &impl Read) -> Result<Self, panic> {
-        todo!()
+    pub fn read(_input: &impl Read) -> Result<Self, panic> {
+        unimplemented!()
     }
 
     /// Serializes this [`Png`] into a byte vector as a PNG image file.
@@ -62,13 +219,27 @@ impl Png {
         Ok(Self::read(&input)?)
     }
 
+    pub fn mut_pixel(&mut self, x: usize, y: usize) -> &mut [u8] {
+        if !matches!(self.bit_depth, EightBit | SixteenBit) {
+            panic!("not supported for color depths below 8-bit");
+        }
+        let bits_per_pixel = self.bits_per_pixel();
+        let row = y * self.image_bytes_per_row();
+        let col = x * bits_per_pixel / 8;
+        &mut self.pixel_data[row + col..row + col + bits_per_pixel / 8]
+    }
+
     /// Sets the pixel at the given coordinates to the given color.
     /// The required length of the color data may vary depending on the
     /// color type and bit depth of the image.
-    pub fn set_pixel(&mut self, x: u32, y: u32, color: &[u8]) -> Result<(), never> {
-        let stride = self.width as usize * self.bits_per_pixel() / 8;
-        let offset = y as usize * stride + x as usize * self.bits_per_pixel() / 8;
-        self.pixel_data[offset..offset + color.len()].copy_from_slice(color);
+    ///
+    /// This is provided for convenience, but it's not fast. If you need speed,
+    /// modify the image data directly or use a faster library.
+    pub fn set_pixel(&mut self, x: usize, y: usize, color: &[u8]) -> Result<(), never> {
+        if self.bit_depth != EightBit {
+            unimplemented!("only 8-bit color depth is implemented")
+        }
+        self.mut_pixel(x, y).copy_from_slice(color);
         Ok(())
     }
 }
@@ -88,7 +259,7 @@ impl<'de> Deserialize<'de> for Png {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where D: serde::Deserializer<'de> {
         let bytes: &[u8] = serde_bytes::deserialize(deserializer)?;
-        Self::read_slice(&bytes).map_err(serde::de::Error::custom)
+        Self::read_slice(bytes).map_err(serde::de::Error::custom)
     }
 }
 

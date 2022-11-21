@@ -13,10 +13,7 @@
 #![deny(unsafe_code)]
 #![doc = include_str!("../README.md")]
 
-use {
-    crate::generic::*,
-    derive_more::{From, Into},
-};
+use crate::generic::*;
 
 mod checksums;
 mod deflate;

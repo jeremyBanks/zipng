@@ -4,7 +4,7 @@ use {crate::Font, once_cell::sync::Lazy};
 macro_rules! pub_use_lazy_font {
     ($($path:ident as $name:ident),* $(,)?) => {
         $(
-            /// ```
+            /// ```text
             #[doc = include_str!(concat!(stringify!($path), ".json"))]
             /// ```
             pub static $name: Lazy<Font> = Lazy::new(|| {

@@ -28,12 +28,12 @@ impl Zip {
     }
 
     /// Serializes this [`Zip`] as a ZIP archive file.
-    pub fn write(&self, output: &mut impl Write) -> Result<usize, panic> {
+    pub fn write(&self, _output: &mut impl Write) -> Result<usize, panic> {
         todo!()
     }
 
     /// Deserializes a ZIP archive file into a [`Zip`].
-    pub fn read(input: &impl Read) -> Result<Self, panic> {
+    pub fn read(_input: &impl Read) -> Result<Self, panic> {
         todo!()
     }
 

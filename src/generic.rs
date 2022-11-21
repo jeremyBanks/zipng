@@ -112,13 +112,13 @@ impl<T: ?Sized> PartialOrd for PhantomType<T> {
 }
 
 impl<T: ?Sized> Ord for PhantomType<T> {
-    fn cmp(&self, other: &Self) -> Ordering {
+    fn cmp(&self, _other: &Self) -> Ordering {
         Ordering::Equal
     }
 }
 
 impl<T: ?Sized> Hash for PhantomType<T> {
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {}
+    fn hash<H: std::hash::Hasher>(&self, _state: &mut H) {}
 }
 
 impl<T: ?Sized> PhantomType<T> {

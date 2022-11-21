@@ -1,12 +1,14 @@
-use {
-    std::fs,
-    zipng::{
-        palettes::{viridis::INFERNO, MAP_BIT_COUNT},
-        panic, EightBit, Png,
-    },
+use zipng::{
+    dev::{init, save},
+    palettes::{viridis::INFERNO, MAP_BIT_COUNT},
+    panic,
+    BitDepth::EightBit,
+    Png,
 };
 
 fn main() -> Result<(), panic> {
+    init!();
+
     let mut png = Png::new_indexed(512, 128, EightBit, INFERNO);
 
     for y in 0..png.height {
@@ -17,17 +19,7 @@ fn main() -> Result<(), panic> {
         }
     }
 
-    let example = option_env!("CARGO_CRATE_NAME").unwrap_or("example");
-
-    let mut f = fs::OpenOptions::new()
-        .write(true)
-        .create(true)
-        .truncate(true)
-        .open(format!("test_data/{example}.png"))?;
-
-    png.write(&mut f)?;
-
-    Ok(())
+    save!({ png.write_vec()? }.png)
 }
 
 #[test]

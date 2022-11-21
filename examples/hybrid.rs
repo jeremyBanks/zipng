@@ -1,13 +1,15 @@
 use zipng::{
     dev::{init, save},
-    palettes::MAP_BIT_COUNT,
-    panic, EightBit, Png,
+    palettes::{viridis::INFERNO, MAP_BIT_COUNT},
+    panic,
+    BitDepth::EightBit,
+    Png,
 };
 
 fn main() -> Result<(), panic> {
     init!();
 
-    let mut png = Png::new_grayscale(512, 128, EightBit);
+    let mut png = Png::new_indexed(512, 128, EightBit, INFERNO);
 
     for y in 0..png.height {
         for x in 0..png.width {
@@ -17,7 +19,7 @@ fn main() -> Result<(), panic> {
         }
     }
 
-    save!({ png.write_vec()? }.png)
+    save!({ png.write_vec()? }.zip.png)
 }
 
 #[test]

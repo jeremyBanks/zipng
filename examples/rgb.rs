@@ -1,9 +1,11 @@
-use {
-    std::fs,
-    zipng::{panic, Png},
+use zipng::{
+    dev::{init, save},
+    panic, Png,
 };
 
 fn main() -> Result<(), panic> {
+    init!();
+
     let mut png = Png::new_rgb(512, 128);
 
     for y in 0..png.height {
@@ -27,17 +29,7 @@ fn main() -> Result<(), panic> {
         png.set_pixel(png.height * 2 - x + 7, x, &[0xFF, 0xFF, 0xFF])?;
     }
 
-    let example = option_env!("CARGO_CRATE_NAME").unwrap_or("example");
-
-    let mut f = fs::OpenOptions::new()
-        .write(true)
-        .create(true)
-        .truncate(true)
-        .open(format!("test_data/{example}.png"))?;
-
-    png.write(&mut f)?;
-
-    Ok(())
+    save!({ png.write_vec()? }.png)
 }
 
 #[test]

@@ -6,7 +6,8 @@ pub mod fonts;
 
 use crate::panic;
 
-/// A bitmap font that can be used to render text onto a [`Png`] image.
+/// A bitmap font that can be used to render text onto a [`Png`][crate::Png]
+/// image.
 pub struct Font;
 
 impl Font {

@@ -1,3 +1,4 @@
+#![feature(doc_cfg, doc_auto_cfg)]
 #![warn(unused_crate_dependencies, missing_docs)]
 #![cfg_attr(
     all(debug_assertions, any(not(test), feature = "EDITOR")),
@@ -20,13 +21,18 @@ mod deflate;
 mod generic;
 mod padding;
 mod png;
-mod poly;
 mod text;
 mod zip;
+mod zipng;
 mod zlib;
 
+#[cfg(feature = "dev-dependencies")]
+pub mod dev;
+
 #[doc(inline)]
-pub use crate::{checksums::*, deflate::*, generic::*, png::*, poly::*, text::*, zip::*, zlib::*};
+pub use crate::{
+    checksums::*, deflate::*, generic::*, png::*, text::*, zip::*, zipng::*, zipng::*, zlib::*,
+};
 
 /// Creates a ZIP archive.
 pub fn zip_to_vec(zip_contents: &impl ToZip) -> Vec<u8> {

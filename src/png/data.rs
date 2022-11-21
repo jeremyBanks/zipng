@@ -2,7 +2,8 @@ use {
     crate::{never, palettes::crameri::ROMA, panic, ToPng},
     bitvec::slice::BitSlice,
     serde::{Deserialize, Serialize},
-    std::io::{Read, Write},
+    std::io::{Cursor, Read, Write},
+    tracing::instrument,
 };
 
 #[doc(hidden)]
@@ -22,6 +23,7 @@ pub struct Png {
 }
 
 impl Png {
+    #[instrument(skip_all)]
     /// Creates a new [`Png`] from the given data.
     pub fn new(data: &impl ToPng) -> Self {
         data.to_png().into_owned()
@@ -96,6 +98,7 @@ impl Png {
         }
     }
 
+    #[instrument(skip_all)]
     /// Create a [`Png`] from unstructured image data bytes.
     ///
     /// Data beyond the first 32MiB may be ignored.
@@ -187,10 +190,11 @@ impl Png {
         self.image_bytes_per_row() * self.height
     }
 
+    #[instrument(skip_all)]
     /// Serializes this [`Png`] as a PNG image file.
     pub fn write(&self, output: &mut impl Write) -> Result<(), panic> {
         let mut buffer = Vec::new();
-        crate::png::writer::write_png(
+        crate::png::writing::write_png(
             &mut buffer,
             self.pixel_data.as_slice(),
             self.width.try_into()?,
@@ -202,6 +206,8 @@ impl Png {
         Ok(output.write_all(&buffer)?)
     }
 
+    #[cfg(feature = "flate2")]
+    #[instrument(skip_all)]
     /// Deserializes a PNG image file into a [`Png`].
     pub fn read(_input: &impl Read) -> Result<Self, panic> {
         unimplemented!()
@@ -209,11 +215,12 @@ impl Png {
 
     /// Serializes this [`Png`] into a byte vector as a PNG image file.
     pub fn write_vec(&self) -> Result<Vec<u8>, never> {
-        let mut output = Vec::new();
+        let mut output = Cursor::new(Vec::new());
         self.write(&mut output)?;
-        Ok(output)
+        Ok(output.into_inner())
     }
 
+    #[cfg(feature = "flate2")]
     /// Deserialize a PNG image file into a [`Png`] from a byte vector.
     pub fn read_slice(input: &[u8]) -> Result<Self, never> {
         Ok(Self::read(&input)?)

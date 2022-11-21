@@ -1,6 +1,6 @@
 use zipng::{
     dev::{init, save},
-    palettes::{viridis::INFERNO, MAP_BIT_COUNT, MAP_STRATA_4, MAP_STRATA_8},
+    palettes::{viridis::INFERNO, MAP_STRATA_4},
     panic,
     BitDepth::EightBit,
     Png,

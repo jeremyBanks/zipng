@@ -30,9 +30,8 @@ fn main() {
             .map(|s| s.parse().unwrap())
             .collect();
 
-
         writeln!(&mut buffer, "/// _{name}_").unwrap();
-        writeln!(&mut buffer, "pub static {NAME}: &[u8; 768] = &[").unwrap();
+        writeln!(&mut buffer, "pub static {NAME}: &[u8] = &[").unwrap();
 
         for (i, byte) in bytes.iter().enumerate() {
             if i % 16 == 0 {

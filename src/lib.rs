@@ -1,4 +1,16 @@
-#![feature(doc_cfg, doc_auto_cfg)]
+#![warn(unused_crate_dependencies, missing_docs)]
+#![cfg_attr(
+    all(debug_assertions, any(not(test), feature = "EDITOR")),
+    allow(
+        dead_code,
+        unreachable_code,
+        unused_variables,
+        unused_crate_dependencies,
+        unused_imports,
+        missing_docs,
+    )
+)]
+#![deny(unsafe_code)]
 #![doc = include_str!("../README.md")]
 
 use {

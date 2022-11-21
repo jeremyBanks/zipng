@@ -1,4 +1,5 @@
 {
   "window.title": "🦀 ${activeEditorShort} ${dirty}",
-  "rust-analyzer.checkOnSave.command": "clippy"
+  "rust-analyzer.checkOnSave.command": "clippy",
+  "lldb.showDisassembly": "never"
 }

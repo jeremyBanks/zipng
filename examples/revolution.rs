@@ -1,13 +1,4 @@
-use {
-    bitvec::{
-        prelude::{Lsb0, Msb0},
-        vec::BitVec,
-        view::AsBits,
-    },
-    bytemuck::bytes_of,
-    std::fs,
-    zipng::*,
-};
+use {bytemuck::bytes_of, std::fs, zipng::*};
 
 fn main() -> Result<(), panic> {
     let mut png = Png::new(&(
@@ -16,10 +7,10 @@ fn main() -> Result<(), panic> {
     ));
 
     for y in 0..png.height {
-        for x in 0..png.width {}
+        for x in 0..png.width {
+            png.set_pixel(x, y, &[(x ^ y) as u8])?;
+        }
     }
-
-    png.set_pixel(0, 0, &[0x00])?;
 
     let mut f = fs::OpenOptions::new()
         .write(true)

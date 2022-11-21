@@ -1,0 +1,60 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug unit tests in library 'zipng'",
+      "cargo": {
+        "args": [
+          "test",
+          "--no-run",
+          "--lib",
+          "--package=zipng"
+        ],
+        "filter": {
+          "name": "zipng",
+          "kind": "lib"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug executable 'zipng'",
+      "cargo": {
+        "args": [
+          "build",
+          "--bin=zipng",
+          "--package=zipng"
+        ],
+        "filter": {
+          "name": "zipng",
+          "kind": "bin"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug example 'revolution'",
+      "cargo": {
+        "args": [
+          "build",
+          "--example=revolution",
+          "--package=zipng"
+        ],
+        "filter": {
+          "name": "revolution",
+          "kind": "example"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    }
+  ]
+}

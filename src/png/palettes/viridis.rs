@@ -1,5 +1,6 @@
-//! 256-color RGB palettes derived from [matplotlib's _viridis_ colormap variants](https://bids.github.io/colormap/),
-//! designed by Nathaniel J. Smith, Stefan van der Walt, and Eric Firing.
+//! A collection of [`EightBit`][crate::EightBit]
+//! [`RedGreenBlue`][crate::RedGreenBlue] palettes derived from Nathaniel J.
+//! Smith, Stefan van der Walt, and Eric Firing's [_viridis_ colormap variants for matplotlib 1.5](https://bids.github.io/colormap/).
 
 /// _magma_
 pub static MAGMA: &[u8] = &[

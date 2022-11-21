@@ -1,5 +1,5 @@
-//! 256-color RGB palettes from [Fabio Crameri's _Scientific Color
-//! Maps_](https://www.fabiocrameri.ch/colourmaps/).
+//! A collection of [`EightBit`][crate::EightBit]
+//! [`RedGreenBlue`][crate::RedGreenBlue] palettes from Fabio Crameri's [_Scientific Color Maps_](https://www.fabiocrameri.ch/colourmaps/).
 
 /// A list of all included color maps.
 pub static ALL: &[&[u8]] = &[

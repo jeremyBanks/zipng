@@ -3,6 +3,12 @@ use std::{env, fs, io::Write};
 
 fn main() {
     let mut buffer = Vec::new();
+    writeln!(
+        &mut buffer,
+        "//! 256-color RGB palettes derived from Fabio Crameri's _Scientific Color Maps_, \
+         v7.0.1.\n\n"
+    )
+    .unwrap();
 
     for entry in fs::read_dir(env::args_os().nth(1).unwrap()).unwrap() {
         let entry = entry.unwrap();
@@ -24,14 +30,8 @@ fn main() {
             .map(|s| s.parse().unwrap())
             .collect();
 
-        writeln!(
-            &mut buffer,
-            "//! 256-color RGB palettes derived from Fabio Crameri's _Scientific Color Maps_, \
-             v7.0.1."
-        )
-        .unwrap();
 
-        writeln!(&mut buffer, "/// Fabio Crameri's _{name}_ color map").unwrap();
+        writeln!(&mut buffer, "/// _{name}_").unwrap();
         writeln!(&mut buffer, "pub static {NAME}: &[u8; 768] = &[").unwrap();
 
         for (i, byte) in bytes.iter().enumerate() {

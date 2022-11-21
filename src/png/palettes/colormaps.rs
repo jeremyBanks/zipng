@@ -1,5 +1,5 @@
-//! 256-color RGB palettes derived from Fabio Crameri's _Scientific Color Maps_,
-//! v7.0.1.
+//! 256-color RGB palettes derived from [Fabio Crameri's _Scientific Color
+//! Maps_ v7.0.1](https://www.fabiocrameri.ch/colourmaps/).
 
 /// _acton_
 pub static ACTON: &[u8] = &[

@@ -1,18 +1,18 @@
 use {
     std::fs,
     zipng::{
-        palettes::{colormaps::ROMA, EIGHT_BIT_MAPPING},
+        palettes::{colormaps, MAP_BIT_COUNT},
         panic, EightBit, Png,
     },
 };
 
 fn main() -> Result<(), panic> {
-    let mut png = Png::new_indexed(512, 128, EightBit, ROMA);
+    let mut png = Png::new_indexed(512, 128, EightBit, colormaps::ROMA_O);
 
     for y in 0..png.height {
         for x in 0..png.width {
             png.set_pixel(x, y, &[
-                EIGHT_BIT_MAPPING[(x * 4 / 9 + x.abs_diff(y) / 15).min(255)]
+                MAP_BIT_COUNT[(x * 4 / 9 + x.abs_diff(y) / 15).min(255)]
             ])?;
         }
     }

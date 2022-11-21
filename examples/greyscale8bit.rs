@@ -1,6 +1,6 @@
 use {
     std::fs,
-    zipng::{palettes::EIGHT_BIT_MAPPING, panic, EightBit, Png},
+    zipng::{palettes::MAP_BIT_COUNT, panic, EightBit, Png},
 };
 
 fn main() -> Result<(), panic> {
@@ -9,7 +9,7 @@ fn main() -> Result<(), panic> {
     for y in 0..png.height {
         for x in 0..png.width {
             png.set_pixel(x, y, &[
-                EIGHT_BIT_MAPPING[(x * 4 / 9 + x.abs_diff(y) / 15).min(255)]
+                MAP_BIT_COUNT[(x * 4 / 9 + x.abs_diff(y) / 15).min(255)]
             ])?;
         }
     }

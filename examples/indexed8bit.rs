@@ -1,13 +1,13 @@
 use {
     std::fs,
     zipng::{
-        palettes::{colormaps, MAP_BIT_COUNT},
+        palettes::{viridis::INFERNO, MAP_BIT_COUNT},
         panic, EightBit, Png,
     },
 };
 
 fn main() -> Result<(), panic> {
-    let mut png = Png::new_indexed(512, 128, EightBit, colormaps::ROMA_O);
+    let mut png = Png::new_indexed(512, 128, EightBit, INFERNO);
 
     for y in 0..png.height {
         for x in 0..png.width {

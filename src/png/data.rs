@@ -1,5 +1,5 @@
 use {
-    crate::{never, palettes::colormaps::ROMA, panic, ToPng},
+    crate::{never, palettes::crameri::ROMA, panic, ToPng},
     bitvec::slice::BitSlice,
     serde::{Deserialize, Serialize},
     std::io::{Read, Write},

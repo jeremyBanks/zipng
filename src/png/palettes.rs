@@ -1,6 +1,7 @@
 //! Built-in color palettes
 
-pub mod colormaps;
+pub mod crameri;
+pub mod viridis;
 
 /// Kate Rose Morley's _12-bit Rainbow_ 12-color palette, plus black, white, 25%
 /// gray and 75% gray.

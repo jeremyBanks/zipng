@@ -44,7 +44,7 @@ macro_rules! save {
                 .truncate(true)
                 .open(format!("test_data/{}.{}", env!("CARGO_CRATE_NAME"), stringify!($ext)))?;
             #[allow(unused_braces, unused_parentheses)]
-            std::io::Write::write_all(&mut f, &{$value})?;
+            std::io::Write::write_all(&mut f, &*{$value})?;
         )+
         Ok(())
     }};

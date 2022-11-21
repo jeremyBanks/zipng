@@ -1,14 +1,18 @@
-use {bytemuck::bytes_of, std::fs, zipng::*};
+use {
+    bytemuck::bytes_of,
+    std::fs,
+    zipng::{palettes::EIGHT_BIT_MAPPING, *},
+};
 
 fn main() -> Result<(), panic> {
     let mut png = Png::new(&(
-        (128, 128),
+        (512, 512),
         (BitDepth::EightBit, bytes_of(&palettes::EIGHT_BIT_HEAT)),
     ));
 
     for y in 0..png.height {
         for x in 0..png.width {
-            png.set_pixel(x, y, &[(x ^ y) as u8])?;
+            png.set_pixel(x, y, &[EIGHT_BIT_MAPPING[((x + y) / 4) as usize]])?;
         }
     }
 

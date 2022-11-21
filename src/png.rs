@@ -1,5 +1,6 @@
 mod data;
 mod to_png;
+mod write;
 
 pub mod palettes;
 

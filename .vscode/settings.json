@@ -1,5 +1,13 @@
 {
   "window.title": "🦀 ${activeEditorShort} ${dirty}",
   "rust-analyzer.checkOnSave.command": "clippy",
-  "lldb.showDisassembly": "never"
+  "lldb.showDisassembly": "never",
+  "rust-analyzer.semanticHighlighting.operator.enable": true,
+  "rust-analyzer.semanticHighlighting.strings.enable": true,
+  "rust-analyzer.semanticHighlighting.punctuation.specialization.enable": true,
+  "rust-analyzer.semanticHighlighting.punctuation.separate.macro.bang": true,
+  "rust-analyzer.semanticHighlighting.punctuation.enable": true,
+  "rust-analyzer.semanticHighlighting.operator.specialization.enable": true,
+  "lldb.consoleMode": "evaluate",
+  "lldb.launch.terminal": "integrated"
 }

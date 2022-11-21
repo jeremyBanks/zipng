@@ -11,11 +11,11 @@ pub use self::{BitDepth::*, ColorType::*};
 #[derive(Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord, Default)]
 #[non_exhaustive]
 pub struct Png {
+    pub pixel_data: Vec<u8>,
     pub width: u32,
     pub height: u32,
     pub bit_depth: BitDepth,
     pub color_type: ColorType,
-    pub pixel_data: Vec<u8>,
     pub palette_data: Option<Vec<u8>>,
     pub transparency_data: Option<Vec<u8>>,
 }
@@ -26,9 +26,23 @@ impl Png {
         data.to_png().into_owned()
     }
 
+    pub fn bits_per_pixel(&self) -> usize {
+        self.bit_depth.bits_per_sample() * self.color_type.samples_per_pixel()
+    }
+
     /// Serializes this [`Png`] as a PNG image file.
-    pub fn write(&self, output: &mut impl Write) -> Result<usize, panic> {
-        todo!()
+    pub fn write(&self, output: &mut impl Write) -> Result<(), panic> {
+        let mut buffer = Vec::new();
+        crate::png::write::write_png(
+            &mut buffer,
+            self.pixel_data.as_slice(),
+            self.width,
+            self.height,
+            self.bit_depth,
+            self.color_type,
+            self.palette_data.as_deref(),
+        );
+        Ok(output.write_all(&buffer)?)
     }
 
     /// Deserializes a PNG image file into a [`Png`].
@@ -52,7 +66,10 @@ impl Png {
     /// The required length of the color data may vary depending on the
     /// color type and bit depth of the image.
     pub fn set_pixel(&mut self, x: u32, y: u32, color: &[u8]) -> Result<(), never> {
-        todo!()
+        let stride = self.width as usize * self.bits_per_pixel() / 8;
+        let offset = y as usize * stride + x as usize * self.bits_per_pixel() / 8;
+        self.pixel_data[offset..offset + color.len()].copy_from_slice(color);
+        Ok(())
     }
 }
 

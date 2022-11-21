@@ -1,8 +1,8 @@
 use {
     super::palettes::EIGHT_BIT_DATA,
     crate::{
-        default, BitDepth, ColorType, Luminance, OneBit, Png, RedGreenBlue, RedGreenBlueAlpha,
-        TwoBit,
+        default, palettes, BitDepth, ColorType, Luminance, OneBit, Png, RedGreenBlue,
+        RedGreenBlueAlpha, TwoBit,
     },
     bytemuck::{bytes_of, cast},
     std::borrow::Cow::{self, Borrowed, Owned},
@@ -114,21 +114,21 @@ impl<const WIDTH: usize, const HEIGHT: usize> ToPng for [[u8; WIDTH]; HEIGHT] {
 impl<const WIDTH: usize, const HEIGHT: usize> ToPng for [[[u8; 3]; WIDTH]; HEIGHT] {
     /// Create a [`Png`] from a 2D array of RGB pixel arrays.
     fn to_png(&self) -> Cow<Png> {
-        todo!()
+        unimplemented!()
     }
 }
 
 impl<const WIDTH: usize, const HEIGHT: usize> ToPng for [[[u8; 4]; WIDTH]; HEIGHT] {
     /// Create a [`Png`] from a 2D array of RGBA pixel arrays.
     fn to_png(&self) -> Cow<Png> {
-        todo!()
+        unimplemented!()
     }
 }
 
 impl<const WIDTH: usize, const HEIGHT: usize> ToPng for [[u32; WIDTH]; HEIGHT] {
     /// Create a [`Png`] from a 2D array of `u32` RGBA pixels.
     fn to_png(&self) -> Cow<Png> {
-        todo!()
+        unimplemented!()
     }
 }
 
@@ -157,14 +157,14 @@ impl<const WIDTH: usize, const HEIGHT: usize> ToPng for [[(u8, u8, u8, u8); WIDT
 impl ToPng for str {
     /// Create a [`Png`] from text, by rendering it with a bitmap font.
     fn to_png(&self) -> Cow<Png> {
-        todo!()
+        unimplemented!()
     }
 }
 
 impl ToPng for (usize, usize) {
     /// Create a new 8-bit RGB [`Png`] from a `(width, height)` usize tuple.
     fn to_png(&self) -> Cow<Png> {
-        todo!()
+        unimplemented!()
     }
 }
 
@@ -172,7 +172,7 @@ impl ToPng for ((usize, usize), (BitDepth, ColorType)) {
     /// Create a new [`Png`] from a `((width, height), (BitDepth, ColorType))`
     /// usize tuple.
     fn to_png(&self) -> Cow<Png> {
-        todo!()
+        unimplemented!()
     }
 }
 
@@ -180,7 +180,24 @@ impl ToPng for ((usize, usize), (BitDepth, &[u8])) {
     /// Create a new [`Png`] from a `((width, height), (BitDepth, palette))`
     /// usize tuple.
     fn to_png(&self) -> Cow<Png> {
-        todo!()
+        let ((width, height), (bit_depth, palette)) = self;
+        let palette_data = Some(palette.to_vec());
+        let pixel_count = width * height;
+        let pixel_data =
+            vec![
+                0;
+                pixel_count * bit_depth.bits_per_sample() * ColorType::Indexed.samples_per_pixel()
+                    / 8
+            ];
+        Owned(Png {
+            width: *width as u32,
+            height: *height as u32,
+            bit_depth: *bit_depth,
+            color_type: ColorType::Indexed,
+            palette_data,
+            transparency_data: None,
+            pixel_data,
+        })
     }
 }
 
@@ -188,7 +205,7 @@ impl ToPng for ((usize, usize), &[u8]) {
     /// Create a new [`Png`] from a `((width, height), pixel data)`
     /// usize tuple.
     fn to_png(&self) -> Cow<Png> {
-        todo!()
+        unimplemented!()
     }
 }
 

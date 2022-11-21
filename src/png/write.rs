@@ -1,3 +1,7 @@
+use {
+    crate::{adler32, crc32, BitDepth, ColorType},
+    std::ops::{Not, Range},
+};
 
 pub fn write_png_header(
     buffer: &mut Vec<u8>,

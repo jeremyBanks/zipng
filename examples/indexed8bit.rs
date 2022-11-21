@@ -1,14 +1,13 @@
 use {
-    bytemuck::bytes_of,
     std::fs,
     zipng::{
-        palettes::{EIGHT_BIT_HEAT, EIGHT_BIT_MAPPING},
+        palettes::{colormaps::ROMA, EIGHT_BIT_MAPPING},
         panic, EightBit, Png,
     },
 };
 
 fn main() -> Result<(), panic> {
-    let mut png = Png::new_indexed(512, 128, EightBit, bytes_of(&EIGHT_BIT_HEAT));
+    let mut png = Png::new_indexed(512, 128, EightBit, &ROMA);
 
     for y in 0..png.height {
         for x in 0..png.width {

@@ -1,6 +1,6 @@
 use {
-    crate::{never, palettes::EIGHT_BIT_HEAT, panic, ToPng},
-    bytemuck::bytes_of,
+    crate::{never, palettes::colormaps::ROMA, panic, ToPng},
+    bitvec::slice::BitSlice,
     serde::{Deserialize, Serialize},
     std::io::{Read, Write},
 };
@@ -102,7 +102,7 @@ impl Png {
     pub fn from_unstructured_bytes(bytes: &[u8]) -> Self {
         let mut bit_depth = BitDepth::EightBit;
         let mut color_type = ColorType::Indexed;
-        let mut palette_data = Some(bytes_of(&EIGHT_BIT_HEAT).to_vec());
+        let mut palette_data = Some(ROMA.to_vec());
         let transparency_data = None;
         let width;
         match bytes.len() {
@@ -221,12 +221,18 @@ impl Png {
 
     pub fn mut_pixel(&mut self, x: usize, y: usize) -> &mut [u8] {
         if !matches!(self.bit_depth, EightBit | SixteenBit) {
-            panic!("not supported for color depths below 8-bit");
+            unimplemented!(
+                "mut_pixel only supports 8- and 16-bit images, use mut_pixel_bits instead"
+            );
         }
         let bits_per_pixel = self.bits_per_pixel();
         let row = y * self.image_bytes_per_row();
         let col = x * bits_per_pixel / 8;
         &mut self.pixel_data[row + col..row + col + bits_per_pixel / 8]
+    }
+
+    pub fn mut_pixel_bits(&mut self, _x: usize, _y: usize) -> &mut BitSlice<u8> {
+        todo!()
     }
 
     /// Sets the pixel at the given coordinates to the given color.
@@ -236,11 +242,23 @@ impl Png {
     /// This is provided for convenience, but it's not fast. If you need speed,
     /// modify the image data directly or use a faster library.
     pub fn set_pixel(&mut self, x: usize, y: usize, color: &[u8]) -> Result<(), never> {
-        if self.bit_depth != EightBit {
-            unimplemented!("only 8-bit color depth is implemented")
-        }
         self.mut_pixel(x, y).copy_from_slice(color);
         Ok(())
+    }
+
+    /// Sets the pixel at the given coordinates to the given color.
+    /// The required length of the color data may vary depending on the
+    /// color type and bit depth of the image.
+    ///
+    /// This is provided for convenience, but it's not fast. If you need speed,
+    /// modify the image data directly or use a faster library.
+    pub fn set_pixel_bits(
+        &mut self,
+        _x: usize,
+        _y: usize,
+        _color: &BitSlice<u8>,
+    ) -> Result<(), never> {
+        unimplemented!()
     }
 }
 

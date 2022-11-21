@@ -127,7 +127,7 @@ pub fn write_png_chunk(buffer: &mut Vec<u8>, chunk_type: &[u8; 4], data: &[u8]) 
 
 pub fn write_png(
     buffer: &mut Vec<u8>,
-    data: &[u8],
+    pixel_data: &[u8],
     width: u32,
     height: u32,
     bit_depth: BitDepth,
@@ -146,7 +146,7 @@ pub fn write_png(
     let bits_per_line = width * bits_per_pixel as u32;
     let bytes_per_line = (bits_per_line + 7) / 8;
 
-    for (i, byte) in data.iter().enumerate() {
+    for (i, byte) in pixel_data.iter().enumerate() {
         if i % (bytes_per_line as usize) == 0 {
             filtered_data.push(0x00);
         }

@@ -9,5 +9,6 @@
   "rust-analyzer.semanticHighlighting.punctuation.enable": true,
   "rust-analyzer.semanticHighlighting.operator.specialization.enable": true,
   "lldb.consoleMode": "evaluate",
-  "lldb.launch.terminal": "integrated"
+  "lldb.launch.terminal": "integrated",
+  "github.copilot.inlineSuggest.enable": true
 }

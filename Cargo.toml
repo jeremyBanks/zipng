@@ -19,6 +19,7 @@ flate2 = { version = "1.0.24", optional = true }
 heapless = "0.7.16"
 heck = "0.4.0"
 once_cell = "1.16.0"
+paste = "1.0.9"
 serde = "1.0.147"
 serde_bytes = "0.11.7"
 simd-adler32 = "0.3.4"
@@ -29,7 +30,7 @@ tracing-subscriber = { version = "0.3.16", optional = true, features = ["env-fil
 
 [features]
 default = ["flate2"]
-dev-dependencies = [ "color-eyre", "tracing-error", "tracing-subscriber" ]
+dev-dependencies = ["color-eyre", "tracing-error", "tracing-subscriber"]
 EDITOR = []
 
 [dev-dependencies]

@@ -32,8 +32,6 @@ mod zlib;
 #[cfg(feature = "dev-dependencies")]
 pub mod dev;
 
-
-
 #[doc(inline)]
 pub use crate::{
     checksums::*, deflate::*, generic::*, png::*, text::*, zip::*, zipng::*, zipng::*, zlib::*,

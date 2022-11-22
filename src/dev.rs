@@ -4,17 +4,10 @@ pub use crate::init;
 #[macro_export]
 macro_rules! init {
     () => {
-        if cfg!(debug_assertions) {
-            if ::std::env::var("RUST_LOG").is_err() {
-                ::std::env::set_var(
-                    "RUST_LOG",
-                    format!("warn,{}=trace", env!("CARGO_CRATE_NAME")),
-                );
-            }
-        } else if ::std::env::var("RUST_LOG").is_err() {
+        if ::std::env::var("RUST_LOG").is_err() {
             ::std::env::set_var(
                 "RUST_LOG",
-                format!("error,{}=warn", env!("CARGO_CRATE_NAME")),
+                format!("warn,zipng=trace,{}=trace", env!("CARGO_CRATE_NAME")),
             );
         }
 

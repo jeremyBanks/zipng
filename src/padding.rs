@@ -1,6 +1,6 @@
 use {
     crate::{generic::panic, WriteAndSeek},
-    std::{io::Write},
+    std::io::Write,
 };
 
 /// Writes `bytes` to `buffer`, padded with trailing zeroes to the next multiple

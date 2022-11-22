@@ -6,6 +6,12 @@ use {
     tracing::instrument,
 };
 
+use tracing::trace;
+
+use crate::palettes::crameri::BUKAVU;
+use crate::palettes::crameri::FES;
+use crate::palettes::crameri::OLERON;
+
 #[doc(hidden)]
 pub use self::{BitDepth::*, ColorType::*};
 
@@ -105,7 +111,8 @@ impl Png {
     pub fn from_unstructured_bytes(bytes: &[u8]) -> Self {
         let mut bit_depth = BitDepth::EightBit;
         let mut color_type = ColorType::Indexed;
-        let mut palette_data = Some(ROMA.to_vec());
+        // TODO: import TOPO and try it out
+        let mut palette_data = Some(OLERON.to_vec());
         let transparency_data = None;
         let width;
         match bytes.len() {
@@ -136,13 +143,13 @@ impl Png {
             0x8001..=0x20000 => {
                 width = 256;
             },
-            0x20001..=0x80000 => {
+            0x20001..=0x200000 => {
                 width = 512;
             },
-            0x80001..=0x200000 => {
+            0x200001..=0x400000 => {
                 width = 1024;
             },
-            0x200001..=0x800000 => {
+            0x400001..=0x800000 => {
                 width = 1024;
                 palette_data = None;
                 color_type = RedGreenBlue;
@@ -158,6 +165,15 @@ impl Png {
 
         let width = 1024.min(width);
         let height = 8192.min((pixel_count + width - 1) / width);
+
+        trace!(
+            width = width,
+            height = height,
+            bit_depth = bit_depth as u8,
+            color_type = color_type as u8,
+            image_data_len = bytes.len(),
+            "Creating Png from unstructured bytes",
+        );
 
         Png {
             width,

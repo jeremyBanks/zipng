@@ -1,8 +1,5 @@
 use {
-    crate::{
-        never,
-        panic,
-    },
+    crate::{never, panic},
     serde::{Deserialize, Serialize},
     std::io::{Read, Write},
 };
@@ -10,9 +7,10 @@ mod configuration;
 mod data;
 mod to_zip;
 
-use {crate::zipng::writing::write_zip, std::io::Cursor};
-
-use crate::WriteAndSeek;
+use {
+    crate::{zipng::writing::write_zip, WriteAndSeek},
+    std::io::Cursor,
+};
 
 pub use self::{configuration::*, to_zip::*};
 
@@ -31,7 +29,15 @@ impl Zip {
 
     /// Serializes this [`Zip`] as a ZIP archive file.
     pub fn write(&self, output: &mut impl WriteAndSeek) -> Result<usize, panic> {
-        write_zip(output, self.files.iter().map(|(a, b)| (a.as_slice(), b.as_slice())).collect::<Vec<_>>().as_slice(), &[])
+        write_zip(
+            output,
+            self.files
+                .iter()
+                .map(|(a, b)| (a.as_slice(), b.as_slice()))
+                .collect::<Vec<_>>()
+                .as_slice(),
+            &[],
+        )
     }
 
     /// Deserializes a ZIP archive file into a [`Zip`].

@@ -29,16 +29,23 @@ macro_rules! init {
 pub use crate::save;
 #[macro_export]
 macro_rules! save {
-    ($value:tt $(.$ext:ident)+) => {{
+    ($value:tt $(/ $tag:tt)? $(. $ext:ident)+) => {{
+        let mut op = "test_data/".to_string();
+        op.push_str(env!("CARGO_CRATE_NAME"));
+        $( op.push_str("-"); op.push_str(stringify!($tag)); )?
+
         $(
+            let mut path = op.to_string();
+            path.push_str(".");
+            path.push_str(stringify!($ext));
             let mut f = ::std::fs::OpenOptions::new()
                 .write(true)
                 .create(true)
                 .truncate(true)
-                .open(format!("test_data/{}.{}", env!("CARGO_CRATE_NAME"), stringify!($ext)))?;
+                .open(path)?;
             #[allow(unused_braces, unused_parentheses)]
             std::io::Write::write_all(&mut f, &*{$value})?;
         )+
-        Ok(())
+        Ok::<(), $crate::panic>(())
     }};
 }

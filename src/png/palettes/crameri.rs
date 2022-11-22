@@ -1,27 +1,5 @@
 //! A collection of [`EightBit`][crate::EightBit]
-//! [`RedGreenBlue`][crate::RedGreenBlue] palettes from Fabio Crameri's [_Scientific Color Maps_](https://www.fabiocrameri.ch/colourmaps/).
-
-/// A list of all included color maps.
-pub static ALL: &[&[u8]] = &[
-    BATLOW, BATLOW_W, BATLOW_K, DEVON, LAJOLLA, BAMAKO, DAVOS, BILBAO, NUUK, OSLO, GRAY_C, HAWAII,
-    LAPAZ, TOKYO, BUDA, ACTON, TURKU, IMOLA, BROC, CORK, VIK, LISBON, TOFINO, BERLIN, ROMA, BAM,
-    VANIMO, OLERON, BUKAVU, FES, ROMA_O, BAM_O, BROC_O, CORK_O, VIK_O,
-];
-
-/// A list of color maps described as "sequential".
-pub static ALL_SEQUENTIAL: &[&[u8]] = &[
-    BATLOW, BATLOW_W, BATLOW_K, DEVON, LAJOLLA, BAMAKO, DAVOS, BILBAO, NUUK, OSLO, GRAY_C, HAWAII,
-    LAPAZ, TOKYO, BUDA, ACTON, TURKU, IMOLA,
-];
-
-/// A list of color maps described as "diverging".
-pub static ALL_DIVERGING: &[&[u8]] = &[BROC, CORK, VIK, LISBON, TOFINO, BERLIN, ROMA, BAM, VANIMO];
-
-/// A list of color maps described as "multi-sequential".
-pub static ALL_MULTI_SEQUENTIAL: &[&[u8]] = &[OLERON, BUKAVU, FES];
-
-/// A list of color maps [described as "cyclic"](https://www.fabiocrameri.ch/cycliccolourmaps/).
-pub static ALL_CYCLIC: &[&[u8]] = &[ROMA_O, BAM_O, BROC_O, CORK_O, VIK_O];
+//! palettes from Fabio Crameri's [_Scientific Color Maps_](https://www.fabiocrameri.ch/colourmaps/).
 
 /// _acton_
 pub static ACTON: &[u8] = &[

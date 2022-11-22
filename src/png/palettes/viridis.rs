@@ -1,6 +1,6 @@
-//! A collection of [`EightBit`][crate::EightBit]
-//! [`RedGreenBlue`][crate::RedGreenBlue] palettes derived from Nathaniel J.
-//! Smith, Stefan van der Walt, and Eric Firing's [_viridis_ colormap variants for matplotlib 1.5](https://bids.github.io/colormap/).
+//! A collection of [`EightBit`][crate::EightBit] palettes derived from
+//! Nathaniel J. Smith, Stefan van der Walt, and Eric Firing's
+//! [_viridis_ color map variants for matplotlib 1.5](https://bids.github.io/colormap/).
 
 /// _magma_
 pub static MAGMA: &[u8] = &[

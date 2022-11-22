@@ -1,5 +1,9 @@
 use {
-    crate::{never, palettes::oceanographic::TOPO, panic, ToPng},
+    crate::{
+        never,
+        palettes::{crameri::OLERON, oceanic::BALANCE, singles::FOUR_BIT_RAINBOW},
+        panic, ToPng,
+    },
     bitvec::slice::BitSlice,
     serde::{Deserialize, Serialize},
     std::io::{Cursor, Read, Write},
@@ -103,67 +107,53 @@ impl Png {
     ///
     /// Data beyond the first 32MiB may be ignored.
     pub fn from_unstructured_bytes(bytes: &[u8]) -> Self {
-        let mut bit_depth = BitDepth::EightBit;
-        let mut color_type = ColorType::Indexed;
-        let mut palette_data = Some(TOPO.to_vec()); // .chunks(3).rev().flatten().copied().collect());
+        let bit_depth;
+        let color_type;
+        let palette_data;
         let transparency_data = None;
-        let width;
         match bytes.len() {
-            len @ 0x0..=0x20 => {
+            _len @ 0x0..=0x20 => {
                 palette_data = None;
                 bit_depth = OneBit;
                 color_type = Luminance;
-                width = 16.min(len * 8);
             },
             0x21..=0x100 => {
                 palette_data = None;
                 bit_depth = TwoBit;
                 color_type = Luminance;
-                width = 16;
             },
-            0x101..=0x200 => {
-                width = 16;
+            0x101..=0x100000 => {
+                palette_data = Some(FOUR_BIT_RAINBOW.to_vec());
+                bit_depth = FourBit;
+                color_type = Indexed;
             },
-            0x201..=0x800 => {
-                width = 32;
-            },
-            0x801..=0x2000 => {
-                width = 64;
-            },
-            0x2001..=0x8000 => {
-                width = 128;
-            },
-            0x8001..=0x20000 => {
-                width = 256;
-            },
-            0x20001..=0x200000 => {
-                width = 512;
-            },
-            0x200001..=0x400000 => {
-                width = 1024;
+            0x100001..=0x400000 => {
+                palette_data = Some(OLERON.to_vec());
+                bit_depth = BitDepth::EightBit;
+                color_type = ColorType::Indexed;
             },
             0x400001..=0x800000 => {
-                width = 1024;
-                palette_data = None;
-                color_type = RedGreenBlue;
+                palette_data = Some(BALANCE.to_vec());
+                bit_depth = BitDepth::EightBit;
+                color_type = ColorType::Indexed;
             },
             _ => {
-                width = 1024;
                 palette_data = None;
+                bit_depth = BitDepth::EightBit;
                 color_type = RedGreenBlueAlpha;
             },
         }
         let pixel_count =
             bytes.len() / (bit_depth.bits_per_sample() * color_type.samples_per_pixel());
 
-        let width = 1024.min(width);
+        let width = 1024.min(((pixel_count as f64 + 1.).sqrt() as usize).next_power_of_two());
         let height = 8192.min((pixel_count + width - 1) / width);
 
         trace!(
             width = width,
             height = height,
-            bit_depth = bit_depth as u8,
-            color_type = color_type as u8,
+            bit_depth = format!("{bit_depth:?}"),
+            color_type = format!("{color_type:?}"),
             image_data_len = bytes.len(),
             "Creating Png from unstructured bytes",
         );

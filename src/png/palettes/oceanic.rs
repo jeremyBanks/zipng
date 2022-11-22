@@ -1,6 +1,5 @@
-//! A collection of [`EightBit`][crate::EightBit]
-//! [`RedGreenBlue`][crate::RedGreenBlue] palettes derived from Kristen M. Thyng
-//! et al's [_cmocean_ color maps for oceanography](http://dx.doi.org/10.5670/oceanog.2016.66).
+//! A collection of [`EightBit`][crate::EightBit] palettes derived from Kristen
+//! M. Thyng et al's [_cmocean_ color maps for oceanography](https://matplotlib.org/cmocean/).
 
 /// _algae_
 pub static ALGAE: &[u8] = &[

@@ -1,9 +1,5 @@
 use {
-    crate::{
-        never,
-        palettes::crameric::{BUKAVU, FES, OLERON, ROMA},
-        panic, ToPng,
-    },
+    crate::{never, palettes::oceanographic::TOPO, panic, ToPng},
     bitvec::slice::BitSlice,
     serde::{Deserialize, Serialize},
     std::io::{Cursor, Read, Write},
@@ -109,8 +105,7 @@ impl Png {
     pub fn from_unstructured_bytes(bytes: &[u8]) -> Self {
         let mut bit_depth = BitDepth::EightBit;
         let mut color_type = ColorType::Indexed;
-        // TODO: import TOPO and try it out
-        let mut palette_data = Some(OLERON.to_vec());
+        let mut palette_data = Some(TOPO.to_vec()); // .chunks(3).rev().flatten().copied().collect());
         let transparency_data = None;
         let width;
         match bytes.len() {

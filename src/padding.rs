@@ -1,49 +1,53 @@
+use std::io::Write;
 use std::ops::Range;
+
+use crate::WriteSeek;
+use crate::generic::panic;
 
 /// Writes `bytes` to `buffer`, padded with trailing zeroes to the next multiple
 /// of `alignment`. Returns the range that `bytes` was written to in `buffer`,
 /// excluding the padding.
 pub(crate) fn write_aligned_pad_end(
-    buffer: &mut Vec<u8>,
+    output: &mut impl WriteSeek,
     bytes: &[u8],
     alignment: usize,
-) -> Range<usize> {
-    let index_before_data = buffer.len();
+) -> Result<usize, panic> {
+    let index_before_data = output.stream_position()? as usize;
 
-    buffer.extend_from_slice(bytes);
+    output.write_all(bytes)?;
 
-    let index_after_data = buffer.len();
+    let index_after_data = output.stream_position()? as usize;
 
     if index_after_data % alignment != 0 {
         let padding = alignment - (index_after_data % alignment);
         for _ in 0..padding {
-            buffer.push(0);
+            output.write_all(&[0])?;
         }
     }
 
-    let _index_after_padding = buffer.len();
+    let _index_after_padding = output.stream_position()? as usize;
 
-    index_before_data..index_after_data
+    Ok((index_before_data..index_after_data).len())
 }
 
 /// Writes `bytes` to `buffer`, padded with leading zeroes to the next multiple
 /// of `alignment`. Returns the range that `bytes` was written to in `buffer`,
 /// excluding the padding.
 pub(crate) fn write_aligned_pad_start(
-    buffer: &mut Vec<u8>,
+    output: &mut impl WriteSeek,
     bytes: &[u8],
     alignment: usize,
-) -> Range<usize> {
-    let index_before_padding = buffer.len();
+) -> Result<usize, panic> {
+    let index_before_padding = output.stream_position()? as usize;
     let unpadded_index_after_data = index_before_padding + bytes.len();
     if unpadded_index_after_data % alignment != 0 {
         let padding = alignment - (unpadded_index_after_data % alignment);
         for _ in 0..padding {
-            buffer.push(0);
+            output.write_all(&[0])?;
         }
     }
-    let index_before_data = buffer.len();
-    buffer.extend_from_slice(bytes);
-    let index_after_data = buffer.len();
-    index_before_data..index_after_data
+    let index_before_data = output.stream_position()? as usize;
+    output.write_all(bytes)?;
+    let index_after_data = output.stream_position()? as usize;
+    Ok((index_before_data..index_after_data).len())
 }

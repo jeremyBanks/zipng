@@ -14,6 +14,11 @@
 #![deny(unsafe_code)]
 #![doc = include_str!("../README.md")]
 
+use std::io::Cursor;
+use std::io::Read;
+use std::io::Seek;
+use std::io::Write;
+
 use crate::generic::*;
 
 mod checksums;
@@ -53,3 +58,12 @@ pub fn png_to_vec(png_contents: &impl ToPng) -> Vec<u8> {
 pub fn png_from_slice(png_file: &[u8]) -> Result<Png, panic> {
     Ok(Png::read_slice(png_file)?)
 }
+
+
+pub(crate) trait ReadSeek: Read + Seek {}
+
+impl<T> ReadSeek for T where T: Read + Seek {}
+
+
+pub(crate) trait WriteSeek: Write + Seek {}
+impl<T> WriteSeek for T where T: Write + Seek {}

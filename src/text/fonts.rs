@@ -1,4 +1,4 @@
-//! Built-in bitmap fonts
+//! Built-in bitmap fonts.
 use {crate::Font, once_cell::sync::Lazy};
 
 macro_rules! pub_use_lazy_font {

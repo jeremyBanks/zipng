@@ -4,13 +4,12 @@
     {
       "type": "lldb",
       "request": "launch",
-      "name": "Debug unit tests in library 'zipng'",
+      "name": "Debug unit tests",
       "cargo": {
         "args": [
           "test",
           "--no-run",
-          "--lib",
-          "--package=zipng"
+          "--all"
         ],
         "filter": {
           "name": "zipng",
@@ -36,7 +35,6 @@
         }
       },
       "env": {
-        "RUST_BACKTRACE": "1",
       },
       "args": [],
       "cwd": "${workspaceFolder}"
@@ -44,20 +42,19 @@
     {
       "type": "lldb",
       "request": "launch",
-      "name": "Debug example 'revolution'",
+      "name": "Debug example 'hybrid'",
       "cargo": {
         "args": [
           "build",
-          "--example=revolution",
+          "--example=hybrid",
           "--package=zipng"
         ],
         "filter": {
-          "name": "revolution",
+          "name": "hybrid",
           "kind": "example"
         }
       },
       "env": {
-        "RUST_BACKTRACE": "1",
       },
       "args": [],
       "cwd": "${workspaceFolder}"

@@ -1,6 +1,6 @@
 use zipng::{
     dev::{init, save},
-    palettes::{viridis::INFERNO, MAP_STRATA_4},
+    palettes::{self, viridis::INFERNO, MAP_STRATA_4},
     panic,
     BitDepth::EightBit,
     Png,
@@ -9,7 +9,7 @@ use zipng::{
 fn main() -> Result<(), panic> {
     init!();
 
-    let mut png = Png::new_indexed(512, 128, EightBit, INFERNO);
+    let mut png = Png::new_indexed(512, 128, EightBit, palettes::crameri::BROC_O);
 
     for y in 0..png.height {
         for x in 0..png.width {

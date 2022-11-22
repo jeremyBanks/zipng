@@ -3,23 +3,18 @@ use zipng::{
     palettes::{viridis::INFERNO, MAP_BIT_COUNT},
     panic,
     BitDepth::EightBit,
-    Png,
+    Png, Zip, Zipng,
 };
 
 fn main() -> Result<(), panic> {
     init!();
 
-    let mut png = Png::new_indexed(512, 128, EightBit, INFERNO);
+    let zip = Zip::default();
 
-    for y in 0..png.height {
-        for x in 0..png.width {
-            png.set_pixel(x, y, &[
-                MAP_BIT_COUNT[(x * 4 / 9 + x.abs_diff(y) / 15).min(255)]
-            ])?;
-        }
-    }
+    // let zipng = Zipng::new(&zip);
+    let zipng = Png::from_unstructured_bytes(&zip.write_vec()?);
 
-    save!({ png.write_vec()? }.zip.png)
+    save!({ zipng.write_vec()? }.zip.png)
 }
 
 #[test]

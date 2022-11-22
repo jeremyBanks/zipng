@@ -1,20 +1,20 @@
 use {
     crate::{
-        checksums::crc32,
         never,
-        padding::{write_aligned_pad_end, write_aligned_pad_start},
         panic,
     },
-    bstr::ByteSlice,
     serde::{Deserialize, Serialize},
     std::io::{Read, Write},
 };
 mod configuration;
-mod to_zip;
 mod data;
+mod to_zip;
+
+use {crate::zipng::writing::write_zip, std::io::Cursor};
+
+use crate::WriteAndSeek;
 
 pub use self::{configuration::*, to_zip::*};
-use crate::zipng::writing::write_zip;
 
 /// In-memory representation of a ZIP file's essential archive contents.
 #[derive(Debug, Clone, Default)]
@@ -30,8 +30,8 @@ impl Zip {
     }
 
     /// Serializes this [`Zip`] as a ZIP archive file.
-    pub fn write(&self, _output: &mut impl Write) -> Result<usize, panic> {
-        todo!()
+    pub fn write(&self, output: &mut impl WriteAndSeek) -> Result<usize, panic> {
+        write_zip(output, self.files.iter().map(|(a, b)| (a.as_slice(), b.as_slice())).collect::<Vec<_>>().as_slice(), &[])
     }
 
     /// Deserializes a ZIP archive file into a [`Zip`].
@@ -41,9 +41,9 @@ impl Zip {
 
     /// Serializes this [`Zip`] into a byte vector as a ZIP archive file.
     pub fn write_vec(&self) -> Result<Vec<u8>, never> {
-        let mut output = Vec::new();
+        let mut output = Cursor::new(Vec::new());
         self.write(&mut output)?;
-        Ok(output)
+        Ok(output.into_inner())
     }
 
     /// Deserialize a ZIP archive file into a [`Zip`] from a byte vector.
@@ -91,6 +91,6 @@ where Files: 'files + IntoIterator<Item = (&'files [u8], &'files [u8])> {
         )
     });
     let mut buffer = Vec::new();
-    write_zip(&mut buffer, &files, b"").unwrap();
+    write_zip(&mut Cursor::new(&mut buffer), &files, b"").unwrap();
     buffer
 }

@@ -1,14 +1,13 @@
-use std::io::Write;
-use std::ops::Range;
-
-use crate::WriteSeek;
-use crate::generic::panic;
+use {
+    crate::{generic::panic, WriteAndSeek},
+    std::{io::Write},
+};
 
 /// Writes `bytes` to `buffer`, padded with trailing zeroes to the next multiple
 /// of `alignment`. Returns the range that `bytes` was written to in `buffer`,
 /// excluding the padding.
 pub(crate) fn write_aligned_pad_end(
-    output: &mut impl WriteSeek,
+    output: &mut impl WriteAndSeek,
     bytes: &[u8],
     alignment: usize,
 ) -> Result<usize, panic> {
@@ -34,7 +33,7 @@ pub(crate) fn write_aligned_pad_end(
 /// of `alignment`. Returns the range that `bytes` was written to in `buffer`,
 /// excluding the padding.
 pub(crate) fn write_aligned_pad_start(
-    output: &mut impl WriteSeek,
+    output: &mut impl WriteAndSeek,
     bytes: &[u8],
     alignment: usize,
 ) -> Result<usize, panic> {

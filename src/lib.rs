@@ -14,12 +14,10 @@
 #![deny(unsafe_code)]
 #![doc = include_str!("../README.md")]
 
-use std::io::Cursor;
-use std::io::Read;
-use std::io::Seek;
-use std::io::Write;
-
-use crate::generic::*;
+use {
+    crate::generic::*,
+    std::io::{BufRead, Seek, Write},
+};
 
 mod checksums;
 mod deflate;
@@ -33,6 +31,8 @@ mod zlib;
 
 #[cfg(feature = "dev-dependencies")]
 pub mod dev;
+
+
 
 #[doc(inline)]
 pub use crate::{
@@ -59,11 +59,8 @@ pub fn png_from_slice(png_file: &[u8]) -> Result<Png, panic> {
     Ok(Png::read_slice(png_file)?)
 }
 
+pub trait BufReadAndSeek: BufRead + Seek {}
+impl<T> BufReadAndSeek for T where T: BufRead + Seek {}
 
-pub(crate) trait ReadSeek: Read + Seek {}
-
-impl<T> ReadSeek for T where T: Read + Seek {}
-
-
-pub(crate) trait WriteSeek: Write + Seek {}
-impl<T> WriteSeek for T where T: Write + Seek {}
+pub trait WriteAndSeek: Write + Seek {}
+impl<T> WriteAndSeek for T where T: Write + Seek {}

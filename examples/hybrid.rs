@@ -1,9 +1,7 @@
 use zipng::{
     dev::{init, save},
-    palettes::{viridis::INFERNO, MAP_BIT_COUNT},
     panic,
-    BitDepth::EightBit,
-    Png, Zip, Zipng,
+    Png, Zip,
 };
 
 fn main() -> Result<(), panic> {

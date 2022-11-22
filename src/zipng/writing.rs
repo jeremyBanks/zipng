@@ -2,7 +2,7 @@ use {
     crate::{
         crc32,
         padding::{write_aligned_pad_end, write_aligned_pad_start},
-        panic,
+        panic, WriteAndSeek,
     },
     bstr::ByteSlice,
     std::io::Write,
@@ -13,16 +13,18 @@ const BLOCK_SIZE: usize = 1024;
 /// Creates a zip file from files in the order given, appending to the `prefix`
 /// buffer `Vec` (which does not need to be empty), and ending with the
 /// given `suffix`,
+///
+/// Returns the number of bytes written.
 pub(crate) fn write_zip(
-    output: &mut impl Write,
+    mut output: &mut impl WriteAndSeek,
     files: &[(&[u8], &[u8])],
     suffix: &[u8],
-) -> Result<Vec<u8>, panic> {
+) -> Result<usize, panic> {
     if suffix.find(b"PK\x05\x06").is_some() {
         panic!("Zip file suffix must not contain zip file terminator signature PK\\x05\\x06");
     }
 
-    let mut offset = 0;
+    let start = output.stream_position()? as usize;
     let mut files_with_offsets = Vec::with_capacity(files.len());
 
     for (name, body) in files.iter() {
@@ -63,18 +65,15 @@ pub(crate) fn write_zip(
         header.extend_from_slice(&[0x00; 2]);
         // 0x0022: file name, followed by extra fields (we have none)
         header.extend_from_slice(name);
-        let range = if !body.is_empty() && name != b"mimetype" {
-            let header_range = write_aligned_pad_start(&mut output, &header, BLOCK_SIZE);
-            let body_range = write_aligned_pad_end(&mut output, body, BLOCK_SIZE);
-            header_range.start..body_range.end
+        let before = output.stream_position()? as usize;
+        if !body.is_empty() && name != b"mimetype" {
+            write_aligned_pad_start(&mut output, &header, BLOCK_SIZE)?;
+            write_aligned_pad_end(&mut output, body, BLOCK_SIZE)?;
         } else {
-            let before = output.len();
             output.write_all(&header)?;
             output.write_all(body)?;
-            let after = output.len();
-            before..after
         };
-        files_with_offsets.push((*name, *body, range.start));
+        files_with_offsets.push((*name, *body, before));
     }
 
     let mut central_directory = Vec::new();
@@ -125,48 +124,53 @@ pub(crate) fn write_zip(
         central_directory.extend_from_slice(&header);
     }
 
-    let archive_terminator = vec![0; 22 + suffix.len()];
-    central_directory.extend_from_slice(&archive_terminator);
+    let directory_terminator_len = 22 + suffix.len();
 
-    let central_directory_range =
-        write_aligned_pad_start(&mut output, &central_directory, BLOCK_SIZE);
+    let before_central_directory = output.stream_position()? as usize;
+    output.write_all(&central_directory)?;
+    let central_directory_len_without_terminator =
+        output.stream_position()? as usize - before_central_directory;
 
-    let final_len = output.len();
-    let mut archive_terminator = &mut output[final_len - archive_terminator.len()..];
+    let _after_central_directory = directory_terminator_len + output.stream_position()? as usize;
+
+    let mut directory_terminator = vec![0; directory_terminator_len];
 
     let directory_offset =
-        u32::try_from(central_directory_range.start).expect("archive larger than 4GiB");
+        u32::try_from(before_central_directory).expect("archive larger than 4GiB");
     let directory_count = u16::try_from(files.len()).expect("more than 64Ki files");
-    let directory_length =
-        u32::try_from(central_directory_range.len() - archive_terminator.len()).unwrap();
+    let directory_length = u32::try_from(central_directory_len_without_terminator).unwrap();
     let suffix_length = u16::try_from(suffix.len()).expect("comment longer than 64KiB");
 
     // 0x0000..0x0004: archive terminator signature
-    archive_terminator.write_all(b"PK\x05\x06").unwrap();
+    directory_terminator.write_all(b"PK\x05\x06").unwrap();
     // 0x0004..0x0006: disk number
-    archive_terminator.write_all(&[0x00; 2]).unwrap();
+    directory_terminator.write_all(&[0x00; 2]).unwrap();
     // 0x0006..0x0008: disk number with central directory
-    archive_terminator.write_all(&[0x00; 2]).unwrap();
+    directory_terminator.write_all(&[0x00; 2]).unwrap();
     // 0x0008..0x000A: directory entries on disk
-    archive_terminator
+    directory_terminator
         .write_all(&directory_count.to_le_bytes())
         .unwrap();
     // 0x000A..0x000C: directory entries total
-    archive_terminator
+    directory_terminator
         .write_all(&directory_count.to_le_bytes())
         .unwrap();
     // 0x000C..0x0010: central directory byte length
-    archive_terminator
+    directory_terminator
         .write_all(&directory_length.to_le_bytes())
         .unwrap();
     // 0x0010..0x0014: central directory offset from start of archive
-    archive_terminator
+    directory_terminator
         .write_all(&directory_offset.to_le_bytes())
         .unwrap();
     // 0x0014..: archive comment (suffix) length, then content
-    archive_terminator
+    directory_terminator
         .write_all(&suffix_length.to_le_bytes())
         .unwrap();
-    archive_terminator.write_all(suffix).unwrap();
-    output
+
+    output.write_all(&directory_terminator)?;
+    output.write_all(suffix)?;
+    let end = output.stream_position()? as usize;
+
+    Ok(end - start)
 }

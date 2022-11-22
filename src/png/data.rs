@@ -1,16 +1,14 @@
 use {
-    crate::{never, palettes::crameri::ROMA, panic, ToPng},
+    crate::{
+        never,
+        palettes::crameric::{BUKAVU, FES, OLERON, ROMA},
+        panic, ToPng,
+    },
     bitvec::slice::BitSlice,
     serde::{Deserialize, Serialize},
     std::io::{Cursor, Read, Write},
-    tracing::instrument,
+    tracing::{instrument, trace},
 };
-
-use tracing::trace;
-
-use crate::palettes::crameri::BUKAVU;
-use crate::palettes::crameri::FES;
-use crate::palettes::crameri::OLERON;
 
 #[doc(hidden)]
 pub use self::{BitDepth::*, ColorType::*};

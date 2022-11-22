@@ -9,7 +9,7 @@ use zipng::{
 fn main() -> Result<(), panic> {
     init!();
 
-    let mut png = Png::new_indexed(512, 128, EightBit, palettes::crameri::BROC_O);
+    let mut png = Png::new_indexed(512, 128, EightBit, palettes::crameric::BROC_O);
 
     for y in 0..png.height {
         for x in 0..png.width {

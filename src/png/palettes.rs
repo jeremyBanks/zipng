@@ -1,8 +1,8 @@
 //! Built-in color palettes
 
-pub mod cmocean;
-pub mod crameri;
-pub mod viridis;
+pub mod crameric;
+pub mod oceanographic;
+pub mod viridic;
 
 /// Kate Rose Morley's _12-bit Rainbow_ 12-color palette, plus black, white, 25%
 /// gray and 75% gray.

@@ -144,9 +144,9 @@ impl Png {
             },
         }
         let pixel_count =
-            bytes.len() / (bit_depth.bits_per_sample() * color_type.samples_per_pixel());
+            bytes.len() * 8 / (bit_depth.bits_per_sample() * color_type.samples_per_pixel());
 
-        let width = 1024.min(((pixel_count as f64 + 1.).sqrt() as usize).next_power_of_two());
+        let width = 2048.min(((pixel_count as f64 + 1.).sqrt() as usize).next_power_of_two());
         let height = 8192.min((pixel_count + width - 1) / width);
 
         trace!(

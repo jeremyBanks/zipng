@@ -1,4 +1,5 @@
 #![feature(doc_cfg, doc_auto_cfg)]
+#![allow(non_upper_case_globals)]
 #![warn(unused_crate_dependencies, missing_docs)]
 #![cfg_attr(
     all(debug_assertions, any(not(test), feature = "EDITOR")),
@@ -16,13 +17,13 @@
 
 use {
     crate::generic::*,
-    std::io::{BufRead, Seek, Write},
+    std::io::{self, BufRead, Write},
 };
 
+mod alignment;
 mod checksums;
 mod deflate;
 mod generic;
-mod padding;
 mod png;
 mod text;
 mod zip;
@@ -32,9 +33,11 @@ mod zlib;
 #[cfg(feature = "dev-dependencies")]
 pub mod dev;
 
+#[doc(hidden)]
+pub use crate::text::*;
 #[doc(inline)]
 pub use crate::{
-    checksums::*, deflate::*, generic::*, png::*, text::*, zip::*, zipng::*, zipng::*, zlib::*,
+    alignment::*, checksums::*, deflate::*, generic::*, png::*, zip::*, zipng::*, zipng::*, zlib::*,
 };
 
 /// Creates a ZIP archive.
@@ -57,8 +60,20 @@ pub fn png_from_slice(png_file: &[u8]) -> Result<Png, panic> {
     Ok(Png::read_slice(png_file)?)
 }
 
+#[doc(hidden)]
+pub trait Seek: io::Seek {
+    /// Calls [`.stream_position()`](io::Seek::stream_position), unwraps
+    /// the value and converts it to a `usize`.
+    fn offset(&mut self) -> usize {
+        self.stream_position().unwrap().try_into().unwrap()
+    }
+}
+impl<T> Seek for T where T: io::Seek {}
+
+#[doc(hidden)]
 pub trait BufReadAndSeek: BufRead + Seek {}
 impl<T> BufReadAndSeek for T where T: BufRead + Seek {}
 
+#[doc(hidden)]
 pub trait WriteAndSeek: Write + Seek {}
 impl<T> WriteAndSeek for T where T: Write + Seek {}

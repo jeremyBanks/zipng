@@ -4,7 +4,6 @@ use {
 };
 
 /// A reference to an entry in a [`Zip`] archive.
-#[non_exhaustive]
 pub struct ZipEntry<'name, 'body> {
     pub name: &'name [u8],
     pub body: &'body [u8],
@@ -35,6 +34,24 @@ pub static SORT_BY_BODY: ZipEntryComparison = |a, b| {
     (a.body, a.name)
         .cmp(&(b.body, b.name))
         .then_with(|| SORT_BY_NAME(a, b))
+};
+
+/// Sorts files by size class, then applies [`SORT_BY_BODY`].
+pub static SORT_BY_SIZE: ZipEntryComparison = |a, b| {
+    fn size_class(n: usize) -> usize {
+        match n {
+            0x00..=0b00 => 0x00,
+            0x01..=0x40 => 0x40,
+            0x41..=0x100 => 0x100,
+            0x101..=0x400 => 0x400,
+            n => n.next_power_of_two(),
+        }
+    }
+
+    let a_size = size_class(a.body.len());
+
+    let b_size = size_class(b.body.len());
+    a_size.cmp(&b_size).then_with(|| SORT_BY_BODY(a, b))
 };
 
 /// Pins the `mimetype` magic header file used by EPUB and OpenDocument.

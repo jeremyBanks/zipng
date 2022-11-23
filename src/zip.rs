@@ -9,7 +9,8 @@ mod to_zip;
 
 use {
     crate::{zipng::writing::write_zip, WriteAndSeek},
-    std::io::Cursor,
+    std::{io::Cursor, path::Path},
+    tracing::{debug, instrument},
 };
 
 pub use self::{configuration::*, to_zip::*};
@@ -25,6 +26,38 @@ impl Zip {
     /// Creates a new [`Zip`] from the given data.
     pub fn new(data: &impl ToZip) -> Self {
         data.to_zip().into_owned()
+    }
+
+    pub fn new_with_files(files: Vec<(Vec<u8>, Vec<u8>)>) -> Self {
+        Self {
+            files,
+            ..Default::default()
+        }
+    }
+
+    #[instrument(skip_all)]
+    /// Creates a new [`Zip`] from the file or directory at the given path.
+    pub fn new_from_path(path: impl AsRef<Path>) -> Result<Self, panic> {
+        let path = path.as_ref();
+        let mut files = Vec::<(Vec<u8>, Vec<u8>)>::new();
+
+        let walkdir = walkdir::WalkDir::new(path);
+        for entry in walkdir {
+            let entry = entry?;
+            if !entry.file_type().is_file() {
+                continue;
+            }
+            // XXX: zip requires `/`-delimited paths, and if we're creating from
+            // the filesystem directly I guess we're responsible for that,
+            // although we don't want to touch users' own input if they're
+            // manually specifying paths.
+            let adding = entry.path().to_path_buf();
+            debug!("adding {adding:?}");
+            let contents = std::fs::read(adding)?;
+            files.push((path.to_str().unwrap().as_bytes().to_vec(), contents));
+        }
+
+        Ok(Self::new_with_files(files))
     }
 
     /// Serializes this [`Zip`] as a ZIP archive file.

@@ -1,6 +1,6 @@
 use zipng::{
     dev::{init, save},
-    palettes::MAP_BIT_COUNT,
+    palettes::mappings::BIT_COUNT,
     panic, EightBit, Png,
 };
 
@@ -11,9 +11,11 @@ fn main() -> Result<(), panic> {
 
     for y in 0..png.height {
         for x in 0..png.width {
-            png.set_pixel(x, y, &[
-                MAP_BIT_COUNT[(x * 4 / 9 + x.abs_diff(y) / 15).min(255)]
-            ])?;
+            png.set_pixel(
+                x,
+                y,
+                &[BIT_COUNT[(x * 4 / 9 + x.abs_diff(y) / 15).min(255)]],
+            )?;
         }
     }
 

@@ -192,7 +192,7 @@ impl Png {
     #[instrument(skip_all)]
     /// Serializes this [`Png`] as a PNG image file.
     pub fn write(&self, output: &mut impl Write) -> Result<(), panic> {
-        let mut buffer = Vec::new();
+        let mut buffer = Cursor::new(Vec::new());
         crate::png::writing::write_png(
             &mut buffer,
             self.pixel_data.as_slice(),
@@ -202,7 +202,7 @@ impl Png {
             self.color_type,
             self.palette_data.as_deref(),
         );
-        Ok(output.write_all(&buffer)?)
+        Ok(output.write_all(&buffer.into_inner())?)
     }
 
     #[cfg(feature = "flate2")]

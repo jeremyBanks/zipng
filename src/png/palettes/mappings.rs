@@ -2,7 +2,7 @@
 //! [`EightBit`][crate::EightBit] palettes.
 
 /// Returns a new palette that is the result of applying the given `mapping`
-/// to the provided [`EightBit`] palette.
+/// to the provided [`EightBit`][crate::EightBit] palette.
 pub fn apply_mapping(mapping: &[u8; 256], palette: &[u8]) -> Vec<u8> {
     if palette.len() % 256 != 0 {
         panic!("palette length must be a multiple of 256");

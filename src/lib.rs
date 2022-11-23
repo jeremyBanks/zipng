@@ -17,7 +17,7 @@
 
 use {
     crate::generic::*,
-    std::io::{self, BufRead, Write},
+    std::io::{self, Read, Write},
 };
 
 mod alignment;
@@ -63,16 +63,23 @@ pub fn png_from_slice(png_file: &[u8]) -> Result<Png, panic> {
 #[doc(hidden)]
 pub trait Seek: io::Seek {
     /// Calls [`.stream_position()`](io::Seek::stream_position), unwraps
-    /// the value and converts it to a `usize`.
+    /// the value and converts it to a `usize`. If either fails, returns
+    /// `usize::MAX` instead of panicking or returning an error.
     fn offset(&mut self) -> usize {
-        self.stream_position().unwrap().try_into().unwrap()
+        let Ok(position) = self.stream_position() else {
+            return usize::MAX;
+        };
+        let Ok(position) = usize::try_from(position) else {
+            return usize::MAX;
+        };
+        position
     }
 }
 impl<T> Seek for T where T: io::Seek {}
 
 #[doc(hidden)]
-pub trait BufReadAndSeek: BufRead + Seek {}
-impl<T> BufReadAndSeek for T where T: BufRead + Seek {}
+pub trait ReadAndSeek: Read + Seek {}
+impl<T> ReadAndSeek for T where T: Read + Seek {}
 
 #[doc(hidden)]
 pub trait WriteAndSeek: Write + Seek {}

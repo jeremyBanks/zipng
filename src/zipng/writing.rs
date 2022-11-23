@@ -9,11 +9,6 @@ use {
 
 const BLOCK_SIZE: usize = 1024;
 
-/// Creates a zip file from files in the order given, appending to the `prefix`
-/// buffer `Vec` (which does not need to be empty), and ending with the
-/// given `suffix`,
-///
-/// Returns the number of bytes written.
 pub(crate) fn write_zip(
     mut output: &mut impl WriteAndSeek,
     files: &[(&[u8], &[u8])],

@@ -10,18 +10,7 @@ fn main() -> Result<(), panic> {
 
     let mut zip = Zip::new_from_path(".\\data\\alpine-minirootfs-3.17.0-x86_64")?;
 
-    zip.files.sort_by(|a, b| {
-        SORT_BY_SIZE(
-            &ZipEntry {
-                name: &a.0,
-                body: &a.1,
-            },
-            &ZipEntry {
-                name: &b.0,
-                body: &b.1,
-            },
-        )
-    });
+    zip.files.sort_by(SORT_BY_SIZE);
 
     let zipng = Png::from_unstructured_bytes(&zip.write_vec()?);
 

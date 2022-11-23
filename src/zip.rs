@@ -60,6 +60,23 @@ impl Zip {
         Ok(Self::new_with_files(files))
     }
 
+    pub fn sort_by(&mut self, comparison: ZipEntryComparison) {
+        self.files.sort_by(|a, b| {
+            comparison(
+                &ZipEntry {
+                    name: &a.0,
+                    body: &a.1,
+                },
+                &ZipEntry {
+                    name: &b.0,
+                    body: &b.1,
+                },
+            )
+        });
+
+    }
+    }
+
     /// Serializes this [`Zip`] as a ZIP archive file.
     pub fn write(&self, output: &mut impl WriteAndSeek) -> Result<usize, panic> {
         write_zip(

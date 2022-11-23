@@ -12,7 +12,7 @@ fn main() -> Result<(), panic> {
 
     zip.files.sort_by(SORT_BY_SIZE);
 
-    let zipng = Png::from_unstructured_bytes(&zip.write_vec()?);
+    let zipng = Zipng::from(zip);
 
     save!({ zipng.write_vec()? }.zip.png)
 }

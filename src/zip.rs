@@ -71,10 +71,7 @@ impl Zip {
                     name: &b.0,
                     body: &b.1,
                 },
-            )
-        });
-
-    }
+            )})
     }
 
     /// Serializes this [`Zip`] as a ZIP archive file.

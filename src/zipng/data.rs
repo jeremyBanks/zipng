@@ -1,3 +1,10 @@
+
+use crate::PNG_CHUNK_PREFIX_SIZE;
+use crate::PNG_CHUNK_WRAPPER_SIZE;
+use crate::PNG_HEADER_SIZE;
+use crate::ZIP_FILE_HEADER_EMPTY_SIZE;
+use crate::palettes::RGB_256_COLOR_PALETTE_SIZE;
+
 use {
     crate::{
         generic::{never, panic},
@@ -24,11 +31,6 @@ impl Zipng {
     #[instrument(skip_all)]
     /// Serializes this [`Zipng`] as a ZIP/PNG polyglot file.
     pub fn write(&self, output: &mut impl WriteAndSeek) -> Result<usize, panic> {
-        {
-            // what do we want?
-            // png header needs to come first
-        }
-
         if output.offset() != 0 {
             warn!(
                 "PNG is being written at nonzero stream offset: {}",
@@ -36,10 +38,16 @@ impl Zipng {
             );
         }
 
-        // in order to write the header, we need to know the image metadata.
-        // it has a fixed length, which can help with figuring out the alignment, I
-        // guess. Well, I guess we can generate the zip data as a single block,
-        // align it as a whole(!?), and work on that? no. maybe. we'll see.
+        // I guess the chunk-alignment can be delayed or even ditched for this operation.
+        // We can probably layer it on later if we want to.
+        // First, just make it work?
+
+        let image_data_offset =
+            PNG_HEADER_SIZE +
+            (PNG_CHUNK_WRAPPER_SIZE + RGB_256_COLOR_PALETTE_SIZE) + 
+            (PNG_CHUNK_PREFIX_SIZE + ZIP_FILE_HEADER_EMPTY_SIZE);
+        
+
 
         unimplemented!()
     }

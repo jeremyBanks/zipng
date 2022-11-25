@@ -1,3 +1,5 @@
+//! In-memory representation of a PNG image.
+
 use {
     crate::{
         never,
@@ -9,6 +11,8 @@ use {
     std::io::{Cursor, Read, Write},
     tracing::{instrument, trace},
 };
+
+use crate::palettes::oceanic::TOPO;
 
 #[doc(hidden)]
 pub use self::{BitDepth::*, ColorType::*};
@@ -133,7 +137,7 @@ impl Png {
                 color_type = ColorType::Indexed;
             },
             0x400001..=0x800000 => {
-                palette_data = Some(BALANCE.to_vec());
+                palette_data = Some(TOPO.to_vec());
                 bit_depth = BitDepth::EightBit;
                 color_type = ColorType::Indexed;
             },

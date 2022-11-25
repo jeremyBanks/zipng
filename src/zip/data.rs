@@ -1,3 +1,5 @@
+//! In-memory representation of a ZIP archive.
+
 use {
     crate::{
         never, panic, zipng::writing::write_zip, ToZip, WriteAndSeek, ZipConfiguration, ZipEntry,

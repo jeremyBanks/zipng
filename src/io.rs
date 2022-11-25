@@ -1,9 +1,13 @@
-//!
+use std::io::Cursor;
 
 use {
     crate::{generic::panic, WriteAndSeek},
     std::io::Write,
 };
+
+pub fn byte_buffer() -> Cursor<Vec<u8>> {
+    Cursor::new(Vec::new())
+}
 
 /// Alignment direction, possible for rendered text or binary data.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]

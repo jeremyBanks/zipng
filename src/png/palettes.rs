@@ -6,6 +6,8 @@ pub mod oceanic;
 pub mod singles;
 pub mod viridis;
 
+pub const RGB_256_COLOR_PALETTE_SIZE: usize = 768;
+
 /// All included [`EightBit`][crate::EightBit]
 /// color maps.
 pub static ALL: &[&[u8]] = &[];

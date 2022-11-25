@@ -1,6 +1,6 @@
 #![feature(doc_cfg, doc_auto_cfg)]
 #![allow(non_upper_case_globals)]
-#![warn(unused_crate_dependencies, missing_docs)]
+#![warn(unused_crate_dependencies, missing_docs, clippy::redundant_pub_crate)]
 #![cfg_attr(
     all(debug_assertions, any(not(test), feature = "EDITOR")),
     allow(
@@ -20,7 +20,7 @@ use {
     std::io::{self, Read, Write},
 };
 
-mod alignment;
+mod io;
 mod checksums;
 mod deflate;
 mod generic;
@@ -37,7 +37,7 @@ pub mod dev;
 pub use crate::text::*;
 #[doc(inline)]
 pub use crate::{
-    alignment::*, checksums::*, deflate::*, generic::*, png::*, zip::*, zipng::*, zipng::*, zlib::*,
+    io::*, checksums::*, deflate::*, generic::*, png::*, zip::*, zipng::*, zipng::*, zlib::*,
 };
 
 /// Creates a ZIP archive.

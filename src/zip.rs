@@ -6,6 +6,7 @@ use {
 mod configuration;
 mod data;
 mod to_zip;
+mod sizes;
 
 use {
     crate::{zipng::writing::write_zip, WriteAndSeek},
@@ -13,7 +14,7 @@ use {
     tracing::{debug, instrument},
 };
 
-pub use self::{configuration::*, data::*, to_zip::*};
+pub use self::{configuration::*, data::*, to_zip::*, sizes::*};
 
 fn zip<'files, Files>(files: Files) -> Vec<u8>
 where Files: 'files + IntoIterator<Item = (&'files [u8], &'files [u8])> {

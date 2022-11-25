@@ -7,7 +7,6 @@ use {
     tracing::warn,
 };
 
-pub const PNG_HEADER_SIZE: usize = 33;
 pub fn write_png_header(
     buffer: &mut impl WriteAndSeek,
     width: u32,
@@ -60,51 +59,6 @@ pub fn write_png_body(buffer: &mut impl WriteAndSeek, data: &[u8]) -> Result<usi
     let mut deflated = Vec::new();
     write_non_deflated(&mut Cursor::new(&mut deflated), data);
     write_png_chunk(buffer, b"IDAT", &deflated)
-}
-
-pub fn write_non_deflated(buffer: &mut impl WriteAndSeek, data: &[u8]) -> Result<usize, panic> {
-    let chunks = data.chunks(0xFFFF);
-
-    // zlib compression mode: deflate with 32KiB windows
-    let cmf = 0b_0111_1000;
-    buffer.write_all(&[cmf])?;
-    // zlib flag bits: no preset dictionary, compression level 0
-    let mut flg: u8 = 0b0000_0000;
-    // zlib flag and check bits
-    flg |= 0b1_1111 - ((((cmf as u16) << 8) | (flg as u16)) % 0b1_1111) as u8;
-    buffer.write_all(&[flg])?;
-
-    let mut before = None;
-    let mut after = None;
-
-    let count = chunks.len();
-    for (index, chunk) in chunks.enumerate() {
-        // deflate flag bits
-        let is_last_chunk = index + 1 >= count;
-        buffer.write_all(&[is_last_chunk.into()])?;
-        // deflate block length
-        buffer.write_all(&u16::try_from(chunk.len()).unwrap().to_le_bytes());
-        // deflate block length check complement
-        buffer.write_all(&u16::try_from(chunk.len()).unwrap().not().to_le_bytes());
-
-        // Is there any way I can massage this into looking like a PNG
-        // filter prefix? We can't get rid of the lengths, and they're constant, but I
-        // guess we can accept that as a border. hmm... if at least one of their
-        // bytes is zero (yes), it will be possible to treat the middle byte as the
-        // filter and have the border on both sides.
-
-        before.get_or_insert(buffer.offset());
-        buffer.write_all(chunk);
-        after = Some(buffer.offset());
-    }
-
-    // adler-32 checksum of the uncompressed data
-    buffer.write_all(&adler32(data).to_le_bytes());
-
-    let after = after.unwrap_or(buffer.offset());
-    let before = before.unwrap_or(after);
-
-    Ok(before - after)
 }
 
 pub fn write_non_png_chunk(buffer: &mut impl WriteAndSeek, data: &[u8]) -> Result<usize, panic> {

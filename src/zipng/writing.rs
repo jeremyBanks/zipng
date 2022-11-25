@@ -1,6 +1,6 @@
 use {
     crate::{
-        alignment::{write_aligned_pad_end, write_aligned_pad_start},
+        io::{write_aligned_pad_end, write_aligned_pad_start},
         crc32, panic, WriteAndSeek,
     },
     bstr::ByteSlice,

@@ -1,7 +1,8 @@
 use {
     crate::{
+        crc32,
         io::{write_aligned_pad_end, write_aligned_pad_start},
-        crc32, panic, WriteAndSeek,
+        panic, WriteAndSeek,
     },
     bstr::ByteSlice,
     std::io::Write,

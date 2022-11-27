@@ -2,8 +2,8 @@
 
 use {
     crate::{
-        never, panic, zipng::writing::write_zip, ToZip, WriteAndSeek, ZipConfiguration, ZipEntry,
-        ZipEntryComparison,
+        byte_buffer, never, panic, zipng::writing::write_zip, ToZip, WriteAndSeek,
+        ZipConfiguration, ZipEntry, ZipEntryComparison,
     },
     serde::{Deserialize, Serialize},
     std::{
@@ -93,7 +93,7 @@ impl Zip {
 
     /// Serializes this [`Zip`] into a byte vector as a ZIP archive file.
     pub fn write_vec(&self) -> Result<Vec<u8>, never> {
-        let mut output = Cursor::new(Vec::new());
+        let mut output = byte_buffer();
         self.write(&mut output)?;
         Ok(output.into_inner())
     }

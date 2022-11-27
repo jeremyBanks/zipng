@@ -1,10 +1,4 @@
-use crate::WriteAndSeek;
-use crate::adler32;
-use crate::byte_buffer;
-use crate::generic::panic;
-use crate::write_framed_as_deflate;
-
-
+use crate::{adler32, byte_buffer, generic::panic, write_framed_as_deflate, WriteAndSeek};
 
 /// Writes the data with the headers and framing required for a zlib stream,
 /// without performing any compression.

@@ -5,8 +5,8 @@ pub mod palettes;
 
 mod data;
 mod dithering;
-mod to_png;
 mod sizes;
+mod to_png;
 
 #[doc(inline)]
-pub use self::{data::*, to_png::*, dithering::*, sizes::*};
+pub use self::{data::*, dithering::*, sizes::*, to_png::*};

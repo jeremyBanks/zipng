@@ -1,15 +1,16 @@
-
-use std::ops::Not;
-
-use crate::WriteAndSeek;
-use crate::adler32;
-use crate::panic;
+use {
+    crate::{adler32, panic, WriteAndSeek},
+    std::ops::Not,
+};
 
 /// Writes the data with the headers and framing required for a deflate stream,
 /// without performing any compression.
-pub fn write_framed_as_deflate(output: &mut impl WriteAndSeek, data: &[u8]) -> Result<usize, panic> {
+pub fn write_framed_as_deflate(
+    output: &mut impl WriteAndSeek,
+    data: &[u8],
+) -> Result<usize, panic> {
     let before = output.offset();
-    
+
     let chunks = data.chunks(0xFFFF);
 
     let count = chunks.len();

@@ -1,4 +1,5 @@
 use zipng::{
+    byte_buffer,
     dev::{init, save},
     panic, Png, Zip, ZipEntry, Zipng, SORT_BY_BODY, SORT_BY_NAME, SORT_BY_SIZE,
 };
@@ -10,9 +11,10 @@ fn main() -> Result<(), panic> {
 
     zip.sort_by(SORT_BY_SIZE);
 
-    let zipng = Zipng::new(&zip);
+    let mut buffer = byte_buffer();
+    zip.write_zipng(&mut buffer)?;
 
-    save!({ zipng.write_vec()? }.zip.png)
+    save!({ buffer.get_ref() }.zip.png)
 }
 
 #[test]

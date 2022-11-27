@@ -20,10 +20,10 @@ use {
     std::io::{Read, Write},
 };
 
-mod io;
 mod checksums;
 mod deflate;
 mod generic;
+mod io;
 mod png;
 mod text;
 mod zip;
@@ -37,7 +37,7 @@ pub mod dev;
 pub use crate::text::*;
 #[doc(inline)]
 pub use crate::{
-    io::*, checksums::*, deflate::*, generic::*, png::*, zip::*, zipng::*, zipng::*, zlib::*,
+    checksums::*, deflate::*, generic::*, io::*, png::*, zip::*, zipng::*, zipng::*, zlib::*,
 };
 
 /// Creates a ZIP archive.

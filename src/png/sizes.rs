@@ -1,4 +1,5 @@
-//! Constants related to the PNG file format, which may be relevant for both [reading][super::reading] and [writing][super::writing].
+//! Constants related to the PNG file format, which may be relevant for both
+//! [reading][super::reading] and [writing][super::writing].
 
 pub(crate) const PNG_CHUNK_PREFIX_SIZE: usize = 8;
 pub(crate) const PNG_CHUNK_SUFFIX_SIZE: usize = 4;

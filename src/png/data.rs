@@ -2,8 +2,12 @@
 
 use {
     crate::{
-        never,
-        palettes::{crameri::OLERON, oceanic::BALANCE, singles::FOUR_BIT_RAINBOW},
+        byte_buffer, never,
+        palettes::{
+            crameri::OLERON,
+            oceanic::{BALANCE, TOPO},
+            singles::FOUR_BIT_RAINBOW,
+        },
         panic, ToPng,
     },
     bitvec::slice::BitSlice,
@@ -11,8 +15,6 @@ use {
     std::io::{Cursor, Read, Write},
     tracing::{instrument, trace},
 };
-
-use crate::palettes::oceanic::TOPO;
 
 #[doc(hidden)]
 pub use self::{BitDepth::*, ColorType::*};
@@ -196,7 +198,7 @@ impl Png {
     #[instrument(skip_all)]
     /// Serializes this [`Png`] as a PNG image file.
     pub fn write(&self, output: &mut impl Write) -> Result<(), panic> {
-        let mut buffer = Cursor::new(Vec::new());
+        let mut buffer = byte_buffer();
         crate::png::writing::write_png(
             &mut buffer,
             self.pixel_data.as_slice(),
@@ -218,7 +220,7 @@ impl Png {
 
     /// Serializes this [`Png`] into a byte vector as a PNG image file.
     pub fn write_vec(&self) -> Result<Vec<u8>, never> {
-        let mut output = Cursor::new(Vec::new());
+        let mut output = byte_buffer();
         self.write(&mut output)?;
         Ok(output.into_inner())
     }

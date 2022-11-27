@@ -1,14 +1,10 @@
-
-use crate::PNG_CHUNK_PREFIX_SIZE;
-use crate::PNG_CHUNK_WRAPPER_SIZE;
-use crate::PNG_HEADER_SIZE;
-use crate::ZIP_FILE_HEADER_EMPTY_SIZE;
-use crate::palettes::RGB_256_COLOR_PALETTE_SIZE;
-
 use {
     crate::{
+        byte_buffer,
         generic::{never, panic},
-        Png, ToZipng, WriteAndSeek, Zip,
+        palettes::RGB_256_COLOR_PALETTE_SIZE,
+        write_framed_as_zlib, Png, ToZipng, WriteAndSeek, Zip, PNG_CHUNK_PREFIX_SIZE,
+        PNG_CHUNK_WRAPPER_SIZE, PNG_HEADER_SIZE, ZIP_FILE_HEADER_EMPTY_SIZE,
     },
     std::io::{Cursor, Read},
     tracing::{instrument, warn},
@@ -16,6 +12,10 @@ use {
 
 /// In-memory representation of a ZIP file's archive contents and a PNG file's
 /// image contents.
+///
+/// This is dumb what does this even mean?
+///
+/// This needs to be like a builder. Probably shouldn't contain a `Png`.
 #[derive(Debug, Clone, Default)]
 pub struct Zipng {
     pub zip: Zip,
@@ -27,10 +27,16 @@ impl Zipng {
     pub fn new(data: &impl ToZipng) -> Self {
         data.to_zipng().into_owned()
     }
+}
 
-    #[instrument(skip_all)]
-    /// Serializes this [`Zipng`] as a ZIP/PNG polyglot file.
-    pub fn write(&self, output: &mut impl WriteAndSeek) -> Result<usize, panic> {
+// Don't be excessively generic, buddy.
+// You don't need this type. These are just methods on your Zip type.
+// Keep minimal information on those types. Mostly arguments to DIFFERENT
+// methods.
+
+impl Zip {
+    /// Serializes this [`Zip`] as a ZIP/PNG polyglot file.
+    pub fn write_zipng(&self, mut output: &mut impl WriteAndSeek) -> Result<usize, panic> {
         if output.offset() != 0 {
             warn!(
                 "PNG is being written at nonzero stream offset: {}",
@@ -38,37 +44,15 @@ impl Zipng {
             );
         }
 
-        // I guess the chunk-alignment can be delayed or even ditched for this operation.
-        // We can probably layer it on later if we want to.
-        // First, just make it work?
+        let image_data_offset = PNG_HEADER_SIZE
+            + (PNG_CHUNK_WRAPPER_SIZE + RGB_256_COLOR_PALETTE_SIZE)
+            + (PNG_CHUNK_PREFIX_SIZE + ZIP_FILE_HEADER_EMPTY_SIZE);
 
-        let image_data_offset =
-            PNG_HEADER_SIZE +
-            (PNG_CHUNK_WRAPPER_SIZE + RGB_256_COLOR_PALETTE_SIZE) + 
-            (PNG_CHUNK_PREFIX_SIZE + ZIP_FILE_HEADER_EMPTY_SIZE);
-        
+        let mut image_data = byte_buffer();
+        self.write(&mut image_data)?;
 
+        write_framed_as_zlib(&mut output, image_data.get_mut())?;
 
         unimplemented!()
-    }
-
-    /// Serializes this [`Zip`] into a byte vector as a ZIP/PNG polyglot file.
-    pub fn write_vec(&self) -> Result<Vec<u8>, never> {
-        let mut output = Cursor::new(Vec::new());
-        self.write(&mut output)?;
-        Ok(output.into_inner())
-    }
-
-    #[instrument(skip_all)]
-    /// Deserializes a ZIP/PNG polyglot file into a [`Zipng`].
-    pub fn read(input: &impl Read) -> Result<Self, panic> {
-        let zip = Zip::read(input)?;
-        let png = Png::read(input)?;
-        Ok(Self { zip, png })
-    }
-
-    /// Deserialize a ZIP/PNG polyglot file into a [`Zip`] from a byte vector.
-    pub fn read_slice(input: &[u8]) -> Result<Self, never> {
-        Ok(Self::read(&input)?)
     }
 }

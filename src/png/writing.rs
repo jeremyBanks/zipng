@@ -1,8 +1,8 @@
-use crate::PNG_HEADER_SIZE;
-use crate::write_framed_as_zlib;
-
 use {
-    crate::{adler32, crc32, panic, BitDepth, ColorType, WriteAndSeek},
+    crate::{
+        adler32, byte_buffer, crc32, panic, write_framed_as_zlib, BitDepth, ColorType,
+        WriteAndSeek, PNG_HEADER_SIZE,
+    },
     std::{
         io::{Cursor, Write},
         ops::{Not, Range},
@@ -26,26 +26,26 @@ pub fn write_png_header(
     buffer.write_all(b"\x89PNG\r\n\x1A\n")?;
     // 0x0008..0x0010:     IHDR chunk prefix (length and type)
     write_png_chunk(buffer, b"IHDR", &{
-        let mut data = Cursor::new(Vec::new());
+        let mut data = byte_buffer();
 
         // 0x0010..0x0014: pixel width
-        data.write_all(&width.to_be_bytes());
+        data.write_all(&width.to_be_bytes())?;
         // 0x0004..0x0018: pixel height
-        data.write_all(&height.to_be_bytes());
+        data.write_all(&height.to_be_bytes())?;
         // 0x0018:         color bit depth
-        data.write_all(&u8::from(color_depth).to_be_bytes());
+        data.write_all(&u8::from(color_depth).to_be_bytes())?;
         // 0x0019:         color type: grayscale
-        data.write_all(&u8::from(color_mode).to_be_bytes());
+        data.write_all(&u8::from(color_mode).to_be_bytes())?;
         // 0x001A:         compression method: deflate
-        data.write_all(&0_u8.to_be_bytes());
+        data.write_all(&0_u8.to_be_bytes())?;
         // 0x001B:         filter method: basic
-        data.write_all(&0_u8.to_be_bytes());
+        data.write_all(&0_u8.to_be_bytes())?;
         // 0x001C:         interlace method: none
-        data.write_all(&0_u8.to_be_bytes());
+        data.write_all(&0_u8.to_be_bytes())?;
 
         data.into_inner()
         // 0x001D..0x0025: IHDR chunk suffix (checksum)
-    });
+    })?;
 
     let after = buffer.offset();
 

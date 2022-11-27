@@ -1,8 +1,6 @@
-use std::io::Cursor;
-
 use {
     crate::{generic::panic, WriteAndSeek},
-    std::io::Write,
+    std::io::{Cursor, Write},
 };
 
 pub fn byte_buffer() -> Cursor<Vec<u8>> {

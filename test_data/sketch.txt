@@ -1,0 +1,28 @@
+
+
+
+# Color Legend
+
+- A1 PNG Chunk Header
+- A2 PNG Data
+- A3 PNG Chunk Trailer
+- B1 ZIP Header
+- B2 ZIP Data
+- B3 ZIP Offset
+
+# Pieces
+
+- A2 I'm a PNG file.
+- A1 start header
+- A2 I'm 300 pixels wide, 400 pixels tall, and use an 8-bit color palette.
+- A3 end header
+- A1 start palette
+- A2 I contain the following colors: #FFFFFF, #000000, #112233, #412934, ...
+- A3 end palette
+- A1 start comment
+
+
+- B2 I'm a ZIP file.
+- B3 More details are here:
+- B1 the rest is a comment
+- A3 end comment

@@ -1,6 +1,6 @@
 {
   "window.title": "🦀 ${activeEditorShort} ${dirty}",
-  "rust-analyzer.checkOnSave.command": "clippy",
+  "rust-analyzer.checkOnSave.command": "check",
   "lldb.showDisassembly": "never",
   "rust-analyzer.semanticHighlighting.operator.enable": true,
   "rust-analyzer.semanticHighlighting.strings.enable": true,

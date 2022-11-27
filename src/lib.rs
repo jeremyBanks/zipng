@@ -17,7 +17,7 @@
 
 use {
     crate::generic::*,
-    std::io::{self, Read, Write},
+    std::io::{Read, Write},
 };
 
 mod io;
@@ -61,7 +61,7 @@ pub fn png_from_slice(png_file: &[u8]) -> Result<Png, panic> {
 }
 
 #[doc(hidden)]
-pub trait Seek: io::Seek {
+pub trait Seek: std::io::Seek {
     /// Calls [`.stream_position()`](io::Seek::stream_position), unwraps
     /// the value and converts it to a `usize`. If either fails, returns
     /// `usize::MAX` instead of panicking or returning an error.
@@ -75,7 +75,7 @@ pub trait Seek: io::Seek {
         position
     }
 }
-impl<T> Seek for T where T: io::Seek {}
+impl<T> Seek for T where T: std::io::Seek {}
 
 #[doc(hidden)]
 pub trait ReadAndSeek: Read + Seek {}

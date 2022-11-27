@@ -1,3 +1,6 @@
+use crate::PNG_HEADER_SIZE;
+use crate::write_framed_as_zlib;
+
 use {
     crate::{adler32, crc32, panic, BitDepth, ColorType, WriteAndSeek},
     std::{
@@ -57,7 +60,7 @@ pub fn write_png_palette(buffer: &mut impl WriteAndSeek, palette: &[u8]) -> Resu
 
 pub fn write_png_body(buffer: &mut impl WriteAndSeek, data: &[u8]) -> Result<usize, panic> {
     let mut deflated = Vec::new();
-    write_non_deflated(&mut Cursor::new(&mut deflated), data);
+    write_framed_as_zlib(&mut Cursor::new(&mut deflated), data);
     write_png_chunk(buffer, b"IDAT", &deflated)
 }
 

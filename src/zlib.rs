@@ -20,13 +20,13 @@ pub fn write_framed_as_zlib(output: &mut impl WriteAndSeek, data: &[u8]) -> Resu
     flg |= 0b1_1111 - ((((cmf as u16) << 8) | (flg as u16)) % 0b1_1111) as u8;
     output.write_all(&[flg])?;
 
-    let buffer = byte_buffer();
+    let mut buffer = byte_buffer();
     write_framed_as_deflate(&mut buffer, data)?;
 
-    output.write_all(&buffer)?;
+    output.write_all(&buffer.get_ref())?;
 
     // adler-32 checksum of the deflated data
-    output.write_all(&adler32(buffer).to_le_bytes());
+    output.write_all(&adler32(buffer.get_ref()).to_le_bytes());
 
     Ok(output.offset() - before)
 }

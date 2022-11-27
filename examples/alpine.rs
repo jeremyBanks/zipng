@@ -12,7 +12,7 @@ fn main() -> Result<(), panic> {
     zip.sort_by(SORT_BY_SIZE);
 
     let mut buffer = byte_buffer();
-    zip.write_zipng(&mut buffer)?;
+    zip.write_glass_zipng(&mut buffer)?;
 
     save!({ buffer.get_ref() }.zip.png)
 }

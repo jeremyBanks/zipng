@@ -36,7 +36,7 @@ impl Zipng {
 
 impl Zip {
     /// Serializes this [`Zip`] as a ZIP/PNG polyglot file.
-    pub fn write_zipng(&self, mut output: &mut impl WriteAndSeek) -> Result<usize, panic> {
+    pub fn write_glass_zipng(&self, mut output: &mut impl WriteAndSeek) -> Result<usize, panic> {
         if output.offset() != 0 {
             warn!(
                 "PNG is being written at nonzero stream offset: {}",

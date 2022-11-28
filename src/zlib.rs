@@ -1,23 +1,47 @@
 use {
-    crate::{adler32, byte_buffer, generic::panic, write_framed_as_deflate, WriteAndSeek},
+    crate::{
+        adler32, byte_buffer, default, generic::panic, write_deflate, DeflateMode, WriteAndSeek,
+    },
     std::{future::Future, ops::Not, pin::Pin, task},
 };
 
-/// Writes the data with the headers and framing required for a zlib stream,
-/// without performing any compression.
-pub fn write_framed_as_zlib(output: &mut impl WriteAndSeek, data: &[u8]) -> Result<usize, panic> {
-    WriteFramedAsZlib { output, data }.execute()
+pub fn write_zlib(output: &mut impl WriteAndSeek, data: &[u8]) -> Result<usize, panic> {
+    write_zlib {
+        output,
+        data,
+        mode: default(),
+    }
+    .call()
 }
 
-pub struct WriteFramedAsZlib<'output, 'data, Output: 'output + WriteAndSeek> {
-    output: &'output mut Output,
-    data: &'data [u8],
+#[allow(non_camel_case_types)]
+#[derive(Debug)]
+pub struct write_zlib<'all, Output>
+where Output: 'all + WriteAndSeek
+{
+    pub output: &'all mut Output,
+    pub data: &'all [u8],
+    pub mode: ZlibMode,
 }
 
-impl<WriteAndSeek: self::WriteAndSeek> Operation for WriteFramedAsZlib<'_, '_, WriteAndSeek> {
-    type Output = Result<usize, panic>;
-    fn execute(self) -> Result<usize, panic> {
-        let Self { output, data } = self;
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum ZlibMode {
+    /// deflate with a 32KiB LZ77 window
+    Deflate32K { mode: DeflateMode },
+}
+
+impl Default for ZlibMode {
+    fn default() -> Self {
+        Self::Deflate32K {
+            mode: DeflateMode::default(),
+        }
+    }
+}
+impl<WriteAndSeek> write_zlib<'_, WriteAndSeek>
+where WriteAndSeek: self::WriteAndSeek
+{
+    pub fn call(&mut self) -> Result<usize, panic> {
+        let Self { output, data, mode } = self;
 
         let before = output.offset();
 
@@ -31,7 +55,7 @@ impl<WriteAndSeek: self::WriteAndSeek> Operation for WriteFramedAsZlib<'_, '_, W
         output.write_all(&[flg])?;
 
         let mut buffer = byte_buffer();
-        write_framed_as_deflate(&mut buffer, data)?;
+        write_deflate(&mut buffer, data)?;
 
         output.write_all(&buffer.get_ref())?;
 
@@ -39,19 +63,5 @@ impl<WriteAndSeek: self::WriteAndSeek> Operation for WriteFramedAsZlib<'_, '_, W
         output.write_all(&adler32(buffer.get_ref()).to_le_bytes())?;
 
         Ok(output.offset() - before)
-    }
-}
-
-pub trait Operation {
-    type Output;
-    fn execute(self) -> Self::Output;
-}
-
-impl<T, U> Operation for T
-where T: Not<Output = U>
-{
-    type Output = U;
-    fn execute(self) -> Self::Output {
-        self.not()
     }
 }

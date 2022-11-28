@@ -1,10 +1,10 @@
 use {
     crate::{
-        byte_buffer,
+        byte_buffer, default,
         generic::{never, panic},
         palettes::RGB_256_COLOR_PALETTE_SIZE,
-        write_framed_as_zlib, Png, ToZipng, WriteAndSeek, Zip, PNG_CHUNK_PREFIX_SIZE,
-        PNG_CHUNK_WRAPPER_SIZE, PNG_HEADER_SIZE, ZIP_FILE_HEADER_EMPTY_SIZE,
+        write_zlib, Png, ToZipng, WriteAndSeek, Zip, PNG_CHUNK_PREFIX_SIZE, PNG_CHUNK_WRAPPER_SIZE,
+        PNG_HEADER_SIZE, ZIP_FILE_HEADER_EMPTY_SIZE,
     },
     std::io::{Cursor, Read},
     tracing::{instrument, warn},
@@ -51,7 +51,12 @@ impl Zip {
         let mut image_data = byte_buffer();
         self.write(&mut image_data)?;
 
-        write_framed_as_zlib(&mut output, image_data.get_mut())?;
+        write_zlib {
+            output: &mut output,
+            data: image_data.get_mut(),
+            mode: default(),
+        }
+        .call()?;
 
         unimplemented!()
     }

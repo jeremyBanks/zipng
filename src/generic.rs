@@ -6,7 +6,7 @@ use {
     },
 };
 
-pub(crate) fn default<T>() -> T
+pub fn default<T>() -> T
 where T: Default {
     T::default()
 }

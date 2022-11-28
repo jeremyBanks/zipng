@@ -32,12 +32,14 @@ mod zlib;
 
 #[cfg(feature = "dev-dependencies")]
 pub mod dev;
+mod opstructs;
 
 #[doc(hidden)]
 pub use crate::text::*;
 #[doc(inline)]
 pub use crate::{
-    checksums::*, deflate::*, generic::*, io::*, png::*, zip::*, zipng::*, zipng::*, zlib::*,
+    checksums::*, deflate::*, generic::*, io::*, opstructs::*, png::*, zip::*, zipng::*, zipng::*,
+    zlib::*,
 };
 
 /// Creates a ZIP archive.

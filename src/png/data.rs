@@ -207,7 +207,7 @@ impl Png {
             self.bit_depth,
             self.color_type,
             self.palette_data.as_deref(),
-        );
+        )?;
         Ok(output.write_all(&buffer.into_inner())?)
     }
 

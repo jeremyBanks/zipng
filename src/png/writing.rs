@@ -60,7 +60,7 @@ pub fn write_png_palette(buffer: &mut impl WriteAndSeek, palette: &[u8]) -> Resu
 
 pub fn write_png_body(buffer: &mut impl WriteAndSeek, data: &[u8]) -> Result<usize, panic> {
     let mut deflated = Vec::new();
-    write_zlib(&mut Cursor::new(&mut deflated), data);
+    write_zlib(&mut Cursor::new(&mut deflated), data)?;
     write_png_chunk(buffer, b"IDAT", &deflated)
 }
 
@@ -83,9 +83,9 @@ pub fn write_png_chunk(
         &u32::try_from(data.len())
             .expect("png chunk larger than 2GiB")
             .to_be_bytes(),
-    );
-    buffer.write_all(chunk_type);
-    buffer.write_all(data);
+    )?;
+    buffer.write_all(chunk_type)?;
+    buffer.write_all(data)?;
     buffer.write_all(
         &crc32(
             &[chunk_type.as_slice(), data]
@@ -95,10 +95,10 @@ pub fn write_png_chunk(
                 .collect::<Vec<_>>(),
         )
         .to_be_bytes(),
-    );
+    )?;
 
     let after = buffer.offset();
-    Ok(before - after)
+    Ok(after - before)
 }
 
 pub fn write_png(
@@ -109,10 +109,10 @@ pub fn write_png(
     bit_depth: BitDepth,
     color_mode: ColorType,
     palette: Option<&[u8]>,
-) {
-    write_png_header(buffer, width, height, bit_depth, color_mode);
+) -> Result<(), panic> {
+    write_png_header(buffer, width, height, bit_depth, color_mode)?;
     if let Some(palette) = palette {
-        write_png_palette(buffer, palette);
+        write_png_palette(buffer, palette)?;
     }
     // We need to insert a 0x00 byte at the start of every line (every `width`
     // bytes) to indicate that the line is not filtered.
@@ -128,6 +128,7 @@ pub fn write_png(
         }
         filtered_data.push(*byte);
     }
-    write_png_body(buffer, &filtered_data);
-    write_png_footer(buffer);
+    write_png_body(buffer, &filtered_data)?;
+    write_png_footer(buffer)?;
+    Ok(())
 }

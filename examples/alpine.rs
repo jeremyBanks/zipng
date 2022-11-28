@@ -1,7 +1,7 @@
 use zipng::{
     byte_buffer,
     dev::{init, save},
-    panic, Png, Zip, ZipEntry, Zipng, SORT_BY_BODY, SORT_BY_NAME, SORT_BY_SIZE,
+    panic, Zip, SORT_BY_SIZE,
 };
 
 fn main() -> Result<(), panic> {
@@ -12,7 +12,7 @@ fn main() -> Result<(), panic> {
     zip.sort_by(SORT_BY_SIZE);
 
     let mut buffer = byte_buffer();
-    zip.write_glass_zipng(&mut buffer)?;
+    // write_glass_zipng(&zip, &mut buffer)?;
 
     save!({ buffer.get_ref() }.zip.png)
 }

@@ -2,8 +2,15 @@ use {
     crate::{
         adler32, byte_buffer, default, generic::panic, write_deflate, DeflateMode, WriteAndSeek,
     },
-    std::{future::Future, ops::Not, pin::Pin, task},
+    std::{future::Future, io::Read, ops::Not, pin::Pin, task},
 };
+
+#[cfg(feature = "flate2")]
+pub fn read_zlib(input: &mut impl Read) -> Result<Vec<u8>, panic> {
+    let mut buffer = Vec::new();
+    flate2::read::ZlibDecoder::new(input).read_to_end(&mut buffer)?;
+    Ok(buffer)
+}
 
 pub fn write_zlib(output: &mut impl WriteAndSeek, data: &[u8]) -> Result<usize, panic> {
     write_zlib {

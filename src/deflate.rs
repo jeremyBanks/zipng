@@ -1,7 +1,14 @@
 use {
     crate::{adler32, generic::default, panic, WriteAndSeek},
-    std::ops::Not,
+    std::{io::Read, ops::Not},
 };
+
+#[cfg(feature = "flate2")]
+pub fn read_deflate(input: &mut impl Read) -> Result<Vec<u8>, panic> {
+    let mut buffer = Vec::new();
+    flate2::read::DeflateDecoder::new(input).read_to_end(&mut buffer)?;
+    Ok(buffer)
+}
 
 pub fn write_deflate(output: &mut impl WriteAndSeek, data: &[u8]) -> Result<usize, panic> {
     write_deflate {

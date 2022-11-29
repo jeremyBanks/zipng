@@ -1,6 +1,6 @@
 use {
     crate::{
-        byte_buffer, crc32,
+        adler32, byte_buffer, crc32,
         generic::default,
         io::{write_aligned_pad_end, write_aligned_pad_start},
         palettes::{
@@ -12,7 +12,7 @@ use {
         panic,
         png::write_png::{write_non_png_chunk, write_png_header, write_png_palette},
         write_aligned,
-        write_png::{write_png_body, write_png_footer},
+        write_png::{write_png_body, write_png_chunk, write_png_footer},
         write_zlib, Align, BitDepth, ColorType, Seek, WriteAndSeek, Zip, PNG_CHUNK_PREFIX_SIZE,
         PNG_CHUNK_SUFFIX_SIZE, PNG_CHUNK_WRAPPER_SIZE, PNG_HEADER_SIZE, ZIP_FILE_HEADER_EMPTY_SIZE,
     },
@@ -114,7 +114,7 @@ pub fn poc_zipng(palette: &[u8]) -> Result<Vec<u8>, panic> {
 
         let pixel_data = file.body;
 
-        let mut filtered_data = Vec::new();
+        let mut data_with_chunk_headers = Vec::new();
         let bits_per_pixel = color_depth.bits_per_sample() * color_mode.samples_per_pixel();
         let bits_per_line = width * bits_per_pixel as u32;
         let bytes_per_line = (bits_per_line + 7) / 8;
@@ -122,27 +122,36 @@ pub fn poc_zipng(palette: &[u8]) -> Result<Vec<u8>, panic> {
             if i % (bytes_per_line as usize) == 0 {
                 // filter byte (uncompressed in PNG) / non-compressed block header (DEFLATE in
                 // ZIP)
-                filtered_data.push(0); // XXX: for the last block this needs to be marked differently, neh?
-                                       // DEFLATE block length (two bytes little endian)
-                filtered_data.push(width as u8 + 4);
-                filtered_data.push(0);
+                data_with_chunk_headers.push(0); // XXX: for the last block this needs to be marked differently, neh?
+                                                 // DEFLATE block length (two bytes little endian)
+                data_with_chunk_headers.push(width as u8 + 4);
+                data_with_chunk_headers.push(0);
                 // DEFLATE block length bitwise negated (two bytes little endian)
-                filtered_data.push(!(width as u8 + 4));
-                filtered_data.push(!0);
+                data_with_chunk_headers.push(!(width as u8 + 4));
+                data_with_chunk_headers.push(!0);
             }
-            filtered_data.push(*byte);
+            data_with_chunk_headers.push(*byte);
         }
 
         // blank lines, visual padding
-        filtered_data.extend(vec![0x00; width as usize + 5]);
-        filtered_data.push(0x00);
-        filtered_data.extend(vec![0xFF; width as usize + 4]);
-        filtered_data.push(0x00);
-        filtered_data.extend(vec![0xFF; width as usize + 4]);
-        filtered_data.push(0x00);
-        filtered_data.extend(vec![0xFF; width as usize + 4]);
+        data_with_chunk_headers.extend(vec![0x00; width as usize + 5]);
+        data_with_chunk_headers.push(0x00);
+        data_with_chunk_headers.extend(vec![0xFF; width as usize + 4]);
+        data_with_chunk_headers.push(0x00);
+        data_with_chunk_headers.extend(vec![0xFF; width as usize + 4]);
+        data_with_chunk_headers.push(0x01); // last block
+        data_with_chunk_headers.extend(vec![0xFF; width as usize + 4]);
 
-        idat.write_all(&filtered_data)?;
+        // zlib compression mode: deflate with 32KiB windows
+        let cmf = 0b_0111_1000;
+        idat.write_all(&[cmf])?;
+        // zlib flag bits: no preset dictionary, compression level 0
+        let mut flg: u8 = 0b0000_0000;
+        // zlib flag and check bits
+        flg |= 0b1_1111 - ((((cmf as u16) << 8) | (flg as u16)) % 0b1_1111) as u8;
+        idat.write_all(&[flg])?;
+
+        idat.write_all(&data_with_chunk_headers)?;
     }
 
     // empty terminating block
@@ -151,21 +160,20 @@ pub fn poc_zipng(palette: &[u8]) -> Result<Vec<u8>, panic> {
     idat.write_all(&[0xFF, 0xFF])?;
 
     let offset_before_idat = buffer.offset();
-    // XXX: this adds a checksum yes or no?
-    // ahh of crap
-    // we have already added the deflate contents
-    // so we need to add the zlib header without adding the deflate details again
-    // and for that we also need an adler32 checksum of the contents excluding the
-    // deflate headers but that's only for the PNG? yes. because right now you
-    // have a PNG that's working but you're corrupting the ZIP file in the
-    // process.
-    write_png_body(&mut buffer, idat.get_ref())?;
+
+    let data: &[u8] = idat.get_ref();
+
+    // this is wrong because we it's looking at the compressed data, not the
+    // uncompressed data
+    idat.write_all(&adler32(idat.get_ref()).to_le_bytes())?;
+
+    write_png_chunk(&mut buffer, b"IDAT", idat.get_ref())?;
 
     let central_directory_offset = buffer.offset() + PNG_CHUNK_PREFIX_SIZE;
     let mut zip_central_directory = byte_buffer();
 
     for (File { name, body }, offset_in_idat) in files.iter().zip(file_offsets_in_idat) {
-        let offset = offset_before_idat + PNG_CHUNK_PREFIX_SIZE + offset_in_idat + 7;
+        let offset = offset_before_idat + PNG_CHUNK_PREFIX_SIZE + offset_in_idat;
         let mut file_entry = byte_buffer();
 
         let name = name.to_vec();

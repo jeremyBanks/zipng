@@ -2,8 +2,8 @@
 
 use {
     crate::{
-        byte_buffer, never, panic, zip::write_zip::write_zip, ToZip, WriteAndSeek,
-        ZipConfiguration, ZipEntry, ZipEntryComparison,
+        byte_buffer, generic::default, never, panic, zip::write_zip::write_zip, ToZip,
+        WriteAndSeek, ZipConfiguration, ZipEntry, ZipEntryComparison,
     },
     serde::{Deserialize, Serialize},
     std::{
@@ -27,10 +27,7 @@ impl Zip {
     }
 
     pub fn new_with_files(files: Vec<(Vec<u8>, Vec<u8>)>) -> Self {
-        Self {
-            files,
-            ..Default::default()
-        }
+        Self { files, ..default() }
     }
 
     #[instrument(skip_all)]

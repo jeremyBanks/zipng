@@ -2,6 +2,7 @@ use zipng::{
     byte_buffer,
     dev::{init, save},
     palettes::{
+        crameri::{BATLOW, ROMA_O},
         oceanic::{BALANCE, GRAY, TOPO},
         singles::TURBO,
         viridis::VIRIDIS,
@@ -15,6 +16,8 @@ fn main() -> Result<(), panic> {
     init!();
 
     save!({ poc_zipng(TURBO)? } - turbo.png.zip)?;
+    save!({ poc_zipng(BATLOW)? } - batlow.png.zip)?;
+    save!({ poc_zipng(ROMA_O)? } - roma_o.png.zip)?;
     save!({ poc_zipng(VIRIDIS)? } - viridis.png.zip)?;
     save!({ poc_zipng(BALANCE)? } - balance.png.zip)?;
     save!({ poc_zipng(GRAY)? } - gray.png.zip)?;

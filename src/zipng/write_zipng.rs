@@ -151,6 +151,13 @@ pub fn poc_zipng(palette: &[u8]) -> Result<Vec<u8>, panic> {
     idat.write_all(&[0xFF, 0xFF])?;
 
     let offset_before_idat = buffer.offset();
+    // XXX: this adds a checksum yes or no?
+    // ahh of crap 
+    // we have already added the deflate contents
+    // so we need to add the zlib header without adding the deflate details again
+    // and for that we also need an adler32 checksum of the contents excluding the deflate headers
+    // but that's only for the PNG? yes. because right now you have a PNG that's working but
+    // you're corrupting the ZIP file in the process.
     write_png_body(&mut buffer, idat.get_ref())?;
 
     let central_directory_offset = buffer.offset() + PNG_CHUNK_PREFIX_SIZE;

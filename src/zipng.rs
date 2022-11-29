@@ -1,4 +1,4 @@
-pub(crate) mod writing;
+pub(crate) mod write_zipng;
 
 #[doc(inline)]
-pub use self::writing::*;
+pub use self::write_zipng::*;

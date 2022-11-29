@@ -34,6 +34,8 @@ mod zlib;
 pub mod dev;
 mod opstructs;
 
+use std::io::SeekFrom;
+
 #[doc(hidden)]
 pub use crate::text::*;
 #[doc(inline)]
@@ -75,6 +77,15 @@ pub trait Seek: std::io::Seek {
             return usize::MAX;
         };
         position
+    }
+
+    fn len(&mut self) -> usize {
+        let old_pos = self.stream_position().unwrap_or(u64::MAX);
+        let len = self.seek(SeekFrom::End(0)).unwrap_or(u64::MAX);
+        if old_pos != len {
+            self.seek(SeekFrom::Start(old_pos)).unwrap();
+        }
+        len.try_into().unwrap_or(usize::MAX)
     }
 }
 impl<T> Seek for T where T: std::io::Seek {}

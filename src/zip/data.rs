@@ -2,8 +2,8 @@
 
 use {
     crate::{
-        byte_buffer, never, panic, zip::writing::write_zip, ToZip, WriteAndSeek, ZipConfiguration,
-        ZipEntry, ZipEntryComparison,
+        byte_buffer, never, panic, zip::write_zip::write_zip, ToZip, WriteAndSeek,
+        ZipConfiguration, ZipEntry, ZipEntryComparison,
     },
     serde::{Deserialize, Serialize},
     std::{

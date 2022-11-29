@@ -29,7 +29,7 @@ macro_rules! init {
 pub use crate::save;
 #[macro_export]
 macro_rules! save {
-    ($value:tt $(/ $tag:tt)? $(. $ext:ident)+) => {{
+    ($value:tt $(- $tag:tt)? $(. $ext:ident)+) => {{
         let mut op = "test_data/".to_string();
         op.push_str(env!("CARGO_CRATE_NAME"));
         $( op.push_str("-"); op.push_str(stringify!($tag)); )?

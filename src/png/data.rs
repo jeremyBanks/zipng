@@ -199,7 +199,7 @@ impl Png {
     /// Serializes this [`Png`] as a PNG image file.
     pub fn write(&self, output: &mut impl Write) -> Result<(), panic> {
         let mut buffer = byte_buffer();
-        crate::png::writing::write_png(
+        crate::png::write_png::write_png(
             &mut buffer,
             self.pixel_data.as_slice(),
             self.width.try_into()?,

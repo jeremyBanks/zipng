@@ -7,10 +7,10 @@ mod configuration;
 mod data;
 mod sizes;
 mod to_zip;
-mod writing;
+mod write_zip;
 
 use {
-    self::writing::write_zip,
+    self::write_zip::write_zip,
     crate::WriteAndSeek,
     std::{io::Cursor, path::Path},
     tracing::{debug, instrument},

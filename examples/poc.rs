@@ -2,7 +2,7 @@ use zipng::{
     byte_buffer,
     dev::{init, save},
     palettes::{
-        oceanic::{BALANCE, GRAY},
+        oceanic::{BALANCE, GRAY, TOPO},
         singles::TURBO,
         viridis::VIRIDIS,
     },
@@ -18,6 +18,7 @@ fn main() -> Result<(), panic> {
     save!({ poc_zipng(VIRIDIS)? } - viridis.png.zip)?;
     save!({ poc_zipng(BALANCE)? } - balance.png.zip)?;
     save!({ poc_zipng(GRAY)? } - gray.png.zip)?;
+    save!({ poc_zipng(TOPO)? } - topo.png.zip)?;
 
     Ok(())
 }

@@ -18,11 +18,11 @@ use {
     },
     bstr::ByteSlice,
     std::{borrow::Cow, io::Write},
-    tracing::{info, trace, warn},
+    tracing::{error, info, trace, warn},
 };
 
 pub fn poc_zipng(palette: &[u8]) -> Result<Vec<u8>, panic> {
-    let mut buffer = byte_buffer();
+    let mut output = output_buffer();
 
     // For this proof-of-concept, let's use two files.
     struct File {
@@ -53,8 +53,15 @@ pub fn poc_zipng(palette: &[u8]) -> Result<Vec<u8>, panic> {
     let width = 48;
     let height = 96;
 
-    write_png_header(&mut buffer, width + 4, height, color_depth, color_mode)?;
-    write_png_palette(&mut buffer, palette)?;
+    output.png_tag_start("PNG file");
+
+    output.png_tag_start("IHDR header");
+    write_png_header(&mut output, width + 4, height, color_depth, color_mode)?;
+    output.png_tag_end("IHDR header");
+
+    output.png_tag_start("PLTE palette");
+    write_png_palette(&mut output, palette)?;
+    output.png_tag_end("PLTE palette");
 
     let mut idat = byte_buffer();
     let mut file_offsets_in_idat = Vec::<usize>::new();
@@ -161,7 +168,7 @@ pub fn poc_zipng(palette: &[u8]) -> Result<Vec<u8>, panic> {
     idat.write_all(&[0x00, 0x00])?;
     idat.write_all(&[0xFF, 0xFF])?;
 
-    let offset_before_idat = buffer.offset();
+    let offset_before_idat = output.offset();
 
     let data: &[u8] = idat.get_ref();
 
@@ -169,9 +176,11 @@ pub fn poc_zipng(palette: &[u8]) -> Result<Vec<u8>, panic> {
     // uncompressed data
     idat.write_all(&adler32(idat.get_ref()).to_le_bytes())?;
 
-    write_png_chunk(&mut buffer, b"IDAT", idat.get_ref())?;
+    output.png_tag_start("IDAT data");
+    write_png_chunk(&mut output, b"IDAT", idat.get_ref())?;
+    output.png_tag_end("IDAT data");
 
-    let central_directory_offset = buffer.offset() + PNG_CHUNK_PREFIX_SIZE;
+    let central_directory_offset = output.offset() + PNG_CHUNK_PREFIX_SIZE;
     let mut zip_central_directory = byte_buffer();
 
     for (File { name, body }, offset_in_idat) in files.iter().zip(file_offsets_in_idat) {
@@ -273,27 +282,31 @@ pub fn poc_zipng(palette: &[u8]) -> Result<Vec<u8>, panic> {
 
     zip_central_directory.write_all(directory_terminator.get_ref())?;
 
-    write_non_png_chunk(&mut buffer, zip_central_directory.get_ref())?;
+    write_non_png_chunk(&mut output, zip_central_directory.get_ref())?;
 
-    buffer.write_all(png_footer.get_ref())?;
+    output.write_all(png_footer.get_ref())?;
 
-    Ok(buffer.into_inner())
+    Ok(output.into_inner())
 }
 
 type CowStr = Cow<'static, str>;
 
+pub fn output_buffer() -> OutputBuffer {
+    OutputBuffer::new()
+}
+
 #[derive(Debug, Default, Clone)]
-pub struct TaggedByteWriter {
+pub struct OutputBuffer {
     bytes: Vec<u8>,
     png_tags_by_byte: Vec<Vec<CowStr>>,
     zip_tags_by_byte: Vec<Vec<CowStr>>,
     png_tag_stack: Vec<CowStr>,
     zip_tag_stack: Vec<CowStr>,
-    png_tag_for_next: Vec<CowStr>,
-    zip_tag_for_next: Vec<CowStr>,
+    png_tags_for_next: Vec<CowStr>,
+    zip_tags_for_next: Vec<CowStr>,
 }
 
-impl TaggedByteWriter {
+impl OutputBuffer {
     pub fn new() -> Self {
         default()
     }
@@ -308,12 +321,30 @@ impl TaggedByteWriter {
 
     pub fn push(&mut self, byte: u8) {
         let mut png_tags = self.png_tag_stack.clone();
-        png_tags.extend(self.png_tag_for_next.drain(..));
+        png_tags.extend(self.png_tags_for_next.drain(..));
         let mut zip_tags = self.png_tag_stack.clone();
-        zip_tags.extend(self.png_tag_for_next.drain(..));
+        zip_tags.extend(self.png_tags_for_next.drain(..));
         self.bytes.push(byte);
         self.png_tags_by_byte.push(png_tags);
         self.zip_tags_by_byte.push(zip_tags);
+
+        let fresh_png_tags = self.png_tags_by_byte.len() < 2
+            || self.png_tags_by_byte[self.png_tags_by_byte.len() - 2]
+                != self.png_tags_by_byte[self.png_tags_by_byte.len() - 1];
+        let fresh_zip_tags = self.zip_tags_by_byte.len() < 2
+            || self.zip_tags_by_byte[self.zip_tags_by_byte.len() - 2]
+                != self.zip_tags_by_byte[self.zip_tags_by_byte.len() - 1];
+
+        if fresh_png_tags || fresh_zip_tags {
+            trace!(
+                "\n[0x{index:04X}] = 0x{byte:02X} with\n  PNG tags: {png_tags:?}\n  ZIP tags: \
+                 {zip_tags:?}",
+                index = self.bytes.len() - 1,
+                byte = byte,
+                png_tags = self.png_tags_by_byte.last().unwrap(),
+                zip_tags = self.zip_tags_by_byte.last().unwrap()
+            );
+        }
     }
 
     pub fn png_tag_start(&mut self, tag: impl Into<CowStr>) {
@@ -323,32 +354,46 @@ impl TaggedByteWriter {
     pub fn png_tag_end(&mut self, tag: impl Into<CowStr>) {
         let tag = tag.into();
         let popped = self.png_tag_stack.pop();
-        if popped != Some(tag.into()) {
+        if popped.as_ref() != Some(&tag) {
             panic!("expected end of tag {tag:?}, but got end of {popped:?}");
         }
     }
 
-    pub fn f() {
-        let buffer = TaggedByteWriter::new();
-        buffer.png_tag_start("file");
+    pub fn png_tag(&mut self, tag: impl Into<CowStr>) {
+        self.png_tags_for_next.push(tag.into());
+    }
 
-        buffer.png_tag("something this byte");
+    pub fn zip_tag_start(&mut self, tag: impl Into<CowStr>) {
+        self.zip_tag_stack.push(tag.into());
+    }
 
-        buffer.png_tag_end("file");
+    pub fn zip_tag_end(&mut self, tag: impl Into<CowStr>) {
+        let tag = tag.into();
+        let popped = self.zip_tag_stack.pop();
+        if popped.as_ref() != Some(&tag) {
+            panic!("expected end of tag {tag:?}, but got end of {popped:?}");
+        }
+    }
+
+    pub fn zip_tag(&mut self, tag: impl Into<CowStr>) {
+        self.zip_tags_for_next.push(tag.into());
     }
 }
 
-impl Write for TaggedByteWriter {
+impl Write for OutputBuffer {
     fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
-        todo!()
+        for byte in buf {
+            self.push(*byte);
+        }
+        Ok(buf.len())
     }
 
     fn flush(&mut self) -> std::io::Result<()> {
-        todo!()
+        Ok(())
     }
 }
 
-impl Offset for TaggedByteWriter {
+impl Offset for OutputBuffer {
     fn offset(&mut self) -> usize {
         self.len()
     }

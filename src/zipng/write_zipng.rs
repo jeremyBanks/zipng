@@ -13,11 +13,11 @@ use {
         png::write_png::{write_non_png_chunk, write_png_header, write_png_palette},
         write_aligned,
         write_png::{write_png_body, write_png_chunk, write_png_footer},
-        write_zlib, Align, BitDepth, ColorType, Seek, WriteAndSeek, Zip, PNG_CHUNK_PREFIX_SIZE,
+        write_zlib, Align, BitDepth, ColorType, Offset, WriteAndSeek, Zip, PNG_CHUNK_PREFIX_SIZE,
         PNG_CHUNK_SUFFIX_SIZE, PNG_CHUNK_WRAPPER_SIZE, PNG_HEADER_SIZE, ZIP_FILE_HEADER_EMPTY_SIZE,
     },
     bstr::ByteSlice,
-    std::io::Write,
+    std::{borrow::Cow, io::Write},
     tracing::{info, trace, warn},
 };
 
@@ -60,9 +60,9 @@ pub fn poc_zipng(palette: &[u8]) -> Result<Vec<u8>, panic> {
     let mut file_offsets_in_idat = Vec::<usize>::new();
 
     for file in files.iter() {
-        idat.write_all(&[0x00])?; // PNG filter byte, ZIP padding/ignored
-
         let mut local_file_header = byte_buffer();
+        local_file_header.write_all(&[0x00])?; // PNG filter byte, ZIP padding/ignored
+
         {
             // 0x0000..0x0004: local file header signature
             local_file_header.write(b"PK\x03\x04")?;
@@ -109,12 +109,22 @@ pub fn poc_zipng(palette: &[u8]) -> Result<Vec<u8>, panic> {
             idat.write_all(&[padding_bytes[i % padding_bytes.len()]])?;
         }
 
-        file_offsets_in_idat.push(idat.offset());
+        file_offsets_in_idat.push(idat.offset() + 1);
         idat.write_all(local_file_header.get_ref())?;
 
         let pixel_data = file.body;
 
         let mut data_with_chunk_headers = Vec::new();
+
+        // zlib compression mode: deflate with 32KiB windows
+        let cmf = 0b_0111_1000;
+        idat.write_all(&[cmf])?;
+        // zlib flag bits: no preset dictionary, compression level 0
+        let mut flg: u8 = 0b0000_0000;
+        // zlib flag and check bits
+        flg |= 0b1_1111 - ((((cmf as u16) << 8) | (flg as u16)) % 0b1_1111) as u8;
+        data_with_chunk_headers.write_all(&[flg])?;
+
         let bits_per_pixel = color_depth.bits_per_sample() * color_mode.samples_per_pixel();
         let bits_per_line = width * bits_per_pixel as u32;
         let bytes_per_line = (bits_per_line + 7) / 8;
@@ -134,22 +144,14 @@ pub fn poc_zipng(palette: &[u8]) -> Result<Vec<u8>, panic> {
         }
 
         // blank lines, visual padding
-        data_with_chunk_headers.extend(vec![0x00; width as usize + 5]);
+        data_with_chunk_headers.push(0x00);
+        data_with_chunk_headers.extend(vec![0x00; width as usize + 4]);
         data_with_chunk_headers.push(0x00);
         data_with_chunk_headers.extend(vec![0xFF; width as usize + 4]);
         data_with_chunk_headers.push(0x00);
         data_with_chunk_headers.extend(vec![0xFF; width as usize + 4]);
         data_with_chunk_headers.push(0x01); // last block
         data_with_chunk_headers.extend(vec![0xFF; width as usize + 4]);
-
-        // zlib compression mode: deflate with 32KiB windows
-        let cmf = 0b_0111_1000;
-        idat.write_all(&[cmf])?;
-        // zlib flag bits: no preset dictionary, compression level 0
-        let mut flg: u8 = 0b0000_0000;
-        // zlib flag and check bits
-        flg |= 0b1_1111 - ((((cmf as u16) << 8) | (flg as u16)) % 0b1_1111) as u8;
-        idat.write_all(&[flg])?;
 
         idat.write_all(&data_with_chunk_headers)?;
     }
@@ -276,4 +278,82 @@ pub fn poc_zipng(palette: &[u8]) -> Result<Vec<u8>, panic> {
     buffer.write_all(png_footer.get_ref())?;
 
     Ok(buffer.into_inner())
+}
+
+type CowStr = Cow<'static, str>;
+
+#[derive(Debug, Default, Clone)]
+pub struct TaggedByteWriter {
+    bytes: Vec<u8>,
+    png_tags_by_byte: Vec<Vec<CowStr>>,
+    zip_tags_by_byte: Vec<Vec<CowStr>>,
+    png_tag_stack: Vec<CowStr>,
+    zip_tag_stack: Vec<CowStr>,
+    png_tag_for_next: Vec<CowStr>,
+    zip_tag_for_next: Vec<CowStr>,
+}
+
+impl TaggedByteWriter {
+    pub fn new() -> Self {
+        default()
+    }
+
+    pub fn into_inner(self) -> Vec<u8> {
+        self.bytes
+    }
+
+    pub fn bytes(&self) -> &[u8] {
+        &self.bytes
+    }
+
+    pub fn push(&mut self, byte: u8) {
+        let mut png_tags = self.png_tag_stack.clone();
+        png_tags.extend(self.png_tag_for_next.drain(..));
+        let mut zip_tags = self.png_tag_stack.clone();
+        zip_tags.extend(self.png_tag_for_next.drain(..));
+        self.bytes.push(byte);
+        self.png_tags_by_byte.push(png_tags);
+        self.zip_tags_by_byte.push(zip_tags);
+    }
+
+    pub fn png_tag_start(&mut self, tag: impl Into<CowStr>) {
+        self.png_tag_stack.push(tag.into());
+    }
+
+    pub fn png_tag_end(&mut self, tag: impl Into<CowStr>) {
+        let tag = tag.into();
+        let popped = self.png_tag_stack.pop();
+        if popped != Some(tag.into()) {
+            panic!("expected end of tag {tag:?}, but got end of {popped:?}");
+        }
+    }
+
+    pub fn f() {
+        let buffer = TaggedByteWriter::new();
+        buffer.png_tag_start("file");
+
+        buffer.png_tag("something this byte");
+
+        buffer.png_tag_end("file");
+    }
+}
+
+impl Write for TaggedByteWriter {
+    fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
+        todo!()
+    }
+
+    fn flush(&mut self) -> std::io::Result<()> {
+        todo!()
+    }
+}
+
+impl Offset for TaggedByteWriter {
+    fn offset(&mut self) -> usize {
+        self.len()
+    }
+
+    fn len(&mut self) -> usize {
+        self.bytes.len()
+    }
 }

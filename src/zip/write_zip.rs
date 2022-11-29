@@ -19,7 +19,7 @@ pub(crate) fn write_zip(
         panic!("Zip file suffix must not contain zip file terminator signature PK\\x05\\x06");
     }
 
-    let start = output.stream_position()? as usize;
+    let start = output.offset();
     let mut files_with_offsets = Vec::with_capacity(files.len());
 
     for (name, body) in files.iter() {
@@ -60,10 +60,10 @@ pub(crate) fn write_zip(
         header.extend_from_slice(&[0x00; 2]);
         // 0x0022: file name, followed by extra fields (we have none)
         header.extend_from_slice(name);
-        let before = output.stream_position()? as usize;
+        let before = output.offset();
         if !body.is_empty() && name != b"mimetype" {
-            write_aligned_pad_start(&mut output, &header, BLOCK_SIZE)?;
-            write_aligned_pad_end(&mut output, body, BLOCK_SIZE)?;
+            write_aligned_pad_start(output, &header, BLOCK_SIZE)?;
+            write_aligned_pad_end(output, body, BLOCK_SIZE)?;
         } else {
             output.write_all(&header)?;
             output.write_all(body)?;
@@ -121,12 +121,11 @@ pub(crate) fn write_zip(
 
     let directory_terminator_len = 22 + suffix.len();
 
-    let before_central_directory = output.stream_position()? as usize;
+    let before_central_directory = output.offset();
     output.write_all(&central_directory)?;
-    let central_directory_len_without_terminator =
-        output.stream_position()? as usize - before_central_directory;
+    let central_directory_len_without_terminator = output.offset() - before_central_directory;
 
-    let _after_central_directory = directory_terminator_len + output.stream_position()? as usize;
+    let _after_central_directory = directory_terminator_len + output.offset();
 
     let mut directory_terminator = vec![0; directory_terminator_len];
 
@@ -165,7 +164,7 @@ pub(crate) fn write_zip(
 
     output.write_all(&directory_terminator)?;
     output.write_all(suffix)?;
-    let end = output.stream_position()? as usize;
+    let end = output.offset();
 
     Ok(end - start)
 }

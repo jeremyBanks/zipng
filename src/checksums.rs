@@ -1,5 +1,5 @@
 use {
-    crate::Seek,
+    crate::Offset,
     crc::Crc,
     std::{fmt::Debug, hash::Hasher, io::Read},
 };
@@ -29,7 +29,7 @@ pub(crate) fn xxh3_64(bytes: &[u8]) -> u64 {
 /// Computes the BLAKE3 cryptographic hash digest of a byte slice, as an
 /// infinite stream of bytes. Using fewer than 32 bytes of the output will
 /// reduce the security level proportionally.
-pub(crate) fn blake3(bytes: &[u8]) -> impl Clone + Debug + Read + Seek + Send + Sync {
+pub(crate) fn blake3(bytes: &[u8]) -> impl Clone + Debug + Read + Offset + Send + Sync {
     let mut hasher = blake3::Hasher::new();
     hasher.update(bytes);
     hasher.finalize_xof()

@@ -65,10 +65,14 @@ pub fn png_from_slice(png_file: &[u8]) -> Result<Png, panic> {
 }
 
 #[doc(hidden)]
-pub trait Seek: std::io::Seek {
-    /// Calls [`.stream_position()`](io::Seek::stream_position), unwraps
-    /// the value and converts it to a `usize`. If either fails, returns
-    /// `usize::MAX` instead of panicking or returning an error.
+pub trait Offset {
+    fn offset(&mut self) -> usize;
+
+    fn len(&mut self) -> usize;
+}
+impl<T> Offset for T
+where T: std::io::Seek
+{
     fn offset(&mut self) -> usize {
         let Ok(position) = self.stream_position() else {
             return usize::MAX;
@@ -88,12 +92,11 @@ pub trait Seek: std::io::Seek {
         len.try_into().unwrap_or(usize::MAX)
     }
 }
-impl<T> Seek for T where T: std::io::Seek {}
 
 #[doc(hidden)]
-pub trait ReadAndSeek: Read + Seek {}
-impl<T> ReadAndSeek for T where T: Read + Seek {}
+pub trait ReadAndSeek: Read + Offset {}
+impl<T> ReadAndSeek for T where T: Read + Offset {}
 
 #[doc(hidden)]
-pub trait WriteAndSeek: Write + Seek {}
-impl<T> WriteAndSeek for T where T: Write + Seek {}
+pub trait WriteAndSeek: Write + Offset {}
+impl<T> WriteAndSeek for T where T: Write + Offset {}

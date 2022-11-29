@@ -14,7 +14,7 @@ use {
         write_aligned,
         write_png::{write_png_body, write_png_footer},
         write_zlib, Align, BitDepth, ColorType, Seek, WriteAndSeek, Zip, PNG_CHUNK_PREFIX_SIZE,
-        PNG_CHUNK_WRAPPER_SIZE, PNG_HEADER_SIZE, ZIP_FILE_HEADER_EMPTY_SIZE,
+        PNG_CHUNK_SUFFIX_SIZE, PNG_CHUNK_WRAPPER_SIZE, PNG_HEADER_SIZE, ZIP_FILE_HEADER_EMPTY_SIZE,
     },
     bstr::ByteSlice,
     std::io::Write,
@@ -67,11 +67,11 @@ pub fn poc_zipng(palette: &[u8]) -> Result<Vec<u8>, panic> {
             // 0x0000..0x0004: local file header signature
             local_file_header.write(b"PK\x03\x04")?;
             // 0x0004..0x0006: version needed to extract
-            local_file_header.write(&1_0_u16.to_le_bytes())?;
+            local_file_header.write(&2_0_u16.to_le_bytes())?;
             // 0x0006..0x0008: general purpose bit flag
             local_file_header.write(&[0x00; 0x00])?;
             // 0x0008..0x000A: compression method -- DEFLATE
-            local_file_header.write(&[0x08; 0x00])?;
+            local_file_header.write(&0x08_u16.to_le_bytes())?;
             // 0x000A..0x000C: modification time
             local_file_header.write(b"PK")?;
             // 0x000C..0x000E: modification date
@@ -108,6 +108,7 @@ pub fn poc_zipng(palette: &[u8]) -> Result<Vec<u8>, panic> {
             static padding_bytes: [u8; 4] = [0x00, 0x00, 0x00, 0x00];
             idat.write_all(&[padding_bytes[i % padding_bytes.len()]])?;
         }
+
         file_offsets_in_idat.push(idat.offset());
         idat.write_all(local_file_header.get_ref())?;
 
@@ -121,8 +122,8 @@ pub fn poc_zipng(palette: &[u8]) -> Result<Vec<u8>, panic> {
             if i % (bytes_per_line as usize) == 0 {
                 // filter byte (uncompressed in PNG) / non-compressed block header (DEFLATE in
                 // ZIP)
-                filtered_data.push(0);
-                // DEFLATE block length (two bytes little endian)
+                filtered_data.push(0); // XXX: for the last block this needs to be marked differently, neh?
+                                       // DEFLATE block length (two bytes little endian)
                 filtered_data.push(width as u8 + 4);
                 filtered_data.push(0);
                 // DEFLATE block length bitwise negated (two bytes little endian)
@@ -144,22 +145,19 @@ pub fn poc_zipng(palette: &[u8]) -> Result<Vec<u8>, panic> {
         idat.write_all(&filtered_data)?;
     }
 
+    // empty terminating block
+    idat.write_all(&[0x01])?;
+    idat.write_all(&[0x00, 0x00])?;
+    idat.write_all(&[0xFF, 0xFF])?;
+
     let offset_before_idat = buffer.offset();
     write_png_body(&mut buffer, idat.get_ref())?;
 
-    let zip_central_directory = byte_buffer();
-    let central_directory_offset = buffer.offset();
-
-    // XXX -- does this need to be excluded from the image data?
-    // XXX -- yes, unless you want to figure out how to line up the filter bytes.
-    // XXX -- it probably could be done. For certain widths.
-    // XXX -- we could allow a PNG filter to line up with the third or fourth byte
-    // XXX -- of a zip chunk, and those would be valid filter modes, but I'm not
-    // sure-- if that would be acceptable.
-    // maybe start with it here.
+    let central_directory_offset = buffer.offset() + PNG_CHUNK_PREFIX_SIZE;
+    let mut zip_central_directory = byte_buffer();
 
     for (File { name, body }, offset_in_idat) in files.iter().zip(file_offsets_in_idat) {
-        let offset = offset_before_idat + PNG_CHUNK_PREFIX_SIZE + offset_in_idat;
+        let offset = offset_before_idat + PNG_CHUNK_PREFIX_SIZE + offset_in_idat + 7;
         let mut file_entry = byte_buffer();
 
         let name = name.to_vec();
@@ -170,13 +168,13 @@ pub fn poc_zipng(palette: &[u8]) -> Result<Vec<u8>, panic> {
         // 0x0000..0x0004: central file header signature
         file_entry.write_all(b"PK\x01\x02")?;
         // 0x0004..0x0006: creator version and platform
-        file_entry.write_all(&1_0_u16.to_le_bytes())?;
+        file_entry.write_all(&2_0_u16.to_le_bytes())?;
         // 0x0006..0x0008: required version
-        file_entry.write_all(&1_0_u16.to_le_bytes())?;
+        file_entry.write_all(&2_0_u16.to_le_bytes())?;
         // 0x0008..0x000A: general purpose bit flag
         file_entry.write_all(&[0x00; 2])?;
         // 0x000A..0x000C: compression method
-        file_entry.write_all(&[0x00; 2])?;
+        file_entry.write_all(&0x08_u16.to_le_bytes())?;
         // 0x000C..0x000E: modification time
         file_entry.write_all(b"PK")?;
         // 0x000E..0x0010: modification date
@@ -184,7 +182,12 @@ pub fn poc_zipng(palette: &[u8]) -> Result<Vec<u8>, panic> {
         // 0x0010..0x0014: checksum
         file_entry.write_all(&crc)?;
         // 0x0014..0x0018: compressed size
-        file_entry.write_all(&body_length.to_le_bytes())?;
+        // XXX: I need to record the actual value for this
+        file_entry.write_all(
+            &u32::try_from((body_length) / (width) * ((width) + 5))
+                .expect("file size larger than 4GiB")
+                .to_le_bytes(),
+        )?;
         // 0x0018..0x001C: uncompressed size
         file_entry.write_all(&body_length.to_le_bytes())?;
         // 0x001C..0x001E: file name length
@@ -203,14 +206,14 @@ pub fn poc_zipng(palette: &[u8]) -> Result<Vec<u8>, panic> {
         file_entry.write_all(&header_offset.to_le_bytes())?;
         // 0x002E..: file name, followed by extra fields and comments (we have none)
         file_entry.write_all(&name)?;
-    }
 
-    write_non_png_chunk(&mut buffer, zip_central_directory.get_ref())?;
+        zip_central_directory.write_all(file_entry.get_ref())?;
+    }
 
     let mut png_footer = byte_buffer();
     write_png_footer(&mut png_footer)?;
 
-    let directory_terminator = byte_buffer();
+    let mut directory_terminator = byte_buffer();
     // 0x0000..0x0004: archive terminator signature
     directory_terminator.write_all(b"PK\x05\x06").unwrap();
     // 0x0004..0x0006: disk number
@@ -219,24 +222,42 @@ pub fn poc_zipng(palette: &[u8]) -> Result<Vec<u8>, panic> {
     directory_terminator.write_all(&[0x00; 2]).unwrap();
     // 0x0008..0x000A: directory entries on disk
     directory_terminator
-        .write_all(&files.len().to_le_bytes())
+        .write_all(&u16::try_from(files.len()).unwrap().to_le_bytes())
         .unwrap();
     // 0x000A..0x000C: directory entries total
     directory_terminator
-        .write_all(&files.len().to_le_bytes())
+        .write_all(&u16::try_from(files.len()).unwrap().to_le_bytes())
         .unwrap();
     // 0x000C..0x0010: central directory byte length
     directory_terminator
-        .write_all(&directory_length.to_le_bytes())
+        .write_all(
+            &u32::try_from(zip_central_directory.len())
+                .unwrap()
+                .to_le_bytes(),
+        )
         .unwrap();
     // 0x0010..0x0014: central directory offset from start of archive
     directory_terminator
-        .write_all(&directory_offset.to_le_bytes())
+        .write_all(
+            &u32::try_from(central_directory_offset)
+                .unwrap()
+                .to_le_bytes(),
+        )
         .unwrap();
-    // 0x0014..: archive comment (suffix) length, then content
+    // 0x0014..: archive comment (suffix) length
     directory_terminator
-        .write_all(&png_footer.len().to_le_bytes())
+        .write_all(
+            &u16::try_from(png_footer.len() + PNG_CHUNK_SUFFIX_SIZE)
+                .unwrap()
+                .to_le_bytes(),
+        )
         .unwrap();
+
+    zip_central_directory.write_all(directory_terminator.get_ref())?;
+
+    write_non_png_chunk(&mut buffer, zip_central_directory.get_ref())?;
+
+    buffer.write_all(png_footer.get_ref())?;
 
     Ok(buffer.into_inner())
 }

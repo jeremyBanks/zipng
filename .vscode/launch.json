@@ -42,15 +42,15 @@
     {
       "type": "lldb",
       "request": "launch",
-      "name": "Debug example 'hybrid'",
+      "name": "Debug example 'poc'",
       "cargo": {
         "args": [
           "build",
-          "--example=hybrid",
+          "--example=poc",
           "--package=zipng"
         ],
         "filter": {
-          "name": "hybrid",
+          "name": "poc",
           "kind": "example"
         }
       },

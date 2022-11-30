@@ -1,6 +1,6 @@
 use {
     crate::{
-        adler32, byte_buffer, crc32,
+        adler32, output_buffer, crc32,
         generic::default,
         io::{write_aligned_pad_end, write_aligned_pad_start},
         palettes::{
@@ -63,11 +63,11 @@ pub fn poc_zipng(palette: &[u8]) -> Result<Vec<u8>, panic> {
     write_png_palette(&mut output, palette)?;
     output.png_tag_end("PLTE palette");
 
-    let mut idat = byte_buffer();
+    let mut idat = output_buffer();
     let mut file_offsets_in_idat = Vec::<usize>::new();
 
     for file in files.iter() {
-        let mut local_file_header = byte_buffer();
+        let mut local_file_header = output_buffer();
         local_file_header.write_all(&[0x00])?; // PNG filter byte, ZIP padding/ignored
 
         {
@@ -181,11 +181,11 @@ pub fn poc_zipng(palette: &[u8]) -> Result<Vec<u8>, panic> {
     output.png_tag_end("IDAT data");
 
     let central_directory_offset = output.offset() + PNG_CHUNK_PREFIX_SIZE;
-    let mut zip_central_directory = byte_buffer();
+    let mut zip_central_directory = output_buffer();
 
     for (File { name, body }, offset_in_idat) in files.iter().zip(file_offsets_in_idat) {
         let offset = offset_before_idat + PNG_CHUNK_PREFIX_SIZE + offset_in_idat;
-        let mut file_entry = byte_buffer();
+        let mut file_entry = output_buffer();
 
         let name = name.to_vec();
         let name_length = u16::try_from(name.len()).expect("file name larger than 64KiB");
@@ -237,10 +237,10 @@ pub fn poc_zipng(palette: &[u8]) -> Result<Vec<u8>, panic> {
         zip_central_directory.write_all(file_entry.get_ref())?;
     }
 
-    let mut png_footer = byte_buffer();
+    let mut png_footer = output_buffer();
     write_png_footer(&mut png_footer)?;
 
-    let mut directory_terminator = byte_buffer();
+    let mut directory_terminator = output_buffer();
     // 0x0000..0x0004: archive terminator signature
     directory_terminator.write_all(b"PK\x05\x06").unwrap();
     // 0x0004..0x0006: disk number
@@ -289,24 +289,8 @@ pub fn poc_zipng(palette: &[u8]) -> Result<Vec<u8>, panic> {
     Ok(output.into_inner())
 }
 
-type CowStr = Cow<'static, str>;
-
-pub fn output_buffer() -> OutputBuffer {
-    OutputBuffer::new()
-}
-
-#[derive(Debug, Default, Clone)]
-pub struct OutputBuffer {
-    bytes: Vec<u8>,
-    png_tags_by_byte: Vec<Vec<CowStr>>,
-    zip_tags_by_byte: Vec<Vec<CowStr>>,
-    png_tag_stack: Vec<CowStr>,
-    zip_tag_stack: Vec<CowStr>,
-    png_tags_for_next: Vec<CowStr>,
-    zip_tags_for_next: Vec<CowStr>,
-}
-
-impl OutputBuffer {
+/*
+mod _test { 
     pub fn new() -> Self {
         default()
     }
@@ -402,3 +386,4 @@ impl Offset for OutputBuffer {
         self.bytes.len()
     }
 }
+ */

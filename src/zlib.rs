@@ -1,6 +1,6 @@
 use {
     crate::{
-        adler32, byte_buffer, default, generic::panic, write_deflate, DeflateMode, WriteAndSeek,
+        adler32, output_buffer, default, generic::panic, write_deflate, DeflateMode, WriteAndSeek,
     },
     std::{future::Future, io::Read, ops::Not, pin::Pin, task},
 };
@@ -61,7 +61,7 @@ where WriteAndSeek: self::WriteAndSeek
         flg |= 0b1_1111 - ((((cmf as u16) << 8) | (flg as u16)) % 0b1_1111) as u8;
         output.write_all(&[flg])?;
 
-        let mut buffer = byte_buffer();
+        let mut buffer = output_buffer();
         write_deflate(&mut buffer, data)?;
 
         output.write_all(&buffer.get_ref())?;

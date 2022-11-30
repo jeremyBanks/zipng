@@ -1,3 +1,14 @@
+use std::collections::BTreeMap;
+use std::collections::BTreeSet;
+use std::ops::Index;
+use std::ops::Range;
+
+use smallvec::SmallVec;
+use smol_str::SmolStr;
+use tracing::warn;
+
+use crate::generic::default;
+
 use {
     crate::{generic::panic, WriteAndSeek},
     core::fmt,
@@ -12,97 +23,161 @@ use {
     },
 };
 
+#[cfg(test)]
+#[test]
+fn test() -> Result<(), panic> {
+    let mut buffer = output_buffer();
+    buffer.start("PNG", "file");
+
+    buffer.start("PNG", "signature");
+    buffer.write_all(b"\x89PNG\r")?;
+    buffer.end("PNG", "signature");
+
+    buffer.start("PNG", "image data");
+    
+    buffer.start("ZIP", "entry");
+    
+    buffer.end("ZIP", "file");
+    buffer.end("PNG", "file");
+
+    Ok(())
+}
+
 #[derive(Clone)]
 pub enum BufferTag {
     Literal(&'static str),
     Dynamic(Arc<str>),
 }
 
-mod _buffer_tag {
-    use super::*;
-
-    impl BufferTag {
-        pub fn literal(s: &'static str) -> Self {
-            Self::Literal(s)
-        }
-
-        pub fn dynamic(s: impl AsRef<str>) -> Self {
-            Self::Dynamic(s.as_ref().to_string().into_boxed_str().into())
-        }
-    }
-
-    impl AsRef<str> for BufferTag {
-        fn as_ref(&self) -> &str {
-            match self {
-                BufferTag::Literal(s) => s,
-                BufferTag::Dynamic(s) => s,
-            }
-        }
-    }
-
-    impl Debug for BufferTag {
-        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-            Debug::fmt(self.as_ref(), f)
-        }
-    }
-
-    impl Display for BufferTag {
-        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-            Display::fmt(self.as_ref(), f)
-        }
-    }
-
-    impl Deref for BufferTag {
-        type Target = str;
-
-        fn deref(&self) -> &Self::Target {
-            self.as_ref()
-        }
-    }
-
-    impl Borrow<str> for BufferTag {
-        fn borrow(&self) -> &str {
-            self.as_ref()
-        }
-    }
-
-    impl PartialEq for BufferTag {
-        fn eq(&self, other: &Self) -> bool {
-            self.as_ref() == other.as_ref()
-        }
-    }
-
-    impl Eq for BufferTag {}
-
-    impl PartialOrd for BufferTag {
-        fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-            self.as_ref().partial_cmp(other.as_ref())
-        }
-    }
-
-    impl Ord for BufferTag {
-        fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-            self.as_ref().cmp(other.as_ref())
-        }
-    }
-
-    impl Hash for BufferTag {
-        fn hash<H: Hasher>(&self, state: &mut H) {
-            self.as_ref().hash(state)
-        }
-    }
-}
-
-/// Buffer will implement Read and Write and Seek, but it will also allow nested
-/// tagging of the bytes.
-pub struct Buffer {
-    index: usize,
+#[derive(Debug, Default, Clone)]
+pub struct OutputBuffer {
+    /// the actual data
     bytes: Vec<u8>,
+    /// tracks of complete tags
+    tag_tracks: BTreeMap<&'static str, Vec<TaggedRange>>,
+    /// tracks of stacks of incomplete tags
+    tag_stacks: BTreeMap<&'static str, Vec<TaggedRange>>,
 }
 
-pub fn byte_buffer() -> Cursor<Vec<u8>> {
-    Cursor::new(Vec::new())
+impl OutputBuffer {
+    pub fn new() -> Self {
+        default()
+    }
+
+    pub fn push(&mut self, byte: u8) {
+        self.bytes.push(byte);
+    }
+
+    /// Pushes a tag onto the stack of tags.
+    pub fn start(&mut self, track: &'static str, tag: impl Into<SmolStr>) {
+        todo!()
+    }
+
+    /// Pops a tag off the stack of tags, finalizes it at the current index, and pushes it onto the
+    /// list of completed tags.
+    pub fn end(&mut self, track: &'static str, tag: impl Into<SmolStr>) {
+        todo!()
+    }
+
+    /// Defines a tag that will be applied to (only) the next byte.
+    pub fn next(&mut self, track: &'static str, tag: impl Into<SmolStr>) {
+        todo!()
+    }
+
+    pub fn offset(&self) -> usize {
+        self.bytes.len()
+    }
+
+    pub fn bytes(&self) -> &[u8] {
+        &self.bytes
+    }
+
+    pub fn tags(&self, track: &'static str) -> Option<&[TaggedRange]> {
+        if !self.tag_stacks.values().all(|stack| stack.is_empty()) {
+            warn!("tag track {track:?} requested but it still has incomplete tags in its stack.");
+        }
+        self.tag_tracks.get(track).map(|v| v.as_slice())
+    }
 }
+
+
+#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord, Hash, Default)]
+pub struct TaggedRange {
+    /// The first index of the range (inclusive).
+    start: usize,
+    /// The last index of the range (exclusive).
+    end: usize,
+    /// The name/tag of the region.
+    name: SmolStr,
+    /// The child sub-regions of this region.
+    children:  Vec<TaggedRange>,
+}
+
+impl TaggedRange {
+    fn new(start: usize, name: impl Into<SmolStr>) -> Self {
+        Self {
+            start,
+            end: usize::MAX,
+            name: name.into(),
+            children: Vec::new()
+        }
+    }
+
+    fn finalize(mut self, end: usize) -> Self {
+        assert_eq!(self.end, usize::MAX, "attempted to finalize a TaggedRange twice");
+        assert!(end > self.start, "range must have nonzero length");
+        self.end = end;
+        self
+    }
+
+    pub fn len(&self) -> usize {
+        self.end - self.start
+    }
+
+    pub fn start(&self) -> usize {
+        self.start
+    }
+
+    pub fn end(&self) -> usize {
+        self.end
+    }
+
+    pub fn name(&self) -> &SmolStr {
+        &self.name
+    }
+
+    pub fn children(&self) -> &[TaggedRange] {
+        &self.children
+    }
+
+    pub fn range(&self) -> Range<usize> {
+        self.start..self.end
+    }
+}
+
+impl Index<TaggedRange> for [u8] {
+    type Output = [u8];
+
+    fn index(&self, index: TaggedRange) -> &Self::Output {
+        &self[index.start..=index.end]
+    }
+}
+
+impl Index<TaggedRange> for OutputBuffer {
+    type Output = [u8];
+
+    fn index(&self, index: TaggedRange) -> &Self::Output {
+        &self.bytes[index.start..=index.end]
+    }
+}
+
+
+pub fn output_buffer() -> OutputBuffer {
+    default()
+}
+
+
+
 
 /// Alignment direction, possible for rendered text or binary data.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]

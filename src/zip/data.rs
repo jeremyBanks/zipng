@@ -2,7 +2,7 @@
 
 use {
     crate::{
-        byte_buffer, generic::default, never, panic, zip::write_zip::write_zip, ToZip,
+        output_buffer, generic::default, never, panic, zip::write_zip::write_zip, ToZip,
         WriteAndSeek, ZipConfiguration, ZipEntry, ZipEntryComparison,
     },
     serde::{Deserialize, Serialize},
@@ -90,7 +90,7 @@ impl Zip {
 
     /// Serializes this [`Zip`] into a byte vector as a ZIP archive file.
     pub fn write_vec(&self) -> Result<Vec<u8>, never> {
-        let mut output = byte_buffer();
+        let mut output = output_buffer();
         self.write(&mut output)?;
         Ok(output.into_inner())
     }

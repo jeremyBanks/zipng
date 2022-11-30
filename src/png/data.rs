@@ -2,7 +2,7 @@
 
 use {
     crate::{
-        byte_buffer, never,
+        output_buffer, never,
         palettes::{
             crameri::OLERON,
             oceanic::{BALANCE, TOPO},
@@ -198,7 +198,7 @@ impl Png {
     #[instrument(skip_all)]
     /// Serializes this [`Png`] as a PNG image file.
     pub fn write(&self, output: &mut impl Write) -> Result<(), panic> {
-        let mut buffer = byte_buffer();
+        let mut buffer = output_buffer();
         crate::png::write_png::write_png(
             &mut buffer,
             self.pixel_data.as_slice(),
@@ -220,7 +220,7 @@ impl Png {
 
     /// Serializes this [`Png`] into a byte vector as a PNG image file.
     pub fn write_vec(&self) -> Result<Vec<u8>, never> {
-        let mut output = byte_buffer();
+        let mut output = output_buffer();
         self.write(&mut output)?;
         Ok(output.into_inner())
     }

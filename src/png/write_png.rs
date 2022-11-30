@@ -1,6 +1,6 @@
 use {
     crate::{
-        adler32, byte_buffer, crc32, panic, write_zlib, BitDepth, ColorType, WriteAndSeek,
+        adler32, output_buffer, crc32, panic, write_zlib, BitDepth, ColorType, WriteAndSeek,
         PNG_HEADER_SIZE,
     },
     std::{
@@ -26,7 +26,7 @@ pub fn write_png_header(
     buffer.write_all(b"\x89PNG\r\n\x1A\n")?;
     // 0x0008..0x0010:     IHDR chunk prefix (length and type)
     write_png_chunk(buffer, b"IHDR", &{
-        let mut data = byte_buffer();
+        let mut data = output_buffer();
 
         // 0x0010..0x0014: pixel width
         data.write_all(&width.to_be_bytes())?;

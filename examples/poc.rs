@@ -2,7 +2,7 @@ use {
     std::io::{Cursor, Read},
     tracing::info,
     zipng::{
-        byte_buffer,
+        output_buffer,
         dev::{init, save},
         palettes::{
             crameri::{BATLOW, ROMA_O},

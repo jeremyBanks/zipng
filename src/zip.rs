@@ -11,7 +11,7 @@ mod write_zip;
 
 use {
     self::write_zip::write_zip,
-    crate::WriteAndSeek,
+    crate::InputWrite,
     std::{io::Cursor, path::Path},
     tracing::{debug, instrument},
 };

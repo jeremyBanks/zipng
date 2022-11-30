@@ -3,7 +3,7 @@
 use {
     crate::{
         generic::default, never, output_buffer, panic, zip::write_zip::write_zip, ToZip,
-        WriteAndSeek, ZipConfiguration, ZipEntry, ZipEntryComparison,
+        InputWrite, ZipConfiguration, ZipEntry, ZipEntryComparison,
     },
     serde::{Deserialize, Serialize},
     std::{
@@ -71,7 +71,7 @@ impl Zip {
     }
 
     /// Serializes this [`Zip`] as a ZIP archive file.
-    pub fn write(&self, output: &mut impl WriteAndSeek) -> Result<usize, panic> {
+    pub fn write(&self, output: &mut impl InputWrite) -> Result<usize, panic> {
         write_zip(
             output,
             self.files
@@ -92,7 +92,7 @@ impl Zip {
     pub fn write_vec(&self) -> Result<Vec<u8>, never> {
         let mut output = output_buffer();
         self.write(&mut output)?;
-        Ok(output.into_inner())
+        Ok(output.into_bytes())
     }
 
     /// Deserialize a ZIP archive file into a [`Zip`] from a byte vector.

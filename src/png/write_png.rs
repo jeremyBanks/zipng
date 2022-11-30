@@ -1,6 +1,6 @@
 use {
     crate::{
-        adler32, crc32, output_buffer, panic, write_zlib, BitDepth, ColorType, WriteAndSeek,
+        adler32, crc32, output_buffer, panic, write_zlib, BitDepth, ColorType, InputWrite,
         PNG_HEADER_SIZE,
     },
     std::{
@@ -11,7 +11,7 @@ use {
 };
 
 pub fn write_png_header(
-    buffer: &mut impl WriteAndSeek,
+    buffer: &mut impl InputWrite,
     width: u32,
     height: u32,
     color_depth: BitDepth,
@@ -43,7 +43,7 @@ pub fn write_png_header(
         // 0x001C:         interlace method: none
         data.write_all(&0_u8.to_be_bytes())?;
 
-        data.into_inner()
+        data.into_bytes()
         // 0x001D..0x0025: IHDR chunk suffix (checksum)
     })?;
 
@@ -54,26 +54,26 @@ pub fn write_png_header(
     Ok(PNG_HEADER_SIZE)
 }
 
-pub fn write_png_palette(buffer: &mut impl WriteAndSeek, palette: &[u8]) -> Result<usize, panic> {
+pub fn write_png_palette(buffer: &mut impl InputWrite, palette: &[u8]) -> Result<usize, panic> {
     write_png_chunk(buffer, b"PLTE", palette)
 }
 
-pub fn write_png_body(buffer: &mut impl WriteAndSeek, data: &[u8]) -> Result<usize, panic> {
+pub fn write_png_body(buffer: &mut impl InputWrite, data: &[u8]) -> Result<usize, panic> {
     let mut deflated = Vec::new();
     write_zlib(&mut Cursor::new(&mut deflated), data)?;
     write_png_chunk(buffer, b"IDAT", &deflated)
 }
 
-pub fn write_non_png_chunk(buffer: &mut impl WriteAndSeek, data: &[u8]) -> Result<usize, panic> {
+pub fn write_non_png_chunk(buffer: &mut impl InputWrite, data: &[u8]) -> Result<usize, panic> {
     write_png_chunk(buffer, b"pkPK", data)
 }
 
-pub fn write_png_footer(buffer: &mut impl WriteAndSeek) -> Result<usize, panic> {
+pub fn write_png_footer(buffer: &mut impl InputWrite) -> Result<usize, panic> {
     write_png_chunk(buffer, b"IEND", b"")
 }
 
 pub fn write_png_chunk(
-    buffer: &mut impl WriteAndSeek,
+    buffer: &mut impl InputWrite,
     chunk_type: &[u8; 4],
     data: &[u8],
 ) -> Result<usize, panic> {
@@ -102,7 +102,7 @@ pub fn write_png_chunk(
 }
 
 pub fn write_png(
-    buffer: &mut impl WriteAndSeek,
+    buffer: &mut impl InputWrite,
     pixel_data: &[u8],
     width: u32,
     height: u32,

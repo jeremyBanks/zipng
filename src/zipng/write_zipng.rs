@@ -14,7 +14,7 @@ use {
         png::write_png::{write_non_png_chunk, write_png_header, write_png_palette},
         write_aligned,
         write_png::{write_png_body, write_png_chunk, write_png_footer},
-        write_zlib, Align, BitDepth, ColorType, Offset, WriteAndSeek, Zip, PNG_CHUNK_PREFIX_SIZE,
+        write_zlib, Align, BitDepth, ColorType, Offset, InputWrite, Zip, PNG_CHUNK_PREFIX_SIZE,
         PNG_CHUNK_SUFFIX_SIZE, PNG_CHUNK_WRAPPER_SIZE, PNG_HEADER_SIZE, ZIP_FILE_HEADER_EMPTY_SIZE,
     },
     bstr::ByteSlice,
@@ -287,7 +287,7 @@ pub fn poc_zipng(palette: &[u8]) -> Result<Vec<u8>, panic> {
 
     output.write_all(png_footer.get_ref())?;
 
-    Ok(output.into_inner())
+    Ok(output.into_bytes())
 }
 
 /*

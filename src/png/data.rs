@@ -208,7 +208,7 @@ impl Png {
             self.color_type,
             self.palette_data.as_deref(),
         )?;
-        Ok(output.write_all(&buffer.into_inner())?)
+        Ok(output.write_all(&buffer.into_bytes())?)
     }
 
     #[cfg(feature = "flate2")]
@@ -222,7 +222,7 @@ impl Png {
     pub fn write_vec(&self) -> Result<Vec<u8>, never> {
         let mut output = output_buffer();
         self.write(&mut output)?;
-        Ok(output.into_inner())
+        Ok(output.into_bytes())
     }
 
     #[cfg(feature = "flate2")]

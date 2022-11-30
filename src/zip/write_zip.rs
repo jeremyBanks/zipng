@@ -2,7 +2,7 @@ use {
     crate::{
         crc32,
         io::{write_aligned_pad_end, write_aligned_pad_start},
-        panic, WriteAndSeek,
+        panic, InputWrite,
     },
     bstr::ByteSlice,
     std::io::Write,
@@ -11,7 +11,7 @@ use {
 const BLOCK_SIZE: usize = 1024;
 
 pub(crate) fn write_zip(
-    mut output: &mut impl WriteAndSeek,
+    mut output: &mut impl InputWrite,
     files: &[(&[u8], &[u8])],
     suffix: &[u8],
 ) -> Result<usize, panic> {

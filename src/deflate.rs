@@ -1,5 +1,5 @@
 use {
-    crate::{adler32, generic::default, panic, WriteAndSeek},
+    crate::{adler32, generic::default, panic, InputWrite},
     std::{io::Read, ops::Not},
 };
 
@@ -10,7 +10,7 @@ pub fn read_deflate(input: &mut impl Read) -> Result<Vec<u8>, panic> {
     Ok(buffer)
 }
 
-pub fn write_deflate(output: &mut impl WriteAndSeek, data: &[u8]) -> Result<usize, panic> {
+pub fn write_deflate(output: &mut impl InputWrite, data: &[u8]) -> Result<usize, panic> {
     write_deflate {
         output,
         data,
@@ -22,7 +22,7 @@ pub fn write_deflate(output: &mut impl WriteAndSeek, data: &[u8]) -> Result<usiz
 #[allow(non_camel_case_types)]
 #[derive(Debug)]
 pub struct write_deflate<'all, Output>
-where Output: 'all + WriteAndSeek
+where Output: 'all + InputWrite
 {
     pub output: &'all mut Output,
     pub data: &'all [u8],
@@ -30,7 +30,7 @@ where Output: 'all + WriteAndSeek
 }
 
 impl<'all, Output> write_deflate<'all, Output>
-where Output: 'all + WriteAndSeek
+where Output: 'all + InputWrite
 {
     pub fn call(&mut self) -> Result<usize, panic> {
         let Self {

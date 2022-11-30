@@ -1,6 +1,6 @@
 use {
     crate::{
-        adler32, default, generic::panic, output_buffer, write_deflate, DeflateMode, WriteAndSeek,
+        adler32, default, generic::panic, output_buffer, write_deflate, DeflateMode, InputWrite,
     },
     std::{future::Future, io::Read, ops::Not, pin::Pin, task},
 };
@@ -12,7 +12,7 @@ pub fn read_zlib(input: &mut impl Read) -> Result<Vec<u8>, panic> {
     Ok(buffer)
 }
 
-pub fn write_zlib(output: &mut impl WriteAndSeek, data: &[u8]) -> Result<usize, panic> {
+pub fn write_zlib(output: &mut impl InputWrite, data: &[u8]) -> Result<usize, panic> {
     write_zlib {
         output,
         data,
@@ -24,7 +24,7 @@ pub fn write_zlib(output: &mut impl WriteAndSeek, data: &[u8]) -> Result<usize, 
 #[allow(non_camel_case_types)]
 #[derive(Debug)]
 pub struct write_zlib<'all, Output>
-where Output: 'all + WriteAndSeek
+where Output: 'all + InputWrite
 {
     pub output: &'all mut Output,
     pub data: &'all [u8],
@@ -45,7 +45,7 @@ impl Default for ZlibMode {
     }
 }
 impl<WriteAndSeek> write_zlib<'_, WriteAndSeek>
-where WriteAndSeek: self::WriteAndSeek
+where WriteAndSeek: self::InputWrite
 {
     pub fn call(&mut self) -> Result<usize, panic> {
         let Self { output, data, mode } = self;

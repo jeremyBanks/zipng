@@ -1,12 +1,19 @@
+mod alignment;
+
+use std::io::Read;
+use std::io::Seek;
+use std::io::SeekFrom;
+
+pub use alignment::*;
+
 use {
     crate::{
         generic::{default, panic},
-        Offset, WriteAndSeek,
     },
     core::fmt,
     derive_more::{Deref, From, TryInto},
     smallvec::SmallVec,
-    smol_str::SmolStr,
+    kstring::KString,
     std::{
         borrow::Borrow,
         collections::{BTreeMap, BTreeSet},
@@ -44,9 +51,9 @@ pub struct OutputBuffer {
     /// the actual data
     bytes: Vec<u8>,
     /// tracks of complete tags
-    tag_tracks: BTreeMap<&'static str, Vec<TaggedRange>>,
+    tag_tracks: BTreeMap<KString, Vec<TaggedRange>>,
     /// tracks of stacks of incomplete tags
-    tag_stacks: BTreeMap<&'static str, Vec<TaggedRange>>,
+    tag_stacks: BTreeMap<KString, Vec<TaggedRange>>,
 }
 
 impl OutputBuffer {
@@ -58,8 +65,19 @@ impl OutputBuffer {
         self.bytes
     }
 
-    pub fn write_tagged(&mut self, data: &[u8], track: &'static str, tag: impl Into<SmolStr>) {
-        self.start(track, tag);
+    pub fn get_ref(&self) -> &[u8] {
+        self.as_ref()
+    }
+
+    pub fn get_mut(&mut self) -> &mut Vec<u8> {
+        self.as_mut()
+    }
+
+    pub fn write_tagged(&mut self, data: &[u8], track: impl Into<KString>, tag: impl Into<KString>) {
+        let track = track.into();
+        let tag = tag.into();
+
+        self.start(track.clone(), tag.clone());
         self.write_bytes(data);
         self.end(track, tag);
     }
@@ -69,8 +87,10 @@ impl OutputBuffer {
     }
 
     /// Pushes a tag onto the stack of tags.
-    pub fn start(&mut self, track: &'static str, tag: impl Into<SmolStr>) {
+    pub fn start(&mut self, track: impl Into<KString>, tag: impl Into<KString>) {
+        let track = track.into();
         let tag = tag.into();
+
         let start = self.offset();
         self.tag_stacks
             .entry(track)
@@ -80,12 +100,14 @@ impl OutputBuffer {
 
     /// Pops a tag off the stack of tags, finalizes it at the current index, and
     /// pushes it onto the list of completed tags.
-    pub fn end(&mut self, track: &'static str, tag: impl Into<SmolStr>) {
+    pub fn end(&mut self, track: impl Into<KString>, tag: impl Into<KString>) {
+        let track = track.into();
         let tag = tag.into();
+
         let end = self.offset();
         let stack = self
             .tag_stacks
-            .get_mut(track)
+            .get_mut(&track)
             .expect("attempting to close a tag on a track that doesn't exist");
         let range = stack
             .pop()
@@ -105,11 +127,22 @@ impl OutputBuffer {
         self.bytes.len()
     }
 
-    pub fn tags(&self, track: &'static str) -> Option<&[TaggedRange]> {
+    pub fn tags(&self, track: impl Into<KString>) -> Option<&[TaggedRange]> {
+        let track = track.into();
+
         if !self.tag_stacks.values().all(|stack| stack.is_empty()) {
             warn!("tag track {track:?} requested but it still has incomplete tags in its stack.");
         }
-        self.tag_tracks.get(track).map(|v| v.as_slice())
+        self.tag_tracks.get(&track).map(|v| v.as_slice())
+    }
+}
+
+impl IntoIterator for OutputBuffer {
+    type Item = u8;
+    type IntoIter = std::vec::IntoIter<u8>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.bytes.into_iter()
     }
 }
 
@@ -145,11 +178,11 @@ impl AsMut<Vec<u8>> for OutputBuffer {
 
 impl Offset for OutputBuffer {
     fn offset(&mut self) -> usize {
-        (&self).offset()
+        OutputBuffer::offset(self)
     }
 
     fn len(&mut self) -> usize {
-        (&self).offset()
+        OutputBuffer::len(self)
     }
 }
 
@@ -170,13 +203,13 @@ pub struct TaggedRange {
     /// The last index of the range (exclusive).
     end: usize,
     /// The name/tag of the region.
-    name: SmolStr,
+    name: KString,
     /// The child sub-regions of this region.
     children: Vec<TaggedRange>,
 }
 
 impl TaggedRange {
-    fn new(start: usize, name: impl Into<SmolStr>) -> Self {
+    fn new(start: usize, name: impl Into<KString>) -> Self {
         Self {
             start,
             end: usize::MAX,
@@ -191,7 +224,9 @@ impl TaggedRange {
             usize::MAX,
             "attempted to finalize a TaggedRange twice"
         );
-        assert!(end > self.start, "range must have nonzero length");
+        if end == self.start {
+            warn!("finalizing an empty TaggedRange");
+        }
         self.end = end;
         self
     }
@@ -208,7 +243,7 @@ impl TaggedRange {
         self.end
     }
 
-    pub fn name(&self) -> &SmolStr {
+    pub fn name(&self) -> &KString {
         &self.name
     }
 
@@ -241,159 +276,37 @@ pub fn output_buffer() -> OutputBuffer {
     default()
 }
 
-/// Alignment direction, possible for rendered text or binary data.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum Align {
-    /// align to the start / left / top / beginning
-    Start,
-    /// align to the middle / center
-    Middle,
-    /// align to the end / right / bottom
-    End,
+pub trait OutputRead: Read + Offset {}
+impl<T> OutputRead for T where T: Read + Offset {}
+
+
+pub trait InputWrite: Write + Offset {}
+impl<T> InputWrite for T where T: Write + Offset {}
+
+pub trait Offset {
+    fn offset(&mut self) -> usize;
+
+    fn len(&mut self) -> usize;
 }
 
-impl Align {
-    /// align to the left / top / beginning / start
-    pub const Left: Align = Align::Start;
-    /// align to the top / beginning / start / left
-    pub const Top: Align = Align::Start;
-    /// align to the beginning / start / left / top
-    pub const Beginning: Align = Align::Start;
-    /// align to the center / middle
-    pub const Center: Align = Align::Middle;
-    /// align to the right / bottom / end
-    pub const Right: Align = Align::End;
-    /// align to the bottom / end / right
-    pub const Bottom: Align = Align::End;
-}
-
-/// Writes `bytes` to `output` with as much padding as necessary to align
-/// ensure that it lines up with the next multiple of the computed alignment
-/// in the output stream.
-///
-/// The default alignment is
-/// [`output.len().next_power_of_two()`][u64::next_power_of_two], clamped by
-/// `minimum_alignment` (defaults to `1_024`) and `maximum_alignment` (defaults
-/// to `1_048_576`).
-///
-/// `direction` determines how the output is supposed to line up
-/// with the alignment interval: the default ([`Align::Start`]) places the
-/// beginning of the output at the alignment interval, while [`Align::End`]
-/// places the end of the output at the alignment interval.
-///
-/// `skip_padding_below_length` defines a size below which no padding will be
-/// written for the value. The default is `1`, which means that zero-length
-/// values will not be padded, but everything else will.
-///
-/// `fully_padded` determines whether the `bytes` must be fully padded within
-/// their alignment intervals (`true`, the default), or whether it's okay for
-/// other values to be packed into the unused space (`false`).
-///
-/// `padding_bytes` determines the bytes used to pad the output, defaulting to
-/// all-zeros.
-#[allow(clippy::too_many_arguments)]
-pub fn write_aligned<'a>(
-    output: &mut impl WriteAndSeek,
-    bytes: impl AsRef<[u8]>,
-    minimum_alignment: impl Into<Option<usize>>,
-    maximum_alignment: impl Into<Option<usize>>,
-    direction: impl Into<Option<Align>>,
-    skip_padding_below_length: impl Into<Option<usize>>,
-    fully_padded: impl Into<Option<bool>>,
-    padding_bytes: impl Into<Option<&'a [u8]>>,
-) -> Result<usize, panic> {
-    let bytes = bytes.as_ref();
-
-    let skip_padding_below_length = skip_padding_below_length.into().unwrap_or(1);
-
-    let minimum_alignment = minimum_alignment.into().unwrap_or(1_024);
-    let maximum_alignment = maximum_alignment.into().unwrap_or(1_048_576);
-
-    let direction = direction.into().unwrap_or(Align::Start);
-
-    let fully_padded = fully_padded.into().unwrap_or(true);
-
-    let padding_bytes = padding_bytes
-        .into()
-        .filter(|b| !b.is_empty())
-        .unwrap_or(b"\x00");
-
-    return write_aligned(
-        output,
-        bytes,
-        minimum_alignment,
-        maximum_alignment,
-        direction,
-        skip_padding_below_length,
-        fully_padded,
-        padding_bytes,
-    );
-    fn write_aligned(
-        output: &mut impl WriteAndSeek,
-        bytes: &[u8],
-        minimum_alignment: usize,
-        maximum_alignment: usize,
-        _direction: Align,
-        skip_padding_below_length: usize,
-        _fully_padded: bool,
-        _padding_bytes: &[u8],
-    ) -> Result<usize, panic> {
-        let previous_offset = output.offset();
-
-        let natural_alignment = bytes.len().next_power_of_two();
-        let _alignment = natural_alignment.clamp(minimum_alignment, maximum_alignment);
-
-        // TODO: all of the things
-
-        let final_offset = output.offset();
-        Ok(final_offset - previous_offset)
+impl<T> Offset for T where T: Seek
+{
+    fn offset(&mut self) -> usize {
+        let Ok(position) = self.stream_position() else {
+            return usize::MAX;
+        };
+        let Ok(position) = usize::try_from(position) else {
+            return usize::MAX;
+        };
+        position
     }
-}
 
-/// Writes `bytes` to `buffer`, padded with trailing zeroes to the next multiple
-/// of `alignment`. Returns the range that `bytes` was written to in `buffer`,
-/// excluding the padding.
-pub(crate) fn write_aligned_pad_end(
-    output: &mut impl WriteAndSeek,
-    bytes: &[u8],
-    alignment: usize,
-) -> Result<usize, panic> {
-    let index_before_data = output.offset();
-
-    output.write_all(bytes)?;
-
-    let index_after_data = output.offset();
-
-    if index_after_data % alignment != 0 {
-        let padding = alignment - (index_after_data % alignment);
-        for _ in 0..padding {
-            output.write_all(&[0])?;
+    fn len(&mut self) -> usize {
+        let old_pos = self.stream_position().unwrap_or(u64::MAX);
+        let len = self.seek(SeekFrom::End(0)).unwrap_or(u64::MAX);
+        if old_pos != len {
+            self.seek(SeekFrom::Start(old_pos)).ok();
         }
+        len.try_into().unwrap_or(usize::MAX)
     }
-
-    let _index_after_padding = output.offset();
-
-    Ok((index_before_data..index_after_data).len())
-}
-
-/// Writes `bytes` to `buffer`, padded with leading zeroes to the next multiple
-/// of `alignment`. Returns the range that `bytes` was written to in `buffer`,
-/// excluding the padding.
-pub(crate) fn write_aligned_pad_start(
-    output: &mut impl WriteAndSeek,
-    bytes: &[u8],
-    alignment: usize,
-) -> Result<usize, panic> {
-    let index_before_padding = output.offset();
-    let unpadded_index_after_data = index_before_padding + bytes.len();
-    if unpadded_index_after_data % alignment != 0 {
-        let padding = alignment - (unpadded_index_after_data % alignment);
-        for _ in 0..padding {
-            output.write_all(&[0])?;
-        }
-    }
-    let index_before_data = output.offset();
-    output.write_all(bytes)?;
-    let index_after_data = output.offset();
-    Ok((index_before_data..index_after_data).len())
 }

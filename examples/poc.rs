@@ -2,8 +2,8 @@ use {
     std::io::{Cursor, Read},
     tracing::info,
     zipng::{
-        output_buffer,
         dev::{init, save},
+        output_buffer,
         palettes::{
             crameri::{BATLOW, ROMA_O},
             oceanic::{BALANCE, GRAY, TOPO},

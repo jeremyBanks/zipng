@@ -1,6 +1,6 @@
 use {
     crate::{
-        adler32, output_buffer, default, generic::panic, write_deflate, DeflateMode, WriteAndSeek,
+        adler32, default, generic::panic, output_buffer, write_deflate, DeflateMode, WriteAndSeek,
     },
     std::{future::Future, io::Read, ops::Not, pin::Pin, task},
 };

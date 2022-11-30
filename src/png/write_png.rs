@@ -1,6 +1,6 @@
 use {
     crate::{
-        adler32, output_buffer, crc32, panic, write_zlib, BitDepth, ColorType, WriteAndSeek,
+        adler32, crc32, output_buffer, panic, write_zlib, BitDepth, ColorType, WriteAndSeek,
         PNG_HEADER_SIZE,
     },
     std::{

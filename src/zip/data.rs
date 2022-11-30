@@ -2,7 +2,7 @@
 
 use {
     crate::{
-        output_buffer, generic::default, never, panic, zip::write_zip::write_zip, ToZip,
+        generic::default, never, output_buffer, panic, zip::write_zip::write_zip, ToZip,
         WriteAndSeek, ZipConfiguration, ZipEntry, ZipEntryComparison,
     },
     serde::{Deserialize, Serialize},

@@ -2,7 +2,7 @@
 
 use {
     crate::{
-        output_buffer, never,
+        never, output_buffer,
         palettes::{
             crameri::OLERON,
             oceanic::{BALANCE, TOPO},

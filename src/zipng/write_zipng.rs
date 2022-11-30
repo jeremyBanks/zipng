@@ -1,8 +1,9 @@
 use {
     crate::{
-        adler32, output_buffer, crc32,
+        adler32, crc32,
         generic::default,
         io::{write_aligned_pad_end, write_aligned_pad_start},
+        output_buffer,
         palettes::{
             oceanic::BALANCE,
             singles::{CIVIDIS, TURBO},
@@ -53,15 +54,15 @@ pub fn poc_zipng(palette: &[u8]) -> Result<Vec<u8>, panic> {
     let width = 48;
     let height = 96;
 
-    output.png_tag_start("PNG file");
+    output.start("PNG", "PNG file");
 
-    output.png_tag_start("IHDR header");
+    output.start("PNG", "IHDR header");
     write_png_header(&mut output, width + 4, height, color_depth, color_mode)?;
-    output.png_tag_end("IHDR header");
+    output.end("PNG", "IHDR header");
 
-    output.png_tag_start("PLTE palette");
+    output.start("PNG", "PLTE palette");
     write_png_palette(&mut output, palette)?;
-    output.png_tag_end("PLTE palette");
+    output.end("PNG", "PLTE palette");
 
     let mut idat = output_buffer();
     let mut file_offsets_in_idat = Vec::<usize>::new();
@@ -176,9 +177,9 @@ pub fn poc_zipng(palette: &[u8]) -> Result<Vec<u8>, panic> {
     // uncompressed data
     idat.write_all(&adler32(idat.get_ref()).to_le_bytes())?;
 
-    output.png_tag_start("IDAT data");
+    output.start("PNG", "IDAT data");
     write_png_chunk(&mut output, b"IDAT", idat.get_ref())?;
-    output.png_tag_end("IDAT data");
+    output.end("PNG", "IDAT data");
 
     let central_directory_offset = output.offset() + PNG_CHUNK_PREFIX_SIZE;
     let mut zip_central_directory = output_buffer();
@@ -290,7 +291,7 @@ pub fn poc_zipng(palette: &[u8]) -> Result<Vec<u8>, panic> {
 }
 
 /*
-mod _test { 
+mod _test {
     pub fn new() -> Self {
         default()
     }
@@ -331,11 +332,11 @@ mod _test {
         }
     }
 
-    pub fn png_tag_start(&mut self, tag: impl Into<CowStr>) {
+    pub fn start("PNG", &mut self, tag: impl Into<CowStr>) {
         self.png_tag_stack.push(tag.into());
     }
 
-    pub fn png_tag_end(&mut self, tag: impl Into<CowStr>) {
+    pub fn end("PNG", &mut self, tag: impl Into<CowStr>) {
         let tag = tag.into();
         let popped = self.png_tag_stack.pop();
         if popped.as_ref() != Some(&tag) {

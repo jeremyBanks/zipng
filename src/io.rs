@@ -1,52 +1,42 @@
-use std::collections::BTreeMap;
-use std::collections::BTreeSet;
-use std::ops::Index;
-use std::ops::Range;
-
-use smallvec::SmallVec;
-use smol_str::SmolStr;
-use tracing::warn;
-
-use crate::generic::default;
-
 use {
-    crate::{generic::panic, WriteAndSeek},
+    crate::{
+        generic::{default, panic},
+        Offset, WriteAndSeek,
+    },
     core::fmt,
     derive_more::{Deref, From, TryInto},
+    smallvec::SmallVec,
+    smol_str::SmolStr,
     std::{
         borrow::Borrow,
+        collections::{BTreeMap, BTreeSet},
         fmt::{Debug, Display},
         hash::{Hash, Hasher},
-        io::{Cursor, Write},
-        ops::Deref,
+        io::{self, Cursor, Write},
+        ops::{Deref, Index, Range},
         sync::Arc,
     },
+    tracing::warn,
 };
 
 #[cfg(test)]
 #[test]
 fn test() -> Result<(), panic> {
     let mut buffer = output_buffer();
-    buffer.start("PNG", "file");
+    buffer.start("PNG", "PNG");
 
     buffer.start("PNG", "signature");
     buffer.write_all(b"\x89PNG\r")?;
     buffer.end("PNG", "signature");
 
     buffer.start("PNG", "image data");
-    
-    buffer.start("ZIP", "entry");
-    
-    buffer.end("ZIP", "file");
-    buffer.end("PNG", "file");
+
+    buffer.start("ZIP", "ZIP");
+
+    buffer.end("ZIP", "ZIP");
+    buffer.end("PNG", "PNG");
 
     Ok(())
-}
-
-#[derive(Clone)]
-pub enum BufferTag {
-    Literal(&'static str),
-    Dynamic(Arc<str>),
 }
 
 #[derive(Debug, Default, Clone)]
@@ -64,32 +54,55 @@ impl OutputBuffer {
         default()
     }
 
-    pub fn push(&mut self, byte: u8) {
-        self.bytes.push(byte);
+    pub fn into_bytes(self) -> Vec<u8> {
+        self.bytes
+    }
+
+    pub fn write_tagged(&mut self, data: &[u8], track: &'static str, tag: impl Into<SmolStr>) {
+        self.start(track, tag);
+        self.write_bytes(data);
+        self.end(track, tag);
+    }
+
+    pub fn write_bytes(&mut self, data: &[u8]) {
+        self.bytes.extend_from_slice(data);
     }
 
     /// Pushes a tag onto the stack of tags.
     pub fn start(&mut self, track: &'static str, tag: impl Into<SmolStr>) {
-        todo!()
+        let tag = tag.into();
+        let start = self.offset();
+        self.tag_stacks
+            .entry(track)
+            .or_default()
+            .push(TaggedRange::new(start, tag));
     }
 
-    /// Pops a tag off the stack of tags, finalizes it at the current index, and pushes it onto the
-    /// list of completed tags.
+    /// Pops a tag off the stack of tags, finalizes it at the current index, and
+    /// pushes it onto the list of completed tags.
     pub fn end(&mut self, track: &'static str, tag: impl Into<SmolStr>) {
-        todo!()
-    }
-
-    /// Defines a tag that will be applied to (only) the next byte.
-    pub fn next(&mut self, track: &'static str, tag: impl Into<SmolStr>) {
-        todo!()
+        let tag = tag.into();
+        let end = self.offset();
+        let stack = self
+            .tag_stacks
+            .get_mut(track)
+            .expect("attempting to close a tag on a track that doesn't exist");
+        let range = stack
+            .pop()
+            .expect("attempted to close a tag but none were open");
+        assert_eq!(range.name, tag, "attempted to close unexpected tag");
+        self.tag_tracks
+            .entry(track)
+            .or_default()
+            .push(range.finalize(end));
     }
 
     pub fn offset(&self) -> usize {
         self.bytes.len()
     }
 
-    pub fn bytes(&self) -> &[u8] {
-        &self.bytes
+    pub fn len(&self) -> usize {
+        self.bytes.len()
     }
 
     pub fn tags(&self, track: &'static str) -> Option<&[TaggedRange]> {
@@ -100,6 +113,55 @@ impl OutputBuffer {
     }
 }
 
+impl From<OutputBuffer> for Vec<u8> {
+    fn from(buffer: OutputBuffer) -> Self {
+        buffer.into_bytes()
+    }
+}
+
+impl AsRef<[u8]> for OutputBuffer {
+    fn as_ref(&self) -> &[u8] {
+        self.bytes.as_slice()
+    }
+}
+
+impl AsRef<Vec<u8>> for OutputBuffer {
+    fn as_ref(&self) -> &Vec<u8> {
+        &self.bytes
+    }
+}
+
+impl AsMut<[u8]> for OutputBuffer {
+    fn as_mut(&mut self) -> &mut [u8] {
+        self.bytes.as_mut_slice()
+    }
+}
+
+impl AsMut<Vec<u8>> for OutputBuffer {
+    fn as_mut(&mut self) -> &mut Vec<u8> {
+        &mut self.bytes
+    }
+}
+
+impl Offset for OutputBuffer {
+    fn offset(&mut self) -> usize {
+        (&self).offset()
+    }
+
+    fn len(&mut self) -> usize {
+        (&self).offset()
+    }
+}
+
+impl Write for OutputBuffer {
+    fn write(&mut self, buf: &[u8]) -> Result<usize, io::Error> {
+        self.bytes.write(buf)
+    }
+
+    fn flush(&mut self) -> Result<(), io::Error> {
+        self.bytes.flush()
+    }
+}
 
 #[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord, Hash, Default)]
 pub struct TaggedRange {
@@ -110,7 +172,7 @@ pub struct TaggedRange {
     /// The name/tag of the region.
     name: SmolStr,
     /// The child sub-regions of this region.
-    children:  Vec<TaggedRange>,
+    children: Vec<TaggedRange>,
 }
 
 impl TaggedRange {
@@ -119,12 +181,16 @@ impl TaggedRange {
             start,
             end: usize::MAX,
             name: name.into(),
-            children: Vec::new()
+            children: Vec::new(),
         }
     }
 
     fn finalize(mut self, end: usize) -> Self {
-        assert_eq!(self.end, usize::MAX, "attempted to finalize a TaggedRange twice");
+        assert_eq!(
+            self.end,
+            usize::MAX,
+            "attempted to finalize a TaggedRange twice"
+        );
         assert!(end > self.start, "range must have nonzero length");
         self.end = end;
         self
@@ -171,13 +237,9 @@ impl Index<TaggedRange> for OutputBuffer {
     }
 }
 
-
 pub fn output_buffer() -> OutputBuffer {
     default()
 }
-
-
-
 
 /// Alignment direction, possible for rendered text or binary data.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]

@@ -1,7 +1,104 @@
 use {
     crate::{generic::panic, WriteAndSeek},
-    std::io::{Cursor, Write},
+    core::fmt,
+    derive_more::{Deref, From, TryInto},
+    std::{
+        borrow::Borrow,
+        fmt::{Debug, Display},
+        hash::{Hash, Hasher},
+        io::{Cursor, Write},
+        ops::Deref,
+        sync::Arc,
+    },
 };
+
+#[derive(Clone)]
+pub enum BufferTag {
+    Literal(&'static str),
+    Dynamic(Arc<str>),
+}
+
+mod _buffer_tag {
+    use super::*;
+
+    impl BufferTag {
+        pub fn literal(s: &'static str) -> Self {
+            Self::Literal(s)
+        }
+
+        pub fn dynamic(s: impl AsRef<str>) -> Self {
+            Self::Dynamic(s.as_ref().to_string().into_boxed_str().into())
+        }
+    }
+
+    impl AsRef<str> for BufferTag {
+        fn as_ref(&self) -> &str {
+            match self {
+                BufferTag::Literal(s) => s,
+                BufferTag::Dynamic(s) => s,
+            }
+        }
+    }
+
+    impl Debug for BufferTag {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            Debug::fmt(self.as_ref(), f)
+        }
+    }
+
+    impl Display for BufferTag {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            Display::fmt(self.as_ref(), f)
+        }
+    }
+
+    impl Deref for BufferTag {
+        type Target = str;
+
+        fn deref(&self) -> &Self::Target {
+            self.as_ref()
+        }
+    }
+
+    impl Borrow<str> for BufferTag {
+        fn borrow(&self) -> &str {
+            self.as_ref()
+        }
+    }
+
+    impl PartialEq for BufferTag {
+        fn eq(&self, other: &Self) -> bool {
+            self.as_ref() == other.as_ref()
+        }
+    }
+
+    impl Eq for BufferTag {}
+
+    impl PartialOrd for BufferTag {
+        fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+            self.as_ref().partial_cmp(other.as_ref())
+        }
+    }
+
+    impl Ord for BufferTag {
+        fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+            self.as_ref().cmp(other.as_ref())
+        }
+    }
+
+    impl Hash for BufferTag {
+        fn hash<H: Hasher>(&self, state: &mut H) {
+            self.as_ref().hash(state)
+        }
+    }
+}
+
+/// Buffer will implement Read and Write and Seek, but it will also allow nested
+/// tagging of the bytes.
+pub struct Buffer {
+    index: usize,
+    bytes: Vec<u8>,
+}
 
 pub fn byte_buffer() -> Cursor<Vec<u8>> {
     Cursor::new(Vec::new())

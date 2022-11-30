@@ -3,6 +3,7 @@ mod alignment;
 use std::io::Read;
 use std::io::Seek;
 use std::io::SeekFrom;
+use std::ops::AddAssign;
 
 pub use alignment::*;
 
@@ -39,6 +40,8 @@ fn test() -> Result<(), panic> {
     buffer.start("PNG", "image data");
 
     buffer.start("ZIP", "ZIP");
+
+    buffer.end("PNG", "image data");
 
     buffer.end("ZIP", "ZIP");
     buffer.end("PNG", "PNG");
@@ -80,6 +83,13 @@ impl OutputBuffer {
         self.start(track.clone(), tag.clone());
         self.write_bytes(data);
         self.end(track, tag);
+    }
+
+    /// Concatenates the contents of other onto self.
+    /// Tags are copied over, nested under the current tag if one is open on the
+    /// corresponding track, and with their offsets adjusted appropriately.
+    pub fn concat(&mut self, other: &Self) {
+        todo!()
     }
 
     pub fn write_bytes(&mut self, data: &[u8]) {
@@ -134,6 +144,24 @@ impl OutputBuffer {
             warn!("tag track {track:?} requested but it still has incomplete tags in its stack.");
         }
         self.tag_tracks.get(&track).map(|v| v.as_slice())
+    }
+}
+
+impl AddAssign for OutputBuffer {
+    fn add_assign(&mut self, other: Self) {
+        self.concat(&other);
+    }
+}
+
+impl AddAssign<&OutputBuffer> for OutputBuffer {
+    fn add_assign(&mut self, other: &Self) {
+        self.concat(other);
+    }
+}
+
+impl AddAssign<&[u8]> for OutputBuffer {
+    fn add_assign(&mut self, other: &[u8]) {
+        self.write_bytes(other);
     }
 }
 

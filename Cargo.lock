@@ -381,6 +381,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ce23b50ad8242c51a442f3ff322d56b02f08852c77e4c0b4d3fd684abc89c683"
 
 [[package]]
+name = "inherent"
+version = "1.0.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2fb971b57a573f221e77621bea15a412033924a30beb9511fa2867572e41ea0e"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "itoa"
 version = "1.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -982,6 +993,7 @@ dependencies = [
  "crc",
  "derive_more",
  "flate2",
+ "inherent",
  "kstring",
  "once_cell",
  "paste",

@@ -1,27 +1,19 @@
 mod alignment;
 
-use std::io::Read;
-use std::io::Seek;
-use std::io::SeekFrom;
-use std::ops::AddAssign;
-
 pub use alignment::*;
-
 use {
-    crate::{
-        generic::{default, panic},
-    },
+    crate::generic::{default, panic},
     core::fmt,
     derive_more::{Deref, From, TryInto},
-    smallvec::SmallVec,
     kstring::KString,
+    smallvec::SmallVec,
     std::{
         borrow::Borrow,
         collections::{BTreeMap, BTreeSet},
         fmt::{Debug, Display},
         hash::{Hash, Hasher},
-        io::{self, Cursor, Write},
-        ops::{Deref, Index, Range},
+        io::{self, Cursor, Read, Seek, SeekFrom, Write},
+        ops::{Add, AddAssign, Deref, DerefMut, Index, Range},
         sync::Arc,
     },
     tracing::warn,
@@ -29,7 +21,7 @@ use {
 
 #[cfg(test)]
 #[test]
-fn test() -> Result<(), panic> {
+fn test_output_buffer() -> Result<(), panic> {
     let mut buffer = output_buffer();
     buffer.start("PNG", "PNG");
 
@@ -44,11 +36,52 @@ fn test() -> Result<(), panic> {
     buffer.end("PNG", "image data");
 
     buffer.end("ZIP", "ZIP");
-    buffer.end("PNG", "PNG");
+
+    dbg!(buffer.tags("ZIP"));
+    dbg!(buffer.tags("PNG"));
 
     Ok(())
 }
 
+#[derive(Debug)]
+pub struct InOutputBufferTag<'buffer> {
+    buffer: &'buffer mut OutputBuffer,
+    track: KString,
+    tag: KString,
+}
+
+impl<'buffer> InOutputBufferTag<'buffer> {
+    pub fn close(self) {
+        drop(self)
+    }
+}
+
+impl Deref for InOutputBufferTag<'_> {
+    type Target = OutputBuffer;
+
+    fn deref(&self) -> &Self::Target {
+        self.buffer
+    }
+}
+
+impl DerefMut for InOutputBufferTag<'_> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        self.buffer
+    }
+}
+
+impl Drop for InOutputBufferTag<'_> {
+    fn drop(&mut self) {
+        self.buffer.end(self.track.clone(), self.tag.clone());
+    }
+}
+
+/// In-memory output buffer supporting multiple overlapping hierarchical markup
+/// tracks.
+///
+/// Can be concatenated with other `OutputBuffer`s while preserving tags.
+///
+/// https://en.wikipedia.org/wiki/Overlapping_markup
 #[derive(Debug, Default, Clone)]
 pub struct OutputBuffer {
     /// the actual data
@@ -76,20 +109,54 @@ impl OutputBuffer {
         self.as_mut()
     }
 
-    pub fn write_tagged(&mut self, data: &[u8], track: impl Into<KString>, tag: impl Into<KString>) {
+    pub fn tagged(
+        &mut self,
+        track: impl Into<KString>,
+        tag: impl Into<KString>,
+    ) -> InOutputBufferTag<'_> {
         let track = track.into();
         let tag = tag.into();
-
         self.start(track.clone(), tag.clone());
-        self.write_bytes(data);
-        self.end(track, tag);
+        InOutputBufferTag {
+            buffer: self,
+            track,
+            tag,
+        }
+    }
+
+    pub fn extend_tagged<Data>(
+        &mut self,
+        data: Data,
+        track: impl Into<KString>,
+        tag: impl Into<KString>,
+    ) where
+        OutputBuffer: Add<Data> + AddAssign<Data>,
+    {
+        *self.tagged(track, tag) += data;
+    }
+
+    pub fn extend<Data>(&mut self, data: Data)
+    where OutputBuffer: Add<Data> + AddAssign<Data> {
+        *self += data;
     }
 
     /// Concatenates the contents of other onto self.
-    /// Tags are copied over, nested under the current tag if one is open on the
-    /// corresponding track, and with their offsets adjusted appropriately.
+    /// Closed tags are copied over, nested under the current tag if one is open on the
+    /// corresponding track, and with their offsets adjusted appropriately. Unclosed
+    /// tags are silently discarded.
     pub fn concat(&mut self, other: &Self) {
-        todo!()
+        let offset = self.bytes.len();
+        self.bytes.extend_from_slice(&other.bytes);
+
+        for (other_track, other_tags) in &other.tag_tracks {
+            let track = self.tag_tracks.entry(other_track.clone()).or_default();
+            let stack = self.tag_stacks.entry(other_track.clone()).or_default();
+            let parent = stack.last_mut().map(|t| &mut t.children).unwrap_or(track);
+
+            for tag in other_tags {
+                parent.push(tag.clone() + offset);
+            }
+        }
     }
 
     pub fn write_bytes(&mut self, data: &[u8]) {
@@ -109,24 +176,21 @@ impl OutputBuffer {
     }
 
     /// Pops a tag off the stack of tags, finalizes it at the current index, and
-    /// pushes it onto the list of completed tags.
+    /// then adds it as a child of the next tag on the stack, if one exists,
+    /// or else adds it to the list of complete tags.
     pub fn end(&mut self, track: impl Into<KString>, tag: impl Into<KString>) {
         let track = track.into();
         let tag = tag.into();
 
         let end = self.offset();
-        let stack = self
-            .tag_stacks
-            .get_mut(&track)
-            .expect("attempting to close a tag on a track that doesn't exist");
-        let range = stack
-            .pop()
-            .expect("attempted to close a tag but none were open");
-        assert_eq!(range.name, tag, "attempted to close unexpected tag");
-        self.tag_tracks
-            .entry(track)
-            .or_default()
-            .push(range.finalize(end));
+        let stack = self.tag_stacks.get_mut(&track).unwrap();
+        let mut range = stack.pop().unwrap();
+        range.end = end;
+        if let Some(parent) = stack.last_mut() {
+            parent.children.push(range);
+        } else {
+            self.tag_tracks.entry(track).or_default().push(range);
+        }
     }
 
     pub fn offset(&self) -> usize {
@@ -143,7 +207,10 @@ impl OutputBuffer {
         if !self.tag_stacks.values().all(|stack| stack.is_empty()) {
             warn!("tag track {track:?} requested but it still has incomplete tags in its stack.");
         }
-        self.tag_tracks.get(&track).map(|v| v.as_slice())
+        self.tag_tracks
+            .get(&track)
+            .map(|v| v.as_slice())
+            .filter(|v| !v.is_empty())
     }
 }
 
@@ -284,6 +351,26 @@ impl TaggedRange {
     }
 }
 
+impl Add<usize> for TaggedRange {
+    type Output = Self;
+
+    fn add(self, rhs: usize) -> Self::Output {
+        Self {
+            start: self.start + rhs,
+            end: self.end + rhs,
+            name: self.name,
+            children: self.children,
+        }
+    }
+}
+
+impl AddAssign<usize> for TaggedRange {
+    fn add_assign(&mut self, rhs: usize) {
+        self.start += rhs;
+        self.end += rhs;
+    }
+}
+
 impl Index<TaggedRange> for [u8] {
     type Output = [u8];
 
@@ -307,7 +394,6 @@ pub fn output_buffer() -> OutputBuffer {
 pub trait OutputRead: Read + Offset {}
 impl<T> OutputRead for T where T: Read + Offset {}
 
-
 pub trait InputWrite: Write + Offset {}
 impl<T> InputWrite for T where T: Write + Offset {}
 
@@ -317,7 +403,8 @@ pub trait Offset {
     fn len(&mut self) -> usize;
 }
 
-impl<T> Offset for T where T: Seek
+impl<T> Offset for T
+where T: Seek
 {
     fn offset(&mut self) -> usize {
         let Ok(position) = self.stream_position() else {

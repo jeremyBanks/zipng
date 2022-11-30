@@ -2,8 +2,8 @@
 
 use {
     crate::{
-        generic::default, never, output_buffer, panic, zip::write_zip::write_zip, ToZip,
-        InputWrite, ZipConfiguration, ZipEntry, ZipEntryComparison,
+        generic::default, never, output_buffer, panic, zip::write_zip::write_zip, InputWrite,
+        ToZip, ZipConfiguration, ZipEntry, ZipEntryComparison,
     },
     serde::{Deserialize, Serialize},
     std::{

@@ -1,30 +1,23 @@
-
-use std::io::Read;
-use std::io::Seek;
-use std::io::SeekFrom;
-
-use crate::InputWrite;
-
 use {
     crate::{
         generic::{default, panic},
+        InputWrite,
     },
     core::fmt,
     derive_more::{Deref, From, TryInto},
-    smallvec::SmallVec,
     kstring::KString,
+    smallvec::SmallVec,
     std::{
         borrow::Borrow,
         collections::{BTreeMap, BTreeSet},
         fmt::{Debug, Display},
         hash::{Hash, Hasher},
-        io::{self, Cursor, Write},
+        io::{self, Cursor, Read, Seek, SeekFrom, Write},
         ops::{Deref, Index, Range},
         sync::Arc,
     },
     tracing::warn,
 };
-
 
 /// Alignment direction, possible for rendered text or binary data.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]

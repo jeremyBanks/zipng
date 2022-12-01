@@ -26,6 +26,7 @@ fn test_output_buffer() -> Result<(), panic> {
 
     let mut buffer = output_buffer();
 
+    {
     let mut buffer = buffer.tagged("PNG", "PNG");
 
     buffer.extend(b"\x89PNG\r");
@@ -54,6 +55,7 @@ fn test_output_buffer() -> Result<(), panic> {
 
     buffer.end("ZIP", "ZIP");
     buffer.end("PNG", "PNG");
+    }
 
     dbg!(buffer.tags("ZIP"));
     dbg!(buffer.tags("PNG"));
@@ -141,17 +143,6 @@ impl OutputBuffer {
             track,
             tag,
         }
-    }
-
-    pub fn extend_tagged<Data>(
-        &mut self,
-        data: Data,
-        track: impl Into<KString>,
-        tag: impl Into<KString>,
-    ) where
-        OutputBuffer: AddAssign<Data>,
-    {
-        *self.tagged(track, tag) += data;
     }
 
     pub fn extend<Data>(&mut self, data: Data)

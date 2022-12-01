@@ -3,3 +3,6 @@ opt-level = 3
 
 [profile.release]
 lto = "thin"
+
+[env]
+UPDATE_EXPECT = "1"

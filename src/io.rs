@@ -1,6 +1,7 @@
 mod alignment;
 
 pub use alignment::*;
+use expect_test::expect;
 use {
     crate::generic::{default, panic},
     core::fmt,
@@ -22,43 +23,95 @@ use {
 #[cfg(test)]
 #[test]
 fn test_output_buffer() -> Result<(), panic> {
+
     crate::dev::init!();
 
     let mut buffer = output_buffer();
 
     {
-    let mut buffer = buffer.tagged("PNG", "PNG");
+        let mut buffer = buffer.tagged("PNG", "PNG");
 
-    buffer.extend(b"\x89PNG\r");
+        buffer.extend(b"\x89PNG\r");
 
-    let mut buffer = buffer.tagged("PNG", "IHDR");
+        let mut buffer = buffer.tagged("PNG", "IHDR");
 
-    buffer.extend(b"\x00\x00\x00\rIHDR");
+        buffer.extend(b"\x00\x00\x00\rIHDR");
 
-    let mut buffer = buffer.closed();
+        let mut buffer = buffer.closed();
 
-    buffer.extend(b"test");
+        buffer.extend(b"test");
 
-    buffer.start("PNG", "signature");
-    
-    buffer.end("PNG", "signature");
+        buffer.start("PNG", "signature");
 
-    buffer.start("PNG", "image data");
+        buffer.end("PNG", "signature");
 
-    buffer.start("ZIP", "ZIP");
+        buffer.start("PNG", "image data");
 
-    let mut sub = output_buffer();
-    sub.tagged("PNG", "sub").extend(b"\x90PNG\r");
-    buffer += sub;
+        buffer.start("ZIP", "ZIP");
 
-    buffer.end("PNG", "image data");
+        let mut sub = output_buffer();
+        sub.tagged("PNG", "sub").extend(b"\x90PNG\r");
+        buffer += sub;
 
-    buffer.end("ZIP", "ZIP");
-    buffer.end("PNG", "PNG");
+        buffer.end("PNG", "image data");
+
+        buffer.end("ZIP", "ZIP");
+        buffer.end("PNG", "PNG");
     }
 
-    dbg!(buffer.tags("ZIP"));
-    dbg!(buffer.tags("PNG"));
+    expect![[r#"
+        Some(
+            [
+                TaggedRange {
+                    start: 17,
+                    end: 22,
+                    name: "ZIP",
+                    children: [],
+                },
+            ],
+        )
+    "#]].assert_debug_eq(&buffer.tags("ZIP"));
+
+    expect![[r#"
+        Some(
+            [
+                TaggedRange {
+                    start: 0,
+                    end: 22,
+                    name: "PNG",
+                    children: [
+                        TaggedRange {
+                            start: 5,
+                            end: 22,
+                            name: "IHDR",
+                            children: [
+                                TaggedRange {
+                                    start: 17,
+                                    end: 17,
+                                    name: "signature",
+                                    children: [],
+                                },
+                                TaggedRange {
+                                    start: 17,
+                                    end: 22,
+                                    name: "image data",
+                                    children: [
+                                        TaggedRange {
+                                            start: 17,
+                                            end: 22,
+                                            name: "sub",
+                                            children: [],
+                                        },
+                                    ],
+                                },
+                            ],
+                        },
+                    ],
+                },
+            ],
+        )
+    "#]].assert_debug_eq(&buffer.tags("PNG"));
+
     Ok(())
 }
 

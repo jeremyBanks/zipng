@@ -22,37 +22,54 @@ use {
 #[cfg(test)]
 #[test]
 fn test_output_buffer() -> Result<(), panic> {
+    crate::dev::init!();
+
     let mut buffer = output_buffer();
-    buffer.start("PNG", "PNG");
+
+    let mut buffer = buffer.tagged("PNG", "PNG");
+
+    buffer.extend(b"\x89PNG\r");
+
+    let mut buffer = buffer.tagged("PNG", "IHDR");
+
+    buffer.extend(b"\x00\x00\x00\rIHDR");
+
+    let mut buffer = buffer.closed();
+
+    buffer.extend(b"test");
 
     buffer.start("PNG", "signature");
-    buffer.write_all(b"\x89PNG\r")?;
+    
     buffer.end("PNG", "signature");
 
     buffer.start("PNG", "image data");
 
     buffer.start("ZIP", "ZIP");
 
+    let mut sub = output_buffer();
+    sub.tagged("PNG", "sub").extend(b"\x90PNG\r");
+    buffer += sub;
+
     buffer.end("PNG", "image data");
 
     buffer.end("ZIP", "ZIP");
+    buffer.end("PNG", "PNG");
 
     dbg!(buffer.tags("ZIP"));
     dbg!(buffer.tags("PNG"));
-
     Ok(())
 }
 
 #[derive(Debug)]
 pub struct InOutputBufferTag<'buffer> {
-    buffer: &'buffer mut OutputBuffer,
+    buffer: Option<&'buffer mut OutputBuffer>,
     track: KString,
     tag: KString,
 }
 
 impl<'buffer> InOutputBufferTag<'buffer> {
-    pub fn close(self) {
-        drop(self)
+    pub fn closed(mut self) -> &'buffer mut OutputBuffer {
+        self.buffer.take().unwrap()
     }
 }
 
@@ -60,19 +77,21 @@ impl Deref for InOutputBufferTag<'_> {
     type Target = OutputBuffer;
 
     fn deref(&self) -> &Self::Target {
-        self.buffer
+        self.buffer.as_ref().unwrap()
     }
 }
 
 impl DerefMut for InOutputBufferTag<'_> {
     fn deref_mut(&mut self) -> &mut Self::Target {
-        self.buffer
+        self.buffer.as_mut().unwrap()
     }
 }
 
 impl Drop for InOutputBufferTag<'_> {
     fn drop(&mut self) {
-        self.buffer.end(self.track.clone(), self.tag.clone());
+        if let Some(buffer) = &mut self.buffer {
+            buffer.end(self.track.clone(), self.tag.clone());
+        }
     }
 }
 
@@ -118,7 +137,7 @@ impl OutputBuffer {
         let tag = tag.into();
         self.start(track.clone(), tag.clone());
         InOutputBufferTag {
-            buffer: self,
+            buffer: Some(self),
             track,
             tag,
         }
@@ -130,20 +149,20 @@ impl OutputBuffer {
         track: impl Into<KString>,
         tag: impl Into<KString>,
     ) where
-        OutputBuffer: Add<Data> + AddAssign<Data>,
+        OutputBuffer: AddAssign<Data>,
     {
         *self.tagged(track, tag) += data;
     }
 
     pub fn extend<Data>(&mut self, data: Data)
-    where OutputBuffer: Add<Data> + AddAssign<Data> {
+    where OutputBuffer: AddAssign<Data> {
         *self += data;
     }
 
     /// Concatenates the contents of other onto self.
-    /// Closed tags are copied over, nested under the current tag if one is open on the
-    /// corresponding track, and with their offsets adjusted appropriately. Unclosed
-    /// tags are silently discarded.
+    /// Closed tags are copied over, nested under the current tag if one is open
+    /// on the corresponding track, and with their offsets adjusted
+    /// appropriately. Unclosed tags are silently discarded.
     pub fn concat(&mut self, other: &Self) {
         let offset = self.bytes.len();
         self.bytes.extend_from_slice(&other.bytes);
@@ -157,10 +176,6 @@ impl OutputBuffer {
                 parent.push(tag.clone() + offset);
             }
         }
-    }
-
-    pub fn write_bytes(&mut self, data: &[u8]) {
-        self.bytes.extend_from_slice(data);
     }
 
     /// Pushes a tag onto the stack of tags.
@@ -214,21 +229,51 @@ impl OutputBuffer {
     }
 }
 
-impl AddAssign for OutputBuffer {
-    fn add_assign(&mut self, other: Self) {
+impl AddAssign<OutputBuffer> for OutputBuffer {
+    fn add_assign(&mut self, other: OutputBuffer) {
         self.concat(&other);
     }
 }
 
 impl AddAssign<&OutputBuffer> for OutputBuffer {
-    fn add_assign(&mut self, other: &Self) {
+    fn add_assign(&mut self, other: &OutputBuffer) {
         self.concat(other);
     }
 }
 
 impl AddAssign<&[u8]> for OutputBuffer {
     fn add_assign(&mut self, other: &[u8]) {
-        self.write_bytes(other);
+        self.bytes.extend_from_slice(other);
+    }
+}
+
+impl<const N: usize> AddAssign<&[u8; N]> for OutputBuffer {
+    fn add_assign(&mut self, other: &[u8; N]) {
+        self.bytes.extend_from_slice(other.as_slice());
+    }
+}
+
+impl AddAssign<OutputBuffer> for &mut OutputBuffer {
+    fn add_assign(&mut self, other: OutputBuffer) {
+        self.concat(&other);
+    }
+}
+
+impl AddAssign<&OutputBuffer> for &mut OutputBuffer {
+    fn add_assign(&mut self, other: &OutputBuffer) {
+        self.concat(other);
+    }
+}
+
+impl AddAssign<&[u8]> for &mut OutputBuffer {
+    fn add_assign(&mut self, other: &[u8]) {
+        self.bytes.extend_from_slice(other);
+    }
+}
+
+impl<const N: usize> AddAssign<&[u8; N]> for &mut OutputBuffer {
+    fn add_assign(&mut self, other: &[u8; N]) {
+        self.bytes.extend_from_slice(other.as_slice());
     }
 }
 

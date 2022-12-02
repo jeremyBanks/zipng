@@ -10,8 +10,8 @@ use {
 
 const BLOCK_SIZE: usize = 1024;
 
-pub(crate) fn write_zip(
-    mut output: &mut impl InputWrite,
+pub fn write_zip(
+    output: &mut impl InputWrite,
     files: &[(&[u8], &[u8])],
     suffix: &[u8],
 ) -> Result<usize, panic> {

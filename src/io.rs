@@ -4,22 +4,17 @@ pub use alignment::*;
 use {
     crate::generic::{default, panic},
     core::fmt,
-    derive_more::{Deref, From, TryInto},
     expect_test::expect,
     kstring::KString,
-    smallvec::SmallVec,
     std::{
-        borrow::Borrow,
         cmp::Ordering,
-        collections::{BTreeMap, BTreeSet, HashMap},
+        collections::{BTreeMap},
         fmt::{Debug, Display},
         hash::{Hash, Hasher},
-        io::{self, Cursor, Read, Seek, SeekFrom, Write},
-        iter,
+        io::{self, Read, Seek, SeekFrom, Write},
         ops::{Add, AddAssign, Deref, DerefMut, Index, Range},
-        sync::Arc,
     },
-    tracing::{trace, warn},
+    tracing::{warn},
 };
 
 /// In-memory output buffer supporting multiple [overlapping hierarchical markup
@@ -67,7 +62,9 @@ impl OutputBuffer {
     }
 
     pub fn extend<Data>(&mut self, data: Data)
-    where OutputBuffer: AddAssign<Data> {
+    where
+        OutputBuffer: AddAssign<Data>,
+    {
         *self += data;
     }
 
@@ -107,7 +104,7 @@ impl OutputBuffer {
     /// or else adds it to the list of complete tags.
     pub fn end(&mut self, track: impl Into<KString>, tag: impl Into<KString>) {
         let track = track.into();
-        let tag = tag.into();
+        let _tag = tag.into();
 
         let end = self.offset();
         let stack = self.tag_stacks.get_mut(&track).unwrap();
@@ -256,7 +253,7 @@ impl Display for OutputBuffer {
                 write!(f, "{:indent$}", "", indent = indentation_total * 4)?;
                 write_bytes(f, before)?;
                 index = tag.index;
-                write!(f, "\n")?;
+                writeln!(f)?;
             }
 
             write!(f, "{:indent$}", "", indent = (tag.depth) * 4)?;
@@ -268,7 +265,7 @@ impl Display for OutputBuffer {
                 indentation_total -= 1;
                 write!(f, "</{}:{}>", tag.track, tag.tag)?;
             }
-            write!(f, "\n")?;
+            writeln!(f)?;
         }
         write_bytes(f, &self.bytes[index..])?;
 
@@ -553,7 +550,8 @@ pub trait Offset {
 }
 
 impl<T> Offset for T
-where T: Seek
+where
+    T: Seek,
 {
     fn offset(&mut self) -> usize {
         let Ok(position) = self.stream_position() else {

@@ -1,4 +1,4 @@
-#![feature(doc_cfg, doc_auto_cfg)]
+#![cfg_attr(doc, feature(doc_cfg, doc_auto_cfg))]
 #![allow(non_upper_case_globals)]
 #![warn(unused_crate_dependencies, missing_docs, clippy::redundant_pub_crate)]
 #![cfg_attr(
@@ -17,7 +17,6 @@
 
 use {
     crate::generic::*,
-    std::io::{Read, Write},
 };
 
 mod checksums;
@@ -34,7 +33,7 @@ mod zlib;
 pub mod dev;
 mod opstructs;
 
-use std::io::SeekFrom;
+
 
 #[doc(hidden)]
 pub use crate::text::*;

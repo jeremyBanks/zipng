@@ -1,22 +1,13 @@
 use {
     crate::{
-        generic::{default, panic},
+        generic::{panic},
         InputWrite,
     },
-    core::fmt,
-    derive_more::{Deref, From, TryInto},
-    kstring::KString,
-    smallvec::SmallVec,
     std::{
-        borrow::Borrow,
-        collections::{BTreeMap, BTreeSet},
-        fmt::{Debug, Display},
+        fmt::{Debug},
         hash::{Hash, Hasher},
-        io::{self, Cursor, Read, Seek, SeekFrom, Write},
-        ops::{Deref, Index, Range},
-        sync::Arc,
+        io::{Write},
     },
-    tracing::warn,
 };
 
 /// Alignment direction, possible for rendered text or binary data.
@@ -112,7 +103,7 @@ pub fn write_aligned<'a>(
         minimum_alignment: usize,
         maximum_alignment: usize,
         _direction: Align,
-        skip_padding_below_length: usize,
+        _skip_padding_below_length: usize,
         _fully_padded: bool,
         _padding_bytes: &[u8],
     ) -> Result<usize, panic> {
@@ -131,7 +122,7 @@ pub fn write_aligned<'a>(
 /// Writes `bytes` to `buffer`, padded with trailing zeroes to the next multiple
 /// of `alignment`. Returns the range that `bytes` was written to in `buffer`,
 /// excluding the padding.
-pub(crate) fn write_aligned_pad_end(
+pub fn write_aligned_pad_end(
     output: &mut impl InputWrite,
     bytes: &[u8],
     alignment: usize,
@@ -157,7 +148,7 @@ pub(crate) fn write_aligned_pad_end(
 /// Writes `bytes` to `buffer`, padded with leading zeroes to the next multiple
 /// of `alignment`. Returns the range that `bytes` was written to in `buffer`,
 /// excluding the padding.
-pub(crate) fn write_aligned_pad_start(
+pub fn write_aligned_pad_start(
     output: &mut impl InputWrite,
     bytes: &[u8],
     alignment: usize,

@@ -1,18 +1,10 @@
 use {
-    std::io::{Cursor, Read},
-    tracing::info,
     zipng::{
         dev::{init, save},
-        output_buffer,
         palettes::{
-            crameri::{BATLOW, ROMA_O},
-            oceanic::{BALANCE, GRAY, TOPO},
-            singles::TURBO,
-            viridis::VIRIDIS,
+            oceanic::{TOPO},
         },
         panic, poc_zipng,
-        BitDepth::EightBit,
-        Png,
     },
 };
 

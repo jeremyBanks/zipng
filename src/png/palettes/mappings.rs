@@ -3,11 +3,11 @@
 
 /// Returns a new palette that is the result of applying the given `mapping`
 /// to the provided [`EightBit`][crate::EightBit] palette.
-pub fn apply_mapping(mapping: &[u8; 256], palette: &[u8]) -> Vec<u8> {
+pub fn apply_mapping(_mapping: &[u8; 256], palette: &[u8]) -> Vec<u8> {
     if palette.len() % 256 != 0 {
         panic!("palette length must be a multiple of 256");
     }
-    let bytes_per_color = palette.len() / 256;
+    let _bytes_per_color = palette.len() / 256;
     let mut new_palette = Vec::with_capacity(palette.len());
     for color in palette.chunks_exact(3) {
         new_palette.extend_from_slice(color);

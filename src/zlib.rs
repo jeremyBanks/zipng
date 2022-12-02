@@ -2,7 +2,7 @@ use {
     crate::{
         adler32, default, generic::panic, output_buffer, write_deflate, DeflateMode, InputWrite,
     },
-    std::{future::Future, io::Read, ops::Not, pin::Pin, task},
+    std::{io::Read},
 };
 
 #[cfg(feature = "flate2")]
@@ -24,7 +24,8 @@ pub fn write_zlib(output: &mut impl InputWrite, data: &[u8]) -> Result<usize, pa
 #[allow(non_camel_case_types)]
 #[derive(Debug)]
 pub struct write_zlib<'all, Output>
-where Output: 'all + InputWrite
+where
+    Output: 'all + InputWrite,
 {
     pub output: &'all mut Output,
     pub data: &'all [u8],
@@ -45,10 +46,11 @@ impl Default for ZlibMode {
     }
 }
 impl<WriteAndSeek> write_zlib<'_, WriteAndSeek>
-where WriteAndSeek: self::InputWrite
+where
+    WriteAndSeek: self::InputWrite,
 {
     pub fn call(&mut self) -> Result<usize, panic> {
-        let Self { output, data, mode } = self;
+        let Self { output, data, mode: _ } = self;
 
         let before = output.offset();
 
@@ -64,7 +66,7 @@ where WriteAndSeek: self::InputWrite
         let mut buffer = output_buffer();
         write_deflate(&mut buffer, data)?;
 
-        output.write_all(&buffer.as_ref())?;
+        output.write_all(buffer.as_ref())?;
 
         // adler-32 checksum of the deflated data
         output.write_all(&adler32(buffer.as_ref()).to_le_bytes())?;

@@ -1,5 +1,5 @@
-pub(crate) mod read_png;
-pub(crate) mod write_png;
+pub mod read_png;
+pub mod write_png;
 
 pub mod palettes;
 

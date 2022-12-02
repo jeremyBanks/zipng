@@ -7,7 +7,9 @@ use {
 };
 
 pub fn default<T>() -> T
-where T: Default {
+where
+    T: Default,
+{
     T::default()
 }
 
@@ -53,7 +55,8 @@ pub enum panic {}
 assert_impl_all!(panic: Send, Sync);
 
 impl<Err> From<Err> for panic
-where Err: Display + Debug
+where
+    Err: Display + Debug,
 {
     #[track_caller]
     fn from(error: Err) -> Self {
@@ -73,7 +76,7 @@ use std::{cmp::Ordering, fmt, hash::Hash, marker::PhantomData};
 /// seems to be the right way to defined a `PhantomData` without affecting
 /// either the borrow checker (lifetimes) or the drop checker (ownership,
 /// borrowing).
-pub(crate) struct PhantomType<T: ?Sized>(PhantomData<fn(T) -> T>);
+pub struct PhantomType<T: ?Sized>(PhantomData<fn(T) -> T>);
 
 impl<T: ?Sized> Copy for PhantomType<T> {}
 

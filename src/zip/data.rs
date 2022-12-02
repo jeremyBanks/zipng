@@ -7,7 +7,7 @@ use {
     },
     serde::{Deserialize, Serialize},
     std::{
-        io::{Cursor, Read},
+        io::{Read},
         path::Path,
     },
     tracing::{debug, instrument},
@@ -103,7 +103,9 @@ impl Zip {
 
 impl Serialize for Zip {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where S: serde::Serializer {
+    where
+        S: serde::Serializer,
+    {
         serializer.serialize_bytes(
             &self
                 .write_vec()
@@ -114,7 +116,9 @@ impl Serialize for Zip {
 
 impl<'de> Deserialize<'de> for Zip {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where D: serde::Deserializer<'de> {
+    where
+        D: serde::Deserializer<'de>,
+    {
         let bytes: &[u8] = serde_bytes::deserialize(deserializer)?;
         Self::read_slice(bytes).map_err(serde::de::Error::custom)
     }

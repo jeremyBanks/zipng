@@ -64,10 +64,10 @@ where WriteAndSeek: self::InputWrite
         let mut buffer = output_buffer();
         write_deflate(&mut buffer, data)?;
 
-        output.write_all(&buffer.get_ref())?;
+        output.write_all(&buffer.as_ref())?;
 
         // adler-32 checksum of the deflated data
-        output.write_all(&adler32(buffer.get_ref()).to_le_bytes())?;
+        output.write_all(&adler32(buffer.as_ref()).to_le_bytes())?;
 
         Ok(output.offset() - before)
     }

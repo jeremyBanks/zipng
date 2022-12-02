@@ -19,13 +19,20 @@ use {
 fn main() -> Result<(), panic> {
     init!();
 
-    save!({ poc_zipng(TURBO)? } - turbo.png.zip)?;
-    save!({ poc_zipng(BATLOW)? } - batlow.png.zip)?;
-    save!({ poc_zipng(ROMA_O)? } - roma_o.png.zip)?;
-    save!({ poc_zipng(VIRIDIS)? } - viridis.png.zip)?;
-    save!({ poc_zipng(BALANCE)? } - balance.png.zip)?;
-    save!({ poc_zipng(GRAY)? } - gray.png.zip)?;
-    save!({ poc_zipng(TOPO)? } - topo.png.zip)?;
+    // save!({ poc_zipng(TURBO)? } - turbo.png.zip)?;
+    // save!({ poc_zipng(BATLOW)? } - batlow.png.zip)?;
+    // save!({ poc_zipng(ROMA_O)? } - roma_o.png.zip)?;
+    // save!({ poc_zipng(VIRIDIS)? } - viridis.png.zip)?;
+    // save!({ poc_zipng(BALANCE)? } - balance.png.zip)?;
+    // save!({ poc_zipng(GRAY)? } - gray.png.zip)?;
+
+    let topo = poc_zipng(TOPO)?;
+    let bytes = topo.as_ref();
+    let text = topo.to_string();
+    let text = text.as_bytes();
+
+    save!(bytes.png.zip)?;
+    save!(text.txt.xml)?;
 
     // let mut zip = ::zip::ZipArchive::new(Cursor::new(poc_zipng(TURBO)?))?;
     // let names: Vec<String> = zip.file_names().map(|s| s.to_string()).collect();

@@ -47,14 +47,6 @@ impl OutputBuffer {
         self.bytes
     }
 
-    pub fn get_ref(&self) -> &[u8] {
-        self.as_ref()
-    }
-
-    pub fn get_mut(&mut self) -> &mut Vec<u8> {
-        self.as_mut()
-    }
-
     pub fn tagged(
         &mut self,
         track: impl Into<KString>,
@@ -68,6 +60,10 @@ impl OutputBuffer {
             track,
             tag,
         }
+    }
+
+    pub fn push(&mut self, byte: u8) {
+        self.bytes.push(byte);
     }
 
     pub fn extend<Data>(&mut self, data: Data)
@@ -387,6 +383,26 @@ impl Write for OutputBuffer {
     }
 }
 
+impl<'a> Write for InOutputBufferTag<'a> {
+    fn write(&mut self, buf: &[u8]) -> Result<usize, io::Error> {
+        self.buffer.as_mut().unwrap().write(buf)
+    }
+
+    fn flush(&mut self) -> Result<(), io::Error> {
+        self.buffer.as_mut().unwrap().flush()
+    }
+}
+
+impl<'a> Offset for InOutputBufferTag<'a> {
+    fn offset(&mut self) -> usize {
+        self.buffer.as_mut().unwrap().offset()
+    }
+
+    fn len(&mut self) -> usize {
+        self.buffer.as_mut().unwrap().len()
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord, Hash, Default)]
 pub struct TaggedRange {
     /// The first index of the range (inclusive).
@@ -567,34 +583,30 @@ fn test_output_buffer() -> Result<(), panic> {
     let mut buffer = output_buffer();
 
     {
-        let mut buffer = buffer.tagged("PNG", "PNG");
+        let mut buffer = buffer.tagged("png", "png");
 
+        buffer.start("png", "signature");
         buffer.extend(b"\x89PNG\r");
+        buffer.end("png", "signature");
 
-        let mut buffer = buffer.tagged("PNG", "IHDR");
+        let mut buffer = buffer.tagged("png", "header");
 
         buffer.extend(b"\x00\x00\x00\rIHDR");
 
         let mut buffer = buffer.closed();
 
-        buffer.extend(b"test");
-
-        buffer.start("PNG", "signature");
-
-        buffer.end("PNG", "signature");
-
-        buffer.start("PNG", "image data");
+        buffer.start("png", "body");
 
         buffer.start("ZIP", "ZIP");
 
         let mut sub = output_buffer();
-        sub.tagged("PNG", "sub").extend(b"\x90PNG\r");
+        sub.tagged("png", "sub").extend(b"\x90PNG\r");
         buffer += sub;
 
-        buffer.end("PNG", "image data");
+        buffer.end("png", "body");
 
         buffer.end("ZIP", "ZIP");
-        buffer.end("PNG", "PNG");
+        buffer.end("png", "PNG");
     }
 
     expect![[r#"

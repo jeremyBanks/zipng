@@ -40,6 +40,20 @@ impl OutputBuffer {
         default()
     }
 
+    pub fn without_tag(data: impl AsRef<[u8]>) -> Self {
+        Self {
+            bytes: data.as_ref().to_vec(),
+            tag_tracks: default(),
+            tag_stacks: default(),
+        }
+    }
+
+    pub fn with_tag(data: impl AsRef<[u8]>, track: impl Into<KString>, tag: impl Into<KString>) -> Self {
+        let mut buffer = Self::new();
+        *buffer.tagged(track, tag) += data.as_ref();
+        buffer
+    }
+
     pub fn into_bytes(self) -> Vec<u8> {
         self.bytes
     }
@@ -397,9 +411,6 @@ impl Offset for OutputBuffer {
     }
 }
 
-// XXX: disabled temporarily because although we do want to support this, most places we're
-//      currently relying on it we probably need to replace with something that preserves
-//      slash adds tags.
 impl Write for OutputBuffer {
     fn write(&mut self, buf: &[u8]) -> Result<usize, io::Error> {
         self.bytes.write(buf)
@@ -427,6 +438,18 @@ impl<'a> Offset for InOutputBufferTag<'a> {
 
     fn len(&mut self) -> usize {
         self.buffer.as_mut().unwrap().len()
+    }
+}
+
+impl<'a> AddAssign<OutputBuffer> for InOutputBufferTag<'a> {
+    fn add_assign(&mut self, other: OutputBuffer) {
+        self.buffer.as_mut().unwrap().concat(&other);
+    }
+}
+
+impl<'a> AddAssign<&OutputBuffer> for InOutputBufferTag<'a> {
+    fn add_assign(&mut self, other: &OutputBuffer) {
+        self.buffer.as_mut().unwrap().concat(other);
     }
 }
 
@@ -566,12 +589,6 @@ impl Drop for InOutputBufferTag<'_> {
 pub fn output_buffer() -> OutputBuffer {
     default()
 }
-
-pub trait OutputRead: Read + Offset {}
-impl<T> OutputRead for T where T: Read + Offset {}
-
-pub trait InputWrite: Write + Offset {}
-impl<T> InputWrite for T where T: Write + Offset {}
 
 pub trait Offset {
     fn offset(&mut self) -> usize;

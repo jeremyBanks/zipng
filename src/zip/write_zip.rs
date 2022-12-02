@@ -2,7 +2,7 @@ use {
     crate::{
         crc32,
         io::{write_aligned_pad_end, write_aligned_pad_start},
-        panic, InputWrite,
+        panic, OutputBuffer,
     },
     bstr::ByteSlice,
     std::io::Write,
@@ -11,7 +11,7 @@ use {
 const BLOCK_SIZE: usize = 1024;
 
 pub fn write_zip(
-    output: &mut impl InputWrite,
+    output: &mut OutputBuffer,
     files: &[(&[u8], &[u8])],
     suffix: &[u8],
 ) -> Result<usize, panic> {
@@ -65,8 +65,8 @@ pub fn write_zip(
             write_aligned_pad_start(output, &header, BLOCK_SIZE)?;
             write_aligned_pad_end(output, body, BLOCK_SIZE)?;
         } else {
-            output.write_all(&header)?;
-            output.write_all(body)?;
+            *output.tagged("zip", "file-header") += &*header;
+            *output.tagged("zip", "file-body") += *body;
         };
         files_with_offsets.push((*name, *body, before));
     }
@@ -122,7 +122,7 @@ pub fn write_zip(
     let directory_terminator_len = 22 + suffix.len();
 
     let before_central_directory = output.offset();
-    output.write_all(&central_directory)?;
+    *output.tagged("zip", "index") += &*central_directory;
     let central_directory_len_without_terminator = output.offset() - before_central_directory;
 
     let _after_central_directory = directory_terminator_len + output.offset();
@@ -162,8 +162,8 @@ pub fn write_zip(
         .write_all(&suffix_length.to_le_bytes())
         .unwrap();
 
-    output.write_all(&directory_terminator)?;
-    output.write_all(suffix)?;
+    *output.tagged("zip", "index-terminator") += &*directory_terminator;
+    *output.tagged("zip", "comment") += suffix;
     let end = output.offset();
 
     Ok(end - start)

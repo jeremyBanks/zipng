@@ -1,5 +1,5 @@
 use {
-    crate::{generic::panic, InputWrite},
+    crate::{generic::panic, OutputBuffer},
     std::{
         fmt::Debug,
         hash::{Hash, Hasher},
@@ -59,7 +59,7 @@ impl Align {
 /// all-zeros.
 #[allow(clippy::too_many_arguments)]
 pub fn write_aligned<'a>(
-    output: &mut impl InputWrite,
+    output: &mut OutputBuffer,
     bytes: impl AsRef<[u8]>,
     minimum_alignment: impl Into<Option<usize>>,
     maximum_alignment: impl Into<Option<usize>>,
@@ -95,7 +95,7 @@ pub fn write_aligned<'a>(
         padding_bytes,
     );
     fn write_aligned(
-        output: &mut impl InputWrite,
+        output: &mut OutputBuffer,
         bytes: &[u8],
         minimum_alignment: usize,
         maximum_alignment: usize,
@@ -120,20 +120,20 @@ pub fn write_aligned<'a>(
 /// of `alignment`. Returns the range that `bytes` was written to in `buffer`,
 /// excluding the padding.
 pub fn write_aligned_pad_end(
-    output: &mut impl InputWrite,
+    mut output: &mut OutputBuffer,
     bytes: &[u8],
     alignment: usize,
 ) -> Result<usize, panic> {
     let index_before_data = output.offset();
 
-    output.write_all(bytes)?;
+    output += (bytes);
 
     let index_after_data = output.offset();
 
     if index_after_data % alignment != 0 {
         let padding = alignment - (index_after_data % alignment);
         for _ in 0..padding {
-            output.write_all(&[0])?;
+            output += (&[0]);
         }
     }
 
@@ -146,7 +146,7 @@ pub fn write_aligned_pad_end(
 /// of `alignment`. Returns the range that `bytes` was written to in `buffer`,
 /// excluding the padding.
 pub fn write_aligned_pad_start(
-    output: &mut impl InputWrite,
+    mut output: &mut OutputBuffer,
     bytes: &[u8],
     alignment: usize,
 ) -> Result<usize, panic> {
@@ -155,11 +155,11 @@ pub fn write_aligned_pad_start(
     if unpadded_index_after_data % alignment != 0 {
         let padding = alignment - (unpadded_index_after_data % alignment);
         for _ in 0..padding {
-            output.write_all(&[0])?;
+            output += (&[0]);
         }
     }
     let index_before_data = output.offset();
-    output.write_all(bytes)?;
+    output += (bytes);
     let index_after_data = output.offset();
     Ok((index_before_data..index_after_data).len())
 }

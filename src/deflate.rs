@@ -1,5 +1,5 @@
 use {
-    crate::{generic::default, panic, InputWrite},
+    crate::{generic::default, panic, OutputBuffer},
     std::{io::Read, ops::Not},
 };
 
@@ -10,7 +10,7 @@ pub fn read_deflate(input: &mut impl Read) -> Result<Vec<u8>, panic> {
     Ok(buffer)
 }
 
-pub fn write_deflate(output: &mut impl InputWrite, data: &[u8]) -> Result<usize, panic> {
+pub fn write_deflate(output: &mut OutputBuffer, data: &[u8]) -> Result<usize, panic> {
     write_deflate {
         output,
         data,
@@ -21,18 +21,14 @@ pub fn write_deflate(output: &mut impl InputWrite, data: &[u8]) -> Result<usize,
 
 #[allow(non_camel_case_types)]
 #[derive(Debug)]
-pub struct write_deflate<'all, Output>
-where
-    Output: 'all + InputWrite,
+pub struct write_deflate<'all>
 {
-    pub output: &'all mut Output,
+    pub output: &'all mut OutputBuffer,
     pub data: &'all [u8],
     pub mode: DeflateMode,
 }
 
-impl<'all, Output> write_deflate<'all, Output>
-where
-    Output: 'all + InputWrite,
+impl<'all> write_deflate<'all>
 {
     pub fn call(&mut self) -> Result<usize, panic> {
         let Self {
@@ -49,13 +45,13 @@ where
         for (index, chunk) in chunks.enumerate() {
             // deflate flag bits
             let is_last_chunk = index + 1 >= count;
-            output.write_all(&[is_last_chunk.into()])?;
+            *output += (&[is_last_chunk.into()]);
             // deflate block length
-            output.write_all(&u16::try_from(chunk.len()).unwrap().to_le_bytes())?;
+            *output += (&u16::try_from(chunk.len()).unwrap().to_le_bytes());
             // deflate block length check complement
-            output.write_all(&u16::try_from(chunk.len()).unwrap().not().to_le_bytes())?;
+            *output += (&u16::try_from(chunk.len()).unwrap().not().to_le_bytes());
 
-            output.write_all(chunk)?;
+            *output += (chunk);
         }
 
         Ok(output.offset() - before)

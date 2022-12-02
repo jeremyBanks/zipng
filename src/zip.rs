@@ -6,6 +6,8 @@ mod write_zip;
 
 use {self::write_zip::write_zip, std::io::Cursor};
 
+use crate::output_buffer;
+
 pub use self::{configuration::*, data::*, sizes::*, to_zip::*};
 
 fn zip<'files, Files>(files: Files) -> Vec<u8>
@@ -29,7 +31,7 @@ where
             *body,
         )
     });
-    let mut buffer = Vec::new();
-    write_zip(&mut Cursor::new(&mut buffer), &files, b"").unwrap();
-    buffer
+    let mut buffer = output_buffer();
+    write_zip(&mut buffer, &files, b"").unwrap();
+    buffer.into()
 }

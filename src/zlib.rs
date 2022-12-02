@@ -1,6 +1,6 @@
 use {
     crate::{
-        adler32, default, generic::panic, output_buffer, write_deflate, DeflateMode, InputWrite,
+        adler32, default, generic::panic, output_buffer, write_deflate, DeflateMode, OutputBuffer,
     },
     std::io::Read,
 };
@@ -12,7 +12,7 @@ pub fn read_zlib(input: &mut impl Read) -> Result<Vec<u8>, panic> {
     Ok(buffer)
 }
 
-pub fn write_zlib(output: &mut impl InputWrite, data: &[u8]) -> Result<usize, panic> {
+pub fn write_zlib(output: &mut OutputBuffer, data: &[u8]) -> Result<usize, panic> {
     write_zlib {
         output,
         data,
@@ -23,11 +23,9 @@ pub fn write_zlib(output: &mut impl InputWrite, data: &[u8]) -> Result<usize, pa
 
 #[allow(non_camel_case_types)]
 #[derive(Debug)]
-pub struct write_zlib<'all, Output>
-where
-    Output: 'all + InputWrite,
+pub struct write_zlib<'all>
 {
-    pub output: &'all mut Output,
+    pub output: &'all mut OutputBuffer,
     pub data: &'all [u8],
     pub mode: ZlibMode,
 }
@@ -45,9 +43,7 @@ impl Default for ZlibMode {
         }
     }
 }
-impl<WriteAndSeek> write_zlib<'_, WriteAndSeek>
-where
-    WriteAndSeek: self::InputWrite,
+impl write_zlib<'_>
 {
     pub fn call(&mut self) -> Result<usize, panic> {
         let Self {
@@ -60,20 +56,20 @@ where
 
         // zlib compression mode: deflate with 32KiB windows
         let cmf = 0b_0111_1000;
-        output.write_all(&[cmf])?;
+        *output += (&[cmf]);
         // zlib flag bits: no preset dictionary, compression level 0
         let mut flg: u8 = 0b0000_0000;
         // zlib flag and check bits
         flg |= 0b1_1111 - ((((cmf as u16) << 8) | (flg as u16)) % 0b1_1111) as u8;
-        output.write_all(&[flg])?;
+        *output += (&[flg]);
 
         let mut buffer = output_buffer();
         write_deflate(&mut buffer, data)?;
 
-        output.write_all(buffer.as_ref())?;
+        *output += &buffer;
 
         // adler-32 checksum of the deflated data
-        output.write_all(&adler32(buffer.as_ref()).to_le_bytes())?;
+        *output += (&adler32(buffer.as_ref()).to_le_bytes());
 
         Ok(output.offset() - before)
     }

@@ -2,7 +2,7 @@
 
 use {
     crate::{
-        generic::default, never, output_buffer, panic, zip::write_zip::write_zip, InputWrite,
+        generic::default, never, output_buffer, panic, zip::write_zip::write_zip, OutputBuffer,
         ToZip, ZipConfiguration, ZipEntry, ZipEntryComparison,
     },
     serde::{Deserialize, Serialize},
@@ -68,7 +68,7 @@ impl Zip {
     }
 
     /// Serializes this [`Zip`] as a ZIP archive file.
-    pub fn write(&self, output: &mut impl InputWrite) -> Result<usize, panic> {
+    pub fn write(&self, output: &mut OutputBuffer) -> Result<usize, panic> {
         write_zip(
             output,
             self.files

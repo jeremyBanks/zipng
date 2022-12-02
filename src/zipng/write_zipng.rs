@@ -162,7 +162,7 @@ pub fn poc_zipng(palette: &[u8]) -> Result<OutputBuffer, panic> {
         idat += &adler32(idat.as_ref()).to_le_bytes();
 
         output.start("png", "body");
-        write_png_chunk(&mut output, b"IDAT", idat.as_ref())?;
+        write_png_chunk(&mut output, b"IDAT", &idat)?;
         output.end("png", "body");
 
         let central_directory_offset = output.offset() + PNG_CHUNK_PREFIX_SIZE;

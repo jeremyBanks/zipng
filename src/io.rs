@@ -232,7 +232,7 @@ impl Display for OutputBuffer {
         // Maybe wrap every 32 bytes?
         fn write_bytes(f: &mut fmt::Formatter, bytes: &[u8]) -> fmt::Result {
             let byte_wrap_at = 64;
-            let text_wrap_at = 80;
+            let text_wrap_at = 96;
             let mut line_byte_length = 0;
             let mut line_text_length = 0;
 
@@ -248,7 +248,7 @@ impl Display for OutputBuffer {
 
                 let mut wrap_modifier = 0;
                 if !byte.is_ascii_graphic() && next.is_ascii_graphic() {
-                    wrap_modifier += 16;
+                    wrap_modifier += 32;
                 }
 
                 line_byte_length += 1;

@@ -20,7 +20,7 @@ fn main() -> Result<(), panic> {
     let text = text.as_bytes();
 
     save!(bytes.png.zip)?;
-    save!(text.txt.xml)?;
+    save!(text.xml)?;
 
     // let mut zip = ::zip::ZipArchive::new(Cursor::new(poc_zipng(TURBO)?))?;
     // let names: Vec<String> = zip.file_names().map(|s| s.to_string()).collect();

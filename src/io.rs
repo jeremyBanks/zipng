@@ -225,15 +225,8 @@ impl Ord for OutputBufferWalkEntry {
 
 impl Display for OutputBuffer {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        // XXX: wrap words now that whitespace isn't significant
-        // but maybe also insert whitespace after encoded whitespace
-        // or allow single inline whitespace spaces to be significant
-        // but anything else is not, including newlines.
-        // Maybe wrap every 32 bytes?
         fn write_bytes(f: &mut fmt::Formatter, bytes: &[u8]) -> fmt::Result {
-            let byte_wrap_at = 64;
             let text_wrap_at = 96;
-            let mut line_byte_length = 0;
             let mut line_text_length = 0;
 
             for window in once(b' ')
@@ -251,8 +244,6 @@ impl Display for OutputBuffer {
                     wrap_modifier += 32;
                 }
 
-                line_byte_length += 1;
-
                 let mut to_write;
 
                 if byte.is_ascii_graphic() && !matches!(byte, b'<' | b'>' | b'&') {
@@ -263,9 +254,8 @@ impl Display for OutputBuffer {
                     line_text_length += 6;
                 }
 
-                if line_byte_length >= byte_wrap_at || line_text_length + wrap_modifier >= text_wrap_at {
+                if line_text_length + wrap_modifier >= text_wrap_at {
                     to_write += "\n";
-                    line_byte_length = 0;
                     line_text_length = 0;
                 }
 

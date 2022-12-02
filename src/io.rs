@@ -1,6 +1,9 @@
 mod alignment;
 
+use std::collections::HashMap;
+
 pub use alignment::*;
+use tracing::trace;
 use {
     crate::generic::{default, panic},
     core::fmt,
@@ -131,17 +134,41 @@ impl OutputBuffer {
         self.bytes.len()
     }
 
-    pub fn tags<'a>(
+    pub fn tracks(&self) -> impl Iterator<Item = &KString> {
+        self.tag_tracks.keys()
+    }
+
+    pub fn walk_tags<'a>(
         &'a self,
         track: impl Into<KString>,
-    ) -> Box<dyn 'a + Iterator<Item = &'a TaggedRange>> {
+    ) -> Box<dyn 'a + Iterator<Item = OutputBufferWalkEntry>> {
         let track = track.into();
-        let tags: Vec<&'a TaggedRange> = self
+        let mut tags: Vec<OutputBufferWalkEntry> = self
             .tag_tracks
             .get(&track)
             .iter()
             .flat_map(|t| t.iter())
+            .flat_map(|t| t.iter())
+            .flat_map(|t| {
+                [
+                    OutputBufferWalkEntry {
+                        index: t.start,
+                        other_index: usize::MAX - t.end,
+                        close_else_open: false,
+                        track: track.clone(),
+                        tag: t.name.clone(),
+                    },
+                    OutputBufferWalkEntry {
+                        index: t.end,
+                        other_index: usize::MAX - t.start,
+                        close_else_open: true,
+                        track: track.clone(),
+                        tag: t.name.clone(),
+                    },
+                ]
+            })
             .collect();
+        tags.sort();
         Box::new(tags.into_iter())
     }
 
@@ -158,15 +185,72 @@ impl OutputBuffer {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub struct OutputBufferWalkEntry {
+    index: usize,
+    other_index: usize,
+    close_else_open: bool,
+    track: KString,
+    tag: KString,
+}
+
 impl Display for OutputBuffer {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        // we're going to use a pseudo-XML style encoding
-        // <PNG:IHDR>PNG&#89;<ZIP:EXAMPLE>&#x4A;&#x4B;</PNG:IHDR>FOO</ZIP:
-        // EXAMPLE>
-        //
-        // actually this sounds like a pain in the ass unless I add like some
-        // way to walk tracks.
-        todo!()
+        fn write_bytes(f: &mut fmt::Formatter, bytes: &[u8]) -> fmt::Result {
+            for byte in bytes {
+                match byte {
+                    b'<' => write!(f, "&lt;")?,
+                    b'>' => write!(f, "&gt;")?,
+                    b'&' => write!(f, "&amp;")?,
+                    0 => write!(f, "&#0;")?,
+                    b if b.is_ascii_graphic() => write!(f, "{}", (*b as char))?,
+                    b => write!(f, "&#x{b:02X};")?,
+                }
+            }
+
+            Ok(())
+        }
+
+        let mut tags = Vec::new();
+        for track in self.tracks() {
+            tags.extend(self.walk_tags(track.clone()));
+        }
+        tags.sort();
+
+        let mut index = 0;
+
+        let mut indentation_by_track = HashMap::new();
+        let mut indentation_total = 0;
+        for tag in tags {
+            let indentation: &mut usize = indentation_by_track.entry(tag.track.clone()).or_default();
+            
+            let before = &self.bytes[index..tag.index];
+            if !before.is_empty() {
+                write!(f, "{:indent$}", "", indent = indentation_total * 4)?;
+                write_bytes(f, before)?;
+                index = tag.index;
+                write!(f, "\n")?;
+            }
+
+            if tag.close_else_open {
+                *indentation -= 1;
+                indentation_total -= 1;
+            }
+
+            write!(f, "{:indent$}", "", indent = *indentation * 4)?;
+
+            if !tag.close_else_open {
+                *indentation += 1;
+                indentation_total += 1;
+                write!(f, "<{}:{}>", tag.track, tag.tag)?;
+            } else {
+                write!(f, "</{}:{}>", tag.track, tag.tag)?;
+            }
+            write!(f, "\n")?;
+        }
+        write_bytes(f, &self.bytes[index..])?;
+
+        Ok(())
     }
 }
 
@@ -339,7 +423,9 @@ impl TaggedRange {
     pub fn iter<'a>(&'a self) -> Box<dyn 'a + Iterator<Item = &'a TaggedRange>> {
         // XXX: wtf are you doing fix this
         let mut items = vec![self];
-        items.extend(self.children.iter().flat_map(TaggedRange::iter));
+        for child in &self.children {
+            items.extend(child.iter());
+        }
         Box::new(items.into_iter())
     }
 }
@@ -546,6 +632,25 @@ fn test_output_buffer() -> Result<(), panic> {
         )
     "#]]
     .assert_debug_eq(&buffer.root_tags("PNG"));
+
+    expect![[r#"
+        <PNG:PNG>
+            &#x89;PNG&#x0D;
+            <PNG:IHDR>
+                &#x00;&#x00;&#x00;&#x0D;IHDRtest
+                <PNG:image data>
+                    <PNG:sub>
+        <ZIP:ZIP>
+                        <PNG:signature>
+                        </PNG:signature>
+                            &#x90;PNG&#x0D;
+                    </PNG:image data>
+                </PNG:sub>
+        </ZIP:ZIP>
+            </PNG:IHDR>
+        </PNG:PNG>
+    "#]]
+    .assert_eq(&buffer.to_string());
 
     Ok(())
 }

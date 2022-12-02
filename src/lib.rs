@@ -1,4 +1,4 @@
-#![cfg_attr(doc, feature(doc_cfg, doc_auto_cfg))]
+#![feature(doc_cfg, doc_auto_cfg)]
 #![allow(non_upper_case_globals)]
 #![warn(unused_crate_dependencies, missing_docs, clippy::redundant_pub_crate)]
 #![cfg_attr(

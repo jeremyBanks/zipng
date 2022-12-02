@@ -24,7 +24,8 @@ pub fn write_zlib(output: &mut impl InputWrite, data: &[u8]) -> Result<usize, pa
 #[allow(non_camel_case_types)]
 #[derive(Debug)]
 pub struct write_zlib<'all, Output>
-where Output: 'all + InputWrite
+where
+    Output: 'all + InputWrite,
 {
     pub output: &'all mut Output,
     pub data: &'all [u8],
@@ -45,7 +46,8 @@ impl Default for ZlibMode {
     }
 }
 impl<WriteAndSeek> write_zlib<'_, WriteAndSeek>
-where WriteAndSeek: self::InputWrite
+where
+    WriteAndSeek: self::InputWrite,
 {
     pub fn call(&mut self) -> Result<usize, panic> {
         let Self {

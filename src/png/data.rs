@@ -272,7 +272,9 @@ impl Png {
 
 impl Serialize for Png {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where S: serde::Serializer {
+    where
+        S: serde::Serializer,
+    {
         serializer.serialize_bytes(
             &self
                 .write_vec()
@@ -283,7 +285,9 @@ impl Serialize for Png {
 
 impl<'de> Deserialize<'de> for Png {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where D: serde::Deserializer<'de> {
+    where
+        D: serde::Deserializer<'de>,
+    {
         let bytes: &[u8] = serde_bytes::deserialize(deserializer)?;
         Self::read_slice(bytes).map_err(serde::de::Error::custom)
     }

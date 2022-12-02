@@ -1,5 +1,7 @@
 mod alignment;
 
+use std::iter::once;
+
 pub use alignment::*;
 use {
     crate::generic::{default, panic},
@@ -62,7 +64,9 @@ impl OutputBuffer {
     }
 
     pub fn extend<Data>(&mut self, data: Data)
-    where OutputBuffer: AddAssign<Data> {
+    where
+        OutputBuffer: AddAssign<Data>,
+    {
         *self += data;
     }
 
@@ -221,16 +225,55 @@ impl Ord for OutputBufferWalkEntry {
 
 impl Display for OutputBuffer {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        // XXX: wrap words now that whitespace isn't significant
+        // but maybe also insert whitespace after encoded whitespace
+        // or allow single inline whitespace spaces to be significant
+        // but anything else is not, including newlines.
+        // Maybe wrap every 32 bytes?
         fn write_bytes(f: &mut fmt::Formatter, bytes: &[u8]) -> fmt::Result {
-            for byte in bytes {
-                match byte {
-                    b'<' => write!(f, "&lt;")?,
-                    b'>' => write!(f, "&gt;")?,
-                    b'&' => write!(f, "&amp;")?,
-                    0 => write!(f, "&#0;")?,
-                    b if b.is_ascii_graphic() => write!(f, "{}", (*b as char))?,
-                    b => write!(f, "&#x{b:02X};")?,
+            let byte_wrap_at = 64;
+            let text_wrap_at = 80;
+            let mut line_byte_length = 0;
+            let mut line_text_length = 0;
+
+            for window in once(b' ')
+                .chain(bytes.iter().copied())
+                .chain(once(b' '))
+                .collect::<Vec<_>>()
+                .windows(3)
+            {
+                let (previous, byte, next) = (window[0], window[1], window[2]);
+
+                let is_single_space_inline = byte == b' ' && previous != b' ' && next != b' ';
+
+                let mut wrap_modifier = 0;
+                if !byte.is_ascii_graphic() && next.is_ascii_graphic() {
+                    wrap_modifier += 16;
                 }
+
+                line_byte_length += 1;
+
+                let mut to_write;
+
+                if byte.is_ascii_graphic() && !matches!(byte, b'<' | b'>' | b'&') {
+                    to_write = format!("{}", byte as char);
+                    line_text_length += 1;
+                } else {
+                    to_write = format!("&#x{byte:02X};");
+                    line_text_length += 6;
+                }
+
+                if line_byte_length >= byte_wrap_at || line_text_length + wrap_modifier >= text_wrap_at {
+                    to_write += "\n";
+                    line_byte_length = 0;
+                    line_text_length = 0;
+                }
+
+                if to_write == "&#x20;" && is_single_space_inline {
+                    to_write = " ".to_string();
+                }
+
+                write!(f, "{to_write}")?;
             }
 
             Ok(())
@@ -244,11 +287,9 @@ impl Display for OutputBuffer {
 
         let mut index = 0;
 
-        let mut indentation_total = 0;
         for tag in tags {
             let before = &self.bytes[index..tag.index];
             if !before.is_empty() {
-                write!(f, "{:indent$}", "", indent = indentation_total * 4)?;
                 write_bytes(f, before)?;
                 index = tag.index;
                 writeln!(f)?;
@@ -257,10 +298,8 @@ impl Display for OutputBuffer {
             write!(f, "{:indent$}", "", indent = (tag.depth) * 4)?;
 
             if !tag.is_closing {
-                indentation_total += 1;
                 write!(f, "<{}:{}>", tag.track, tag.tag)?;
             } else {
-                indentation_total -= 1;
                 write!(f, "</{}:{}>", tag.track, tag.tag)?;
             }
             writeln!(f)?;
@@ -368,6 +407,9 @@ impl Offset for OutputBuffer {
     }
 }
 
+// XXX: disabled temporarily because although we do want to support this, most places we're
+//      currently relying on it we probably need to replace with something that preserves
+//      slash adds tags.
 impl Write for OutputBuffer {
     fn write(&mut self, buf: &[u8]) -> Result<usize, io::Error> {
         self.bytes.write(buf)
@@ -548,7 +590,8 @@ pub trait Offset {
 }
 
 impl<T> Offset for T
-where T: Seek
+where
+    T: Seek,
 {
     fn offset(&mut self) -> usize {
         let Ok(position) = self.stream_position() else {

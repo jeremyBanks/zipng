@@ -7,7 +7,9 @@ use {
 };
 
 pub fn default<T>() -> T
-where T: Default {
+where
+    T: Default,
+{
     T::default()
 }
 
@@ -53,7 +55,8 @@ pub enum panic {}
 assert_impl_all!(panic: Send, Sync);
 
 impl<Err> From<Err> for panic
-where Err: Display + Debug
+where
+    Err: Display + Debug,
 {
     #[track_caller]
     fn from(error: Err) -> Self {

@@ -9,7 +9,9 @@ use {self::write_zip::write_zip, std::io::Cursor};
 pub use self::{configuration::*, data::*, sizes::*, to_zip::*};
 
 fn zip<'files, Files>(files: Files) -> Vec<u8>
-where Files: 'files + IntoIterator<Item = (&'files [u8], &'files [u8])> {
+where
+    Files: 'files + IntoIterator<Item = (&'files [u8], &'files [u8])>,
+{
     let mut files: Vec<(&[u8], &[u8])> = files.into_iter().collect();
     files.sort_by_cached_key(|(path, body)| {
         (

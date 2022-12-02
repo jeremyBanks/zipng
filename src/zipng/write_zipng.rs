@@ -1,3 +1,5 @@
+use std::ops::AddAssign;
+
 use crate::{
     adler32, crc32, output_buffer,
     palettes::{
@@ -46,13 +48,9 @@ pub fn poc_zipng(palette: &[u8]) -> Result<OutputBuffer, panic> {
 
         let mut output = output.tagged("png", "png");
 
-        output.start("png", "header");
         write_png_header(&mut output, width + 4, height, color_depth, color_mode)?;
-        output.end("png", "header");
 
-        output.start("png", "palette");
         write_png_palette(&mut output, palette)?;
-        output.end("png", "palette");
 
         let mut idat = output_buffer();
         let mut file_offsets_in_idat = Vec::<usize>::new();
@@ -104,7 +102,6 @@ pub fn poc_zipng(palette: &[u8]) -> Result<OutputBuffer, panic> {
             }
 
             file_offsets_in_idat.push(idat.offset() + 1);
-            *idat.tagged("zip", "entry") += local_file_header;
 
             let pixel_data = file.body;
 
@@ -147,7 +144,9 @@ pub fn poc_zipng(palette: &[u8]) -> Result<OutputBuffer, panic> {
             data_with_chunk_headers.push(0x01); // last block
             data_with_chunk_headers.extend(&*vec![0xFF; width as usize + 4]);
 
-            *idat.tagged("zip", "compressed") += data_with_chunk_headers;
+            let mut entry = idat.tagged("zip", "entry");
+            entry.tagged("zip", "head").add_assign(local_file_header);
+            entry.tagged("zip", "body").add_assign(data_with_chunk_headers);
         }
 
         // empty terminating block

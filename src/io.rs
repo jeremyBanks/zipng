@@ -1,5 +1,6 @@
 mod alignment;
 
+use std::iter;
 use std::iter::once;
 
 pub use alignment::*;
@@ -239,9 +240,11 @@ impl Ord for OutputBufferWalkEntry {
 
 impl Display for OutputBuffer {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        fn write_bytes(f: &mut fmt::Formatter, bytes: &[u8]) -> fmt::Result {
+        fn write_bytes(f: &mut fmt::Formatter, bytes: &[u8], indentation: &str) -> fmt::Result {
             let text_wrap_at = 96;
             let mut line_text_length = 0;
+
+            f.write_str(indentation)?;
 
             for window in once(b' ')
                 .chain(bytes.iter().copied())
@@ -270,6 +273,7 @@ impl Display for OutputBuffer {
 
                 if line_text_length + wrap_modifier >= text_wrap_at {
                     to_write += "\n";
+                    to_write += indentation;
                     line_text_length = 0;
                 }
 
@@ -291,24 +295,36 @@ impl Display for OutputBuffer {
 
         let mut index = 0;
 
+        let mut next_depth = 0;
+
         for tag in tags {
             let before = &self.bytes[index..tag.index];
             if !before.is_empty() {
-                write_bytes(f, before)?;
+                write_bytes(f, before, &format!("{:indent$}", "", indent = (next_depth) * 2))?;
                 index = tag.index;
                 writeln!(f)?;
             }
 
-            write!(f, "{:indent$}", "", indent = (tag.depth) * 4)?;
+            write!(f, "{:indent$}", "", indent = (tag.depth) * 2)?;
 
             if !tag.is_closing {
-                write!(f, "<{}:{}>", tag.track, tag.tag)?;
+                if tag.track != tag.tag {
+                    write!(f, "<{}:{}>", tag.track, tag.tag)?;
+                } else {
+                    write!(f, "<{}>", tag.tag)?;
+                }
+                next_depth = tag.depth + 1;
             } else {
-                write!(f, "</{}:{}>", tag.track, tag.tag)?;
+                if tag.track != tag.tag {
+                    write!(f, "</{}:{}>", tag.track, tag.tag)?;
+                } else {
+                    write!(f, "</{}>", tag.tag)?;
+                }
+                next_depth = tag.depth;
             }
             writeln!(f)?;
         }
-        write_bytes(f, &self.bytes[index..])?;
+        write_bytes(f, &self.bytes[index..], "")?;
 
         Ok(())
     }
@@ -453,6 +469,42 @@ impl<'a> AddAssign<&OutputBuffer> for InOutputBufferTag<'a> {
     }
 }
 
+impl<'a> AddAssign<&[u8]> for InOutputBufferTag<'a> {
+    fn add_assign(&mut self, other: &[u8]) {
+        *self.buffer.as_mut().unwrap() += other;
+    }
+}
+
+impl<'a> AddAssign<OutputBuffer> for &mut InOutputBufferTag<'a> {
+    fn add_assign(&mut self, other: OutputBuffer) {
+        self.buffer.as_mut().unwrap().concat(&other);
+    }
+}
+
+impl<'a> AddAssign<&OutputBuffer> for &mut InOutputBufferTag<'a> {
+    fn add_assign(&mut self, other: &OutputBuffer) {
+        self.buffer.as_mut().unwrap().concat(other);
+    }
+}
+
+impl<'a> AddAssign<&[u8]> for &mut InOutputBufferTag<'a> {
+    fn add_assign(&mut self, other: &[u8]) {
+        *self.buffer.as_mut().unwrap() += other;
+    }
+}
+
+impl<'a, const N: usize> AddAssign<&[u8; N]> for &mut InOutputBufferTag<'a> {
+    fn add_assign(&mut self, other: &[u8; N]) {
+*self.buffer.as_mut().unwrap() += other;
+    }
+}
+
+impl<'a, const N: usize> AddAssign<&[u8; N]> for InOutputBufferTag<'a> {
+    fn add_assign(&mut self, other: &[u8; N]) {
+        *self.buffer.as_mut().unwrap() += other;
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord, Hash, Default)]
 pub struct TaggedRange {
     /// The first index of the range (inclusive).
@@ -530,7 +582,7 @@ impl TaggedRange {
             end: self.end + offset,
             name: self.name.clone(),
             depth: self.depth + depth,
-            children: self.children.clone(),
+            children: self.children.iter().map(|c| c.add(offset, depth)).collect(),
         }
     }
 }

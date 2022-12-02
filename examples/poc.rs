@@ -18,9 +18,12 @@ fn main() -> Result<(), panic> {
     let bytes = topo.as_ref();
     let text = topo.to_string();
     let text = text.as_bytes();
+    let debug = format!("{topo:#?}");
+    let debug = debug.as_bytes();
 
     save!(bytes.png.zip)?;
     save!(text.xml)?;
+    save!(debug.txt)?;
 
     // let mut zip = ::zip::ZipArchive::new(Cursor::new(poc_zipng(TURBO)?))?;
     // let names: Vec<String> = zip.file_names().map(|s| s.to_string()).collect();

@@ -1,3 +1,5 @@
+use std::ops::AddAssign;
+
 
 use {
     crate::{
@@ -20,25 +22,26 @@ pub fn write_png_header(
     }
 
     // 0x0000..0x0008: PNG signature
-    buffer += (b"\x89PNG\r\n\x1A\n");
+    buffer.tagged("png", "signature").add_assign(b"\x89PNG\r\n\x1A\n");
+
     // 0x0008..0x0010:     IHDR chunk prefix (length and type)
     write_png_chunk(buffer, b"IHDR", &{
         let mut data = output_buffer();
 
         // 0x0010..0x0014: pixel width
-        data += (&width.to_be_bytes());
+        data.tagged("png", "width").add_assign(&width.to_be_bytes());
         // 0x0004..0x0018: pixel height
-        data += (&height.to_be_bytes());
+        data.tagged("png", "height").add_assign(&height.to_be_bytes());
         // 0x0018:         color bit depth
-        data += (&u8::from(color_depth).to_be_bytes());
+        data.tagged("png", "bit-depth").add_assign(&u8::from(color_depth).to_be_bytes());
         // 0x0019:         color type: grayscale
-        data += (&u8::from(color_mode).to_be_bytes());
+        data.tagged("png", "color-mode").add_assign(&u8::from(color_mode).to_be_bytes());
         // 0x001A:         compression method: deflate
-        data += (&0_u8.to_be_bytes());
+        data.tagged("png", "compression-mode").add_assign(&0_u8.to_be_bytes());
         // 0x001B:         filter method: basic
-        data += (&0_u8.to_be_bytes());
+        data.tagged("png", "filter-mode").add_assign(&0_u8.to_be_bytes());
         // 0x001C:         interlace method: none
-        data += (&0_u8.to_be_bytes());
+        data.tagged("png", "interlace-mode").add_assign(&0_u8.to_be_bytes());
 
         data
         // 0x001D..0x0025: IHDR chunk suffix (checksum)
@@ -52,7 +55,7 @@ pub fn write_png_header(
 }
 
 pub fn write_png_palette(buffer: &mut OutputBuffer, palette: &[u8]) -> Result<usize, panic> {
-    write_png_chunk(buffer, b"PLTE", &OutputBuffer::with_tag(palette, "png", "palette-data"))
+    write_png_chunk(buffer, b"PLTE", &OutputBuffer::with_tag(palette, "png", "colors"))
 }
 
 pub fn write_png_body(buffer: &mut OutputBuffer, data: &[u8]) -> Result<usize, panic> {
@@ -78,14 +81,14 @@ pub fn write_png_chunk(
 
     let mut buffer = buffer.tagged("png", "chunk");
 
-    *buffer += (
+    buffer.tagged("png", "size").add_assign(
         &u32::try_from(data.len())
             .expect("png chunk larger than 2GiB")
             .to_be_bytes()
     );
-    *buffer.tagged("png", "chunk_type") += (chunk_type);
-    *buffer += (data);
-    *buffer.tagged("png", "crc32") += (
+    buffer.tagged("png", "type").add_assign(chunk_type);
+    buffer.tagged("png", "body").add_assign(data);
+    buffer.tagged("png", "checksum").add_assign(
         &crc32(
             &[chunk_type.as_slice(), data.as_ref()]
                 .into_iter()

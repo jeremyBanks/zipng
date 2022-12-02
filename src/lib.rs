@@ -15,9 +15,7 @@
 #![deny(unsafe_code)]
 #![doc = include_str!("../README.md")]
 
-use {
-    crate::generic::*,
-};
+use crate::generic::*;
 
 mod checksums;
 mod deflate;
@@ -32,8 +30,6 @@ mod zlib;
 #[cfg(feature = "dev-dependencies")]
 pub mod dev;
 mod opstructs;
-
-
 
 #[doc(hidden)]
 pub use crate::text::*;

@@ -1,11 +1,8 @@
 use {
     crate::{
-        crc32, output_buffer, panic, write_zlib, BitDepth, ColorType, InputWrite,
-        PNG_HEADER_SIZE,
+        crc32, output_buffer, panic, write_zlib, BitDepth, ColorType, InputWrite, PNG_HEADER_SIZE,
     },
-    std::{
-        io::{Cursor, Write},
-    },
+    std::io::{Cursor, Write},
     tracing::warn,
 };
 

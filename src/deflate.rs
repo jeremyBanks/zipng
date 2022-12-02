@@ -22,8 +22,7 @@ pub fn write_deflate(output: &mut impl InputWrite, data: &[u8]) -> Result<usize,
 #[allow(non_camel_case_types)]
 #[derive(Debug)]
 pub struct write_deflate<'all, Output>
-where
-    Output: 'all + InputWrite,
+where Output: 'all + InputWrite
 {
     pub output: &'all mut Output,
     pub data: &'all [u8],
@@ -31,8 +30,7 @@ where
 }
 
 impl<'all, Output> write_deflate<'all, Output>
-where
-    Output: 'all + InputWrite,
+where Output: 'all + InputWrite
 {
     pub fn call(&mut self) -> Result<usize, panic> {
         let Self {

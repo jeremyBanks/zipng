@@ -10,15 +10,11 @@ fn main() -> Result<(), panic> {
 
     for y in 0..png.height {
         for x in 0..png.width {
-            png.set_pixel(
-                x,
-                y,
-                &[
-                    (x / 4) as u8,
-                    y as u8,
-                    (x * 4 / 9 + x.abs_diff(y) / 15).min(255) as u8,
-                ],
-            )?;
+            png.set_pixel(x, y, &[
+                (x / 4) as u8,
+                y as u8,
+                (x * 4 / 9 + x.abs_diff(y) / 15).min(255) as u8,
+            ])?;
         }
     }
 

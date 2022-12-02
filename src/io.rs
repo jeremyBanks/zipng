@@ -8,13 +8,13 @@ use {
     kstring::KString,
     std::{
         cmp::Ordering,
-        collections::{BTreeMap},
+        collections::BTreeMap,
         fmt::{Debug, Display},
         hash::{Hash, Hasher},
         io::{self, Read, Seek, SeekFrom, Write},
         ops::{Add, AddAssign, Deref, DerefMut, Index, Range},
     },
-    tracing::{warn},
+    tracing::warn,
 };
 
 /// In-memory output buffer supporting multiple [overlapping hierarchical markup
@@ -62,9 +62,7 @@ impl OutputBuffer {
     }
 
     pub fn extend<Data>(&mut self, data: Data)
-    where
-        OutputBuffer: AddAssign<Data>,
-    {
+    where OutputBuffer: AddAssign<Data> {
         *self += data;
     }
 
@@ -550,8 +548,7 @@ pub trait Offset {
 }
 
 impl<T> Offset for T
-where
-    T: Seek,
+where T: Seek
 {
     fn offset(&mut self) -> usize {
         let Ok(position) = self.stream_position() else {

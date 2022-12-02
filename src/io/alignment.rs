@@ -1,12 +1,9 @@
 use {
-    crate::{
-        generic::{panic},
-        InputWrite,
-    },
+    crate::{generic::panic, InputWrite},
     std::{
-        fmt::{Debug},
+        fmt::Debug,
         hash::{Hash, Hasher},
-        io::{Write},
+        io::Write,
     },
 };
 

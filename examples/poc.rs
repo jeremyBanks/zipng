@@ -1,11 +1,7 @@
-use {
-    zipng::{
-        dev::{init, save},
-        palettes::{
-            oceanic::{TOPO},
-        },
-        panic, poc_zipng,
-    },
+use zipng::{
+    dev::{init, save},
+    palettes::oceanic::TOPO,
+    panic, poc_zipng,
 };
 
 fn main() -> Result<(), panic> {

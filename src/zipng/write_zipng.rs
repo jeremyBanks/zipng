@@ -1,17 +1,14 @@
-use {
-    crate::{
-        adler32, crc32,
-        output_buffer,
-        palettes::{
-            oceanic::BALANCE,
-            singles::{CIVIDIS, TURBO},
-            viridis::MAGMA,
-        },
-        panic,
-        png::write_png::{write_non_png_chunk, write_png_header, write_png_palette},
-        write_png::{write_png_chunk, write_png_footer}, BitDepth, ColorType, Offset, OutputBuffer,
-        PNG_CHUNK_PREFIX_SIZE, PNG_CHUNK_SUFFIX_SIZE,
+use crate::{
+    adler32, crc32, output_buffer,
+    palettes::{
+        oceanic::BALANCE,
+        singles::{CIVIDIS, TURBO},
+        viridis::MAGMA,
     },
+    panic,
+    png::write_png::{write_non_png_chunk, write_png_header, write_png_palette},
+    write_png::{write_png_chunk, write_png_footer},
+    BitDepth, ColorType, Offset, OutputBuffer, PNG_CHUNK_PREFIX_SIZE, PNG_CHUNK_SUFFIX_SIZE,
 };
 
 pub fn poc_zipng(palette: &[u8]) -> Result<OutputBuffer, panic> {

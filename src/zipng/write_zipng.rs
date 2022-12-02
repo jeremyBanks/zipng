@@ -62,36 +62,38 @@ pub fn poc_zipng(palette: &[u8]) -> Result<OutputBuffer, panic> {
 
             {
                 // 0x0000..0x0004: local file header signature
-                local_file_header += b"PK\x03\x04";
+                *local_file_header.tagged("zip", "signature") += b"PK\x03\x04";
                 // 0x0004..0x0006: version needed to extract
-                local_file_header += &2_0_u16.to_le_bytes();
+                *local_file_header.tagged("zip", "version-required") += &2_0_u16.to_le_bytes();
                 // 0x0006..0x0008: general purpose bit flag
-                local_file_header += &[0x00; 0x00];
+                *local_file_header.tagged("zip", "bitflags") += &[0x00; 0x00];
                 // 0x0008..0x000A: compression method -- DEFLATE
-                local_file_header += &0x08_u16.to_le_bytes();
+                *local_file_header.tagged("zip", "compression-mode") += &0x08_u16.to_le_bytes();
                 // 0x000A..0x000C: modification time
+                local_file_header.start("zip", "timestamp");
                 local_file_header += b"PK";
                 // 0x000C..0x000E: modification date
                 local_file_header += b"PK";
+                local_file_header.end("zip", "timestamp");
                 // 0x000E..0x0012: checksum
-                local_file_header += &crc32(file.body).to_le_bytes();
+                *local_file_header.tagged("zip", "checksum") += &crc32(file.body).to_le_bytes();
                 // 0x0012..0x0016: compressed size
-                local_file_header +=
+                *local_file_header.tagged("zip", "size-compressed") +=
                     &u32::try_from((file.body.len()) / (width as usize) * ((width as usize) + 5))
                         .expect("file size larger than 4GiB")
                         .to_le_bytes();
                 // 0x0016..0x001A: uncompressed size
-                local_file_header += &u32::try_from(file.body.len())
+                *local_file_header.tagged("zip", "size-original") += &u32::try_from(file.body.len())
                     .expect("file size larger than 4GiB")
                     .to_le_bytes();
                 // 0x001A..0x001E: file name length
-                local_file_header += &u16::try_from(file.name.len())
+                *local_file_header.tagged("zip", "name-length") += &u16::try_from(file.name.len())
                     .expect("file name larger than 64KiB")
                     .to_le_bytes();
                 // 0x001E..0x0022: extra fields length
-                local_file_header += &[0x00; 2];
+                *local_file_header.tagged("zip", "extra-length") += &[0x00; 2];
                 // 0x0022: file name, followed by extra fields (we have none)
-                local_file_header += file.name;
+                *local_file_header.tagged("zip", "name") += file.name;
             }
 
             assert!(local_file_header.offset() < width as usize + 4);
@@ -100,8 +102,6 @@ pub fn poc_zipng(palette: &[u8]) -> Result<OutputBuffer, panic> {
                 static padding_bytes: [u8; 4] = [0x00, 0x00, 0x00, 0x00];
                 idat += &[padding_bytes[i % padding_bytes.len()]];
             }
-
-            file_offsets_in_idat.push(idat.offset() + 1);
 
             let pixel_data = file.body;
 
@@ -114,7 +114,9 @@ pub fn poc_zipng(palette: &[u8]) -> Result<OutputBuffer, panic> {
             let mut flg: u8 = 0b0000_0000;
             // zlib flag and check bits
             flg |= 0b1_1111 - ((((cmf as u16) << 8) | (flg as u16)) % 0b1_1111) as u8;
-            data_with_chunk_headers += &[flg];
+            idat.tagged("png", "zlib-head").add_assign(&[flg]);
+
+            file_offsets_in_idat.push(idat.offset());
 
             let bits_per_pixel = color_depth.bits_per_sample() * color_mode.samples_per_pixel();
             let bits_per_line = width * bits_per_pixel as u32;
@@ -123,36 +125,43 @@ pub fn poc_zipng(palette: &[u8]) -> Result<OutputBuffer, panic> {
                 if i % (bytes_per_line as usize) == 0 {
                     // filter byte (uncompressed in PNG) / non-compressed block header (DEFLATE in
                     // ZIP)
+                    data_with_chunk_headers.start("png", "line-filter");
+                    data_with_chunk_headers.start("zip", "deflate-chunk-type");
                     data_with_chunk_headers.push(0); // XXX: for the last block this needs to be marked differently, neh?
                                                      // DEFLATE block length (two bytes little endian)
+                    data_with_chunk_headers.end("zip", "deflate-chunk-type");
+                    data_with_chunk_headers.end("png", "line-filter");
+
+                    data_with_chunk_headers.start("zip", "deflate-chunk-size");
                     data_with_chunk_headers.push(width as u8 + 4);
                     data_with_chunk_headers.push(0);
                     // DEFLATE block length bitwise negated (two bytes little endian)
                     data_with_chunk_headers.push(!(width as u8 + 4));
                     data_with_chunk_headers.push(!0);
+                    data_with_chunk_headers.end("zip", "deflate-chunk-size");
                 }
                 data_with_chunk_headers.push(*byte);
             }
 
             // blank lines, visual padding
-            data_with_chunk_headers.push(0x00);
-            data_with_chunk_headers.extend(&*vec![0x00; width as usize + 4]);
-            data_with_chunk_headers.push(0x00);
-            data_with_chunk_headers.extend(&*vec![0xFF; width as usize + 4]);
-            data_with_chunk_headers.push(0x00);
-            data_with_chunk_headers.extend(&*vec![0xFF; width as usize + 4]);
-            data_with_chunk_headers.push(0x01); // last block
-            data_with_chunk_headers.extend(&*vec![0xFF; width as usize + 4]);
+            let mut cosmetic = data_with_chunk_headers.tagged("png", "padding");
+            cosmetic.push(0x00);
+            cosmetic.extend(&*vec![0x00; width as usize + 4]);
+            cosmetic.push(0x00);
+            cosmetic.extend(&*vec![0xFF; width as usize + 4]);
+            cosmetic.push(0x00);
+            cosmetic.extend(&*vec![0xFF; width as usize + 4]);
+            cosmetic.push(0x01); // last block
+            cosmetic.extend(&*vec![0xFF; width as usize + 4]);
+            drop(cosmetic);
 
             let mut entry = idat.tagged("zip", "entry");
             entry.tagged("zip", "head").add_assign(local_file_header);
             entry.tagged("zip", "body").add_assign(data_with_chunk_headers);
         }
 
-        // empty terminating block
-        idat += &[0x01];
-        idat += &[0x00, 0x00];
-        idat += &[0xFF, 0xFF];
+        
+        *idat.tagged("zip", "deflate-terminator") += &[0x01, 0x00, 0x00, 0xFF, 0xFF];
 
         let offset_before_idat = output.offset();
 

@@ -271,6 +271,7 @@ impl Display for OutputBuffer {
                     line_text_length += 6;
                 }
 
+                // XXX: we shouldn't do this if there's nothing left to write after this.
                 if line_text_length + wrap_modifier >= text_wrap_at {
                     to_write += "\n";
                     to_write += indentation;

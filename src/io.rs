@@ -1,11 +1,11 @@
 mod alignment;
 
 pub use alignment::*;
-use expect_test::expect;
 use {
     crate::generic::{default, panic},
     core::fmt,
     derive_more::{Deref, From, TryInto},
+    expect_test::expect,
     kstring::KString,
     smallvec::SmallVec,
     std::{
@@ -14,148 +14,19 @@ use {
         fmt::{Debug, Display},
         hash::{Hash, Hasher},
         io::{self, Cursor, Read, Seek, SeekFrom, Write},
+        iter,
         ops::{Add, AddAssign, Deref, DerefMut, Index, Range},
         sync::Arc,
     },
     tracing::warn,
 };
 
-#[cfg(test)]
-#[test]
-fn test_output_buffer() -> Result<(), panic> {
-
-    crate::dev::init!();
-
-    let mut buffer = output_buffer();
-
-    {
-        let mut buffer = buffer.tagged("PNG", "PNG");
-
-        buffer.extend(b"\x89PNG\r");
-
-        let mut buffer = buffer.tagged("PNG", "IHDR");
-
-        buffer.extend(b"\x00\x00\x00\rIHDR");
-
-        let mut buffer = buffer.closed();
-
-        buffer.extend(b"test");
-
-        buffer.start("PNG", "signature");
-
-        buffer.end("PNG", "signature");
-
-        buffer.start("PNG", "image data");
-
-        buffer.start("ZIP", "ZIP");
-
-        let mut sub = output_buffer();
-        sub.tagged("PNG", "sub").extend(b"\x90PNG\r");
-        buffer += sub;
-
-        buffer.end("PNG", "image data");
-
-        buffer.end("ZIP", "ZIP");
-        buffer.end("PNG", "PNG");
-    }
-
-    expect![[r#"
-        Some(
-            [
-                TaggedRange {
-                    start: 17,
-                    end: 22,
-                    name: "ZIP",
-                    children: [],
-                },
-            ],
-        )
-    "#]].assert_debug_eq(&buffer.tags("ZIP"));
-
-    expect![[r#"
-        Some(
-            [
-                TaggedRange {
-                    start: 0,
-                    end: 22,
-                    name: "PNG",
-                    children: [
-                        TaggedRange {
-                            start: 5,
-                            end: 22,
-                            name: "IHDR",
-                            children: [
-                                TaggedRange {
-                                    start: 17,
-                                    end: 17,
-                                    name: "signature",
-                                    children: [],
-                                },
-                                TaggedRange {
-                                    start: 17,
-                                    end: 22,
-                                    name: "image data",
-                                    children: [
-                                        TaggedRange {
-                                            start: 17,
-                                            end: 22,
-                                            name: "sub",
-                                            children: [],
-                                        },
-                                    ],
-                                },
-                            ],
-                        },
-                    ],
-                },
-            ],
-        )
-    "#]].assert_debug_eq(&buffer.tags("PNG"));
-
-    Ok(())
-}
-
-#[derive(Debug)]
-pub struct InOutputBufferTag<'buffer> {
-    buffer: Option<&'buffer mut OutputBuffer>,
-    track: KString,
-    tag: KString,
-}
-
-impl<'buffer> InOutputBufferTag<'buffer> {
-    pub fn closed(mut self) -> &'buffer mut OutputBuffer {
-        self.buffer.take().unwrap()
-    }
-}
-
-impl Deref for InOutputBufferTag<'_> {
-    type Target = OutputBuffer;
-
-    fn deref(&self) -> &Self::Target {
-        self.buffer.as_ref().unwrap()
-    }
-}
-
-impl DerefMut for InOutputBufferTag<'_> {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        self.buffer.as_mut().unwrap()
-    }
-}
-
-impl Drop for InOutputBufferTag<'_> {
-    fn drop(&mut self) {
-        if let Some(buffer) = &mut self.buffer {
-            buffer.end(self.track.clone(), self.tag.clone());
-        }
-    }
-}
-
-/// In-memory output buffer supporting multiple overlapping hierarchical markup
-/// tracks.
+/// In-memory output buffer supporting multiple [overlapping hierarchical markup
+/// tracks][1].
 ///
 /// Can be concatenated with other `OutputBuffer`s while preserving tags.
 ///
-/// https://en.wikipedia.org/wiki/Overlapping_markup
+/// [1]: https://en.wikipedia.org/wiki/Overlapping_markup
 #[derive(Debug, Default, Clone)]
 pub struct OutputBuffer {
     /// the actual data
@@ -260,7 +131,21 @@ impl OutputBuffer {
         self.bytes.len()
     }
 
-    pub fn tags(&self, track: impl Into<KString>) -> Option<&[TaggedRange]> {
+    pub fn tags<'a>(
+        &'a self,
+        track: impl Into<KString>,
+    ) -> Box<dyn 'a + Iterator<Item = &'a TaggedRange>> {
+        let track = track.into();
+        let tags: Vec<&'a TaggedRange> = self
+            .tag_tracks
+            .get(&track)
+            .iter()
+            .flat_map(|t| t.iter())
+            .collect();
+        Box::new(tags.into_iter())
+    }
+
+    pub fn root_tags(&self, track: impl Into<KString>) -> Option<&[TaggedRange]> {
         let track = track.into();
 
         if !self.tag_stacks.values().all(|stack| stack.is_empty()) {
@@ -270,6 +155,18 @@ impl OutputBuffer {
             .get(&track)
             .map(|v| v.as_slice())
             .filter(|v| !v.is_empty())
+    }
+}
+
+impl Display for OutputBuffer {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        // we're going to use a pseudo-XML style encoding
+        // <PNG:IHDR>PNG&#89;<ZIP:EXAMPLE>&#x4A;&#x4B;</PNG:IHDR>FOO</ZIP:
+        // EXAMPLE>
+        //
+        // actually this sounds like a pain in the ass unless I add like some
+        // way to walk tracks.
+        todo!()
     }
 }
 
@@ -438,6 +335,13 @@ impl TaggedRange {
     pub fn range(&self) -> Range<usize> {
         self.start..self.end
     }
+
+    pub fn iter<'a>(&'a self) -> Box<dyn 'a + Iterator<Item = &'a TaggedRange>> {
+        // XXX: wtf are you doing fix this
+        let mut items = vec![self];
+        items.extend(self.children.iter().flat_map(TaggedRange::iter));
+        Box::new(items.into_iter())
+    }
 }
 
 impl Add<usize> for TaggedRange {
@@ -473,6 +377,41 @@ impl Index<TaggedRange> for OutputBuffer {
 
     fn index(&self, index: TaggedRange) -> &Self::Output {
         &self.bytes[index.start..=index.end]
+    }
+}
+
+#[derive(Debug)]
+pub struct InOutputBufferTag<'buffer> {
+    buffer: Option<&'buffer mut OutputBuffer>,
+    track: KString,
+    tag: KString,
+}
+
+impl<'buffer> InOutputBufferTag<'buffer> {
+    pub fn closed(mut self) -> &'buffer mut OutputBuffer {
+        self.buffer.take().unwrap()
+    }
+}
+
+impl Deref for InOutputBufferTag<'_> {
+    type Target = OutputBuffer;
+
+    fn deref(&self) -> &Self::Target {
+        self.buffer.as_ref().unwrap()
+    }
+}
+
+impl DerefMut for InOutputBufferTag<'_> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        self.buffer.as_mut().unwrap()
+    }
+}
+
+impl Drop for InOutputBufferTag<'_> {
+    fn drop(&mut self) {
+        if let Some(buffer) = &mut self.buffer {
+            buffer.end(self.track.clone(), self.tag.clone());
+        }
     }
 }
 
@@ -513,4 +452,100 @@ where T: Seek
         }
         len.try_into().unwrap_or(usize::MAX)
     }
+}
+
+#[cfg(test)]
+#[test]
+fn test_output_buffer() -> Result<(), panic> {
+    crate::dev::init!();
+
+    let mut buffer = output_buffer();
+
+    {
+        let mut buffer = buffer.tagged("PNG", "PNG");
+
+        buffer.extend(b"\x89PNG\r");
+
+        let mut buffer = buffer.tagged("PNG", "IHDR");
+
+        buffer.extend(b"\x00\x00\x00\rIHDR");
+
+        let mut buffer = buffer.closed();
+
+        buffer.extend(b"test");
+
+        buffer.start("PNG", "signature");
+
+        buffer.end("PNG", "signature");
+
+        buffer.start("PNG", "image data");
+
+        buffer.start("ZIP", "ZIP");
+
+        let mut sub = output_buffer();
+        sub.tagged("PNG", "sub").extend(b"\x90PNG\r");
+        buffer += sub;
+
+        buffer.end("PNG", "image data");
+
+        buffer.end("ZIP", "ZIP");
+        buffer.end("PNG", "PNG");
+    }
+
+    expect![[r#"
+        Some(
+            [
+                TaggedRange {
+                    start: 17,
+                    end: 22,
+                    name: "ZIP",
+                    children: [],
+                },
+            ],
+        )
+    "#]]
+    .assert_debug_eq(&buffer.root_tags("ZIP"));
+
+    expect![[r#"
+        Some(
+            [
+                TaggedRange {
+                    start: 0,
+                    end: 22,
+                    name: "PNG",
+                    children: [
+                        TaggedRange {
+                            start: 5,
+                            end: 22,
+                            name: "IHDR",
+                            children: [
+                                TaggedRange {
+                                    start: 17,
+                                    end: 17,
+                                    name: "signature",
+                                    children: [],
+                                },
+                                TaggedRange {
+                                    start: 17,
+                                    end: 22,
+                                    name: "image data",
+                                    children: [
+                                        TaggedRange {
+                                            start: 17,
+                                            end: 22,
+                                            name: "sub",
+                                            children: [],
+                                        },
+                                    ],
+                                },
+                            ],
+                        },
+                    ],
+                },
+            ],
+        )
+    "#]]
+    .assert_debug_eq(&buffer.root_tags("PNG"));
+
+    Ok(())
 }

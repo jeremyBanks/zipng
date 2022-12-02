@@ -86,10 +86,11 @@ impl OutputBuffer {
         for (other_track, other_tags) in &other.tag_tracks {
             let track = self.tag_tracks.entry(other_track.clone()).or_default();
             let stack = self.tag_stacks.entry(other_track.clone()).or_default();
+            let depth = stack.len();
             let parent = stack.last_mut().map(|t| &mut t.children).unwrap_or(track);
 
             for tag in other_tags {
-                parent.push(tag.clone() + offset);
+                parent.push(tag.add(offset, depth));
             }
         }
     }
@@ -146,7 +147,7 @@ impl OutputBuffer {
             .iter()
             .flat_map(|t| t.iter())
             .flat_map(|t| t.iter())
-            .filter(|t| t.start != t.end)
+            // .filter(|t| t.start != t.end)
             .flat_map(|t| {
                 [
                     OutputBufferWalkEntry {
@@ -456,26 +457,15 @@ impl TaggedRange {
         }
         Box::new(items.into_iter())
     }
-}
 
-impl Add<usize> for TaggedRange {
-    type Output = Self;
-
-    fn add(self, rhs: usize) -> Self::Output {
+    fn add(&self, offset: usize, depth: usize) -> Self {
         Self {
-            start: self.start + rhs,
-            end: self.end + rhs,
-            name: self.name,
-            depth: self.depth,
-            children: self.children,
+            start: self.start + offset,
+            end: self.end + offset,
+            name: self.name.clone(),
+            depth: self.depth + depth,
+            children: self.children.clone(),
         }
-    }
-}
-
-impl AddAssign<usize> for TaggedRange {
-    fn add_assign(&mut self, rhs: usize) {
-        self.start += rhs;
-        self.end += rhs;
     }
 }
 
@@ -653,7 +643,7 @@ fn test_output_buffer() -> Result<(), panic> {
                                         TaggedRange {
                                             start: 17,
                                             end: 22,
-                                            depth: 0,
+                                            depth: 3,
                                             name: "sub",
                                             children: [],
                                         },
@@ -673,14 +663,16 @@ fn test_output_buffer() -> Result<(), panic> {
             &#x89;PNG&#x0D;
             <PNG:IHDR>
                 &#0;&#0;&#0;&#x0D;IHDRtest
-        <PNG:sub>
+                </PNG:signature>
         <ZIP:ZIP>
                 <PNG:image data>
+                <PNG:signature>
+                    <PNG:sub>
                             &#x90;PNG&#x0D;
+                    </PNG:sub>
                 </PNG:image data>
             </PNG:IHDR>
         </PNG:PNG>
-        </PNG:sub>
         </ZIP:ZIP>
     "#]]
     .assert_eq(&buffer.to_string());

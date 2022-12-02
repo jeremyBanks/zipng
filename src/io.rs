@@ -1,9 +1,6 @@
 mod alignment;
 
-use std::collections::HashMap;
-
 pub use alignment::*;
-use tracing::trace;
 use {
     crate::generic::{default, panic},
     core::fmt,
@@ -13,7 +10,8 @@ use {
     smallvec::SmallVec,
     std::{
         borrow::Borrow,
-        collections::{BTreeMap, BTreeSet},
+        cmp::Ordering,
+        collections::{BTreeMap, BTreeSet, HashMap},
         fmt::{Debug, Display},
         hash::{Hash, Hasher},
         io::{self, Cursor, Read, Seek, SeekFrom, Write},
@@ -21,7 +19,7 @@ use {
         ops::{Add, AddAssign, Deref, DerefMut, Index, Range},
         sync::Arc,
     },
-    tracing::warn,
+    tracing::{trace, warn},
 };
 
 /// In-memory output buffer supporting multiple [overlapping hierarchical markup
@@ -102,10 +100,9 @@ impl OutputBuffer {
         let tag = tag.into();
 
         let start = self.offset();
-        self.tag_stacks
-            .entry(track)
-            .or_default()
-            .push(TaggedRange::new(start, tag));
+        let stack = self.tag_stacks.entry(track).or_default();
+        let depth = stack.len();
+        stack.push(TaggedRange::new(start, depth, tag));
     }
 
     /// Pops a tag off the stack of tags, finalizes it at the current index, and
@@ -149,19 +146,20 @@ impl OutputBuffer {
             .iter()
             .flat_map(|t| t.iter())
             .flat_map(|t| t.iter())
+            .filter(|t| t.start != t.end)
             .flat_map(|t| {
                 [
                     OutputBufferWalkEntry {
                         index: t.start,
-                        other_index: usize::MAX - t.end,
-                        close_else_open: false,
+                        depth: t.depth,
+                        is_closing: false,
                         track: track.clone(),
                         tag: t.name.clone(),
                     },
                     OutputBufferWalkEntry {
                         index: t.end,
-                        other_index: usize::MAX - t.start,
-                        close_else_open: true,
+                        depth: t.depth,
+                        is_closing: true,
                         track: track.clone(),
                         tag: t.name.clone(),
                     },
@@ -185,13 +183,48 @@ impl OutputBuffer {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct OutputBufferWalkEntry {
     index: usize,
-    other_index: usize,
-    close_else_open: bool,
+    depth: usize,
+    is_closing: bool,
     track: KString,
     tag: KString,
+}
+
+impl PartialOrd for OutputBufferWalkEntry {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for OutputBufferWalkEntry {
+    fn cmp(&self, other: &Self) -> Ordering {
+        // Sort by index primarily, of course.
+        let by_index = self.index.cmp(&other.index);
+        if by_index != Ordering::Equal {
+            return by_index;
+        }
+
+        // Closing tags go before opening tags at the same index.
+        let by_closing = self.is_closing.cmp(&other.is_closing).reverse();
+        if by_closing != Ordering::Equal {
+            return by_closing;
+        }
+
+        // For opening tags, we want least depth first, but for closing tags,
+        // we want greatest depth first.
+        let by_depth = if self.is_closing {
+            self.depth.cmp(&other.depth).reverse()
+        } else {
+            self.depth.cmp(&other.depth)
+        };
+        if by_depth != Ordering::Equal {
+            return by_depth;
+        }
+
+        (&self.track, &self.tag).cmp(&(&other.track, &other.tag))
+    }
 }
 
 impl Display for OutputBuffer {
@@ -219,11 +252,8 @@ impl Display for OutputBuffer {
 
         let mut index = 0;
 
-        let mut indentation_by_track = HashMap::new();
         let mut indentation_total = 0;
         for tag in tags {
-            let indentation: &mut usize = indentation_by_track.entry(tag.track.clone()).or_default();
-            
             let before = &self.bytes[index..tag.index];
             if !before.is_empty() {
                 write!(f, "{:indent$}", "", indent = indentation_total * 4)?;
@@ -232,18 +262,13 @@ impl Display for OutputBuffer {
                 write!(f, "\n")?;
             }
 
-            if tag.close_else_open {
-                *indentation -= 1;
-                indentation_total -= 1;
-            }
+            write!(f, "{:indent$}", "", indent = (tag.depth) * 4)?;
 
-            write!(f, "{:indent$}", "", indent = *indentation * 4)?;
-
-            if !tag.close_else_open {
-                *indentation += 1;
+            if !tag.is_closing {
                 indentation_total += 1;
                 write!(f, "<{}:{}>", tag.track, tag.tag)?;
             } else {
+                indentation_total -= 1;
                 write!(f, "</{}:{}>", tag.track, tag.tag)?;
             }
             write!(f, "\n")?;
@@ -367,6 +392,8 @@ pub struct TaggedRange {
     start: usize,
     /// The last index of the range (exclusive).
     end: usize,
+    /// How many ancestors this range has, or 0 if it's a root.
+    depth: usize,
     /// The name/tag of the region.
     name: KString,
     /// The child sub-regions of this region.
@@ -374,9 +401,10 @@ pub struct TaggedRange {
 }
 
 impl TaggedRange {
-    fn new(start: usize, name: impl Into<KString>) -> Self {
+    fn new(start: usize, depth: usize, name: impl Into<KString>) -> Self {
         Self {
             start,
+            depth,
             end: usize::MAX,
             name: name.into(),
             children: Vec::new(),
@@ -438,6 +466,7 @@ impl Add<usize> for TaggedRange {
             start: self.start + rhs,
             end: self.end + rhs,
             name: self.name,
+            depth: self.depth,
             children: self.children,
         }
     }
@@ -584,6 +613,7 @@ fn test_output_buffer() -> Result<(), panic> {
                 TaggedRange {
                     start: 17,
                     end: 22,
+                    depth: 0,
                     name: "ZIP",
                     children: [],
                 },
@@ -598,27 +628,32 @@ fn test_output_buffer() -> Result<(), panic> {
                 TaggedRange {
                     start: 0,
                     end: 22,
+                    depth: 0,
                     name: "PNG",
                     children: [
                         TaggedRange {
                             start: 5,
                             end: 22,
+                            depth: 1,
                             name: "IHDR",
                             children: [
                                 TaggedRange {
                                     start: 17,
                                     end: 17,
+                                    depth: 2,
                                     name: "signature",
                                     children: [],
                                 },
                                 TaggedRange {
                                     start: 17,
                                     end: 22,
+                                    depth: 2,
                                     name: "image data",
                                     children: [
                                         TaggedRange {
                                             start: 17,
                                             end: 22,
+                                            depth: 0,
                                             name: "sub",
                                             children: [],
                                         },
@@ -637,18 +672,16 @@ fn test_output_buffer() -> Result<(), panic> {
         <PNG:PNG>
             &#x89;PNG&#x0D;
             <PNG:IHDR>
-                &#x00;&#x00;&#x00;&#x0D;IHDRtest
-                <PNG:image data>
-                    <PNG:sub>
+                &#0;&#0;&#0;&#x0D;IHDRtest
+        <PNG:sub>
         <ZIP:ZIP>
-                        <PNG:signature>
-                        </PNG:signature>
+                <PNG:image data>
                             &#x90;PNG&#x0D;
-                    </PNG:image data>
-                </PNG:sub>
-        </ZIP:ZIP>
+                </PNG:image data>
             </PNG:IHDR>
         </PNG:PNG>
+        </PNG:sub>
+        </ZIP:ZIP>
     "#]]
     .assert_eq(&buffer.to_string());
 

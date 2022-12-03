@@ -310,16 +310,16 @@ impl Display for OutputBuffer {
 
             if !tag.is_closing {
                 if tag.track != tag.tag {
-                    write!(f, "<{}:{}>", tag.track, tag.tag)?;
+                    write!(f, "<{}:{} offset=\"{}\">", tag.track, tag.tag, index)?;
                 } else {
-                    write!(f, "<{}>", tag.tag)?;
+                    write!(f, "<{} offset=\"{}\">", tag.tag, index)?;
                 }
                 next_depth = tag.depth + 1;
             } else {
                 if tag.track != tag.tag {
-                    write!(f, "</{}:{}>", tag.track, tag.tag)?;
+                    write!(f, "</{}:{} offset=\"{}\">", tag.track, tag.tag, index)?;
                 } else {
-                    write!(f, "</{}>", tag.tag)?;
+                    write!(f, "</{} offset=\"{}\">", tag.tag, index)?;
                 }
                 next_depth = tag.depth;
             }

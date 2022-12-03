@@ -3,7 +3,6 @@ use {
     std::{
         fmt::Debug,
         hash::{Hash, Hasher},
-        io::Write,
     },
 };
 
@@ -126,14 +125,14 @@ pub fn write_aligned_pad_end(
 ) -> Result<usize, panic> {
     let index_before_data = output.offset();
 
-    output += (bytes);
+    output += bytes;
 
     let index_after_data = output.offset();
 
     if index_after_data % alignment != 0 {
         let padding = alignment - (index_after_data % alignment);
         for _ in 0..padding {
-            output += (&[0]);
+            output += &[0];
         }
     }
 
@@ -155,11 +154,11 @@ pub fn write_aligned_pad_start(
     if unpadded_index_after_data % alignment != 0 {
         let padding = alignment - (unpadded_index_after_data % alignment);
         for _ in 0..padding {
-            output += (&[0]);
+            output += &[0];
         }
     }
     let index_before_data = output.offset();
-    output += (bytes);
+    output += bytes;
     let index_after_data = output.offset();
     Ok((index_before_data..index_after_data).len())
 }

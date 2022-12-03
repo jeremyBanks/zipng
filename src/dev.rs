@@ -34,10 +34,11 @@ macro_rules! save {
         op.push_str(env!("CARGO_CRATE_NAME"));
         $( op.push_str("-"); op.push_str(stringify!($tag)); )?
 
-        $(
             let mut path = op.to_string();
+            $(
             path.push_str(".");
             path.push_str(stringify!($ext));
+        )+
             let mut f = ::std::fs::OpenOptions::new()
                 .write(true)
                 .create(true)
@@ -45,7 +46,6 @@ macro_rules! save {
                 .open(path)?;
             #[allow(unused_braces, unused_parentheses)]
             std::io::Write::write_all(&mut f, &*{$value})?;
-        )+
         Ok::<(), $crate::panic>(())
     }};
 }

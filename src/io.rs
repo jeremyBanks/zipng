@@ -1,8 +1,5 @@
 mod alignment;
 
-use std::iter;
-use std::iter::once;
-
 pub use alignment::*;
 use {
     crate::generic::{default, panic},
@@ -15,6 +12,7 @@ use {
         fmt::{Debug, Display},
         hash::{Hash, Hasher},
         io::{self, Read, Seek, SeekFrom, Write},
+        iter::once,
         ops::{Add, AddAssign, Deref, DerefMut, Index, Range},
     },
     tracing::warn,
@@ -49,7 +47,11 @@ impl OutputBuffer {
         }
     }
 
-    pub fn with_tag(data: impl AsRef<[u8]>, track: impl Into<KString>, tag: impl Into<KString>) -> Self {
+    pub fn with_tag(
+        data: impl AsRef<[u8]>,
+        track: impl Into<KString>,
+        tag: impl Into<KString>,
+    ) -> Self {
         let mut buffer = Self::new();
         *buffer.tagged(track, tag) += data.as_ref();
         buffer
@@ -79,9 +81,7 @@ impl OutputBuffer {
     }
 
     pub fn extend<Data>(&mut self, data: Data)
-    where
-        OutputBuffer: AddAssign<Data>,
-    {
+    where OutputBuffer: AddAssign<Data> {
         *self += data;
     }
 
@@ -162,6 +162,7 @@ impl OutputBuffer {
                 [
                     OutputBufferWalkEntry {
                         index: t.start,
+                        length: t.len(),
                         depth: t.depth,
                         is_closing: false,
                         track: track.clone(),
@@ -169,6 +170,7 @@ impl OutputBuffer {
                     },
                     OutputBufferWalkEntry {
                         index: t.end,
+                        length: t.len(),
                         depth: t.depth,
                         is_closing: true,
                         track: track.clone(),
@@ -197,6 +199,7 @@ impl OutputBuffer {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct OutputBufferWalkEntry {
     index: usize,
+    length: usize,
     depth: usize,
     is_closing: bool,
     track: KString,
@@ -271,7 +274,8 @@ impl Display for OutputBuffer {
                     line_text_length += 6;
                 }
 
-                // XXX: we shouldn't do this if there's nothing left to write after this.
+                // XXX: we shouldn't be wrapping before the end of string, or before an
+                // unescaped space
                 if line_text_length + wrap_modifier >= text_wrap_at {
                     to_write += "\n";
                     to_write += indentation;
@@ -301,7 +305,11 @@ impl Display for OutputBuffer {
         for tag in tags {
             let before = &self.bytes[index..tag.index];
             if !before.is_empty() {
-                write_bytes(f, before, &format!("{:indent$}", "", indent = (next_depth) * 2))?;
+                write_bytes(
+                    f,
+                    before,
+                    &format!("{:indent$}", "", indent = (next_depth) * 2),
+                )?;
                 index = tag.index;
                 writeln!(f)?;
             }
@@ -310,16 +318,24 @@ impl Display for OutputBuffer {
 
             if !tag.is_closing {
                 if tag.track != tag.tag {
-                    write!(f, "<{}:{} offset=\"{}\">", tag.track, tag.tag, index)?;
+                    write!(
+                        f,
+                        "<{}:{} offset=\"{}\" length=\"{}\">",
+                        tag.track, tag.tag, tag.index, tag.length
+                    )?;
                 } else {
-                    write!(f, "<{} offset=\"{}\">", tag.tag, index)?;
+                    write!(
+                        f,
+                        "<{} offset=\"{}\" length=\"{}\">",
+                        tag.track, tag.index, tag.length
+                    )?;
                 }
                 next_depth = tag.depth + 1;
             } else {
                 if tag.track != tag.tag {
-                    write!(f, "</{}:{} offset=\"{}\">", tag.track, tag.tag, index)?;
+                    write!(f, "</{}:{}>", tag.track, tag.tag)?;
                 } else {
-                    write!(f, "</{} offset=\"{}\">", tag.tag, index)?;
+                    write!(f, "</{}>", tag.track)?;
                 }
                 next_depth = tag.depth;
             }
@@ -496,7 +512,7 @@ impl<'a> AddAssign<&[u8]> for &mut InOutputBufferTag<'a> {
 
 impl<'a, const N: usize> AddAssign<&[u8; N]> for &mut InOutputBufferTag<'a> {
     fn add_assign(&mut self, other: &[u8; N]) {
-*self.buffer.as_mut().unwrap() += other;
+        *self.buffer.as_mut().unwrap() += other;
     }
 }
 
@@ -650,8 +666,7 @@ pub trait Offset {
 }
 
 impl<T> Offset for T
-where
-    T: Seek,
+where T: Seek
 {
     fn offset(&mut self) -> usize {
         let Ok(position) = self.stream_position() else {

@@ -1,16 +1,17 @@
-use std::ops::AddAssign;
-
-use crate::{
-    adler32, crc32, output_buffer,
-    palettes::{
-        oceanic::BALANCE,
-        singles::{CIVIDIS, TURBO},
-        viridis::MAGMA,
+use {
+    crate::{
+        adler32, crc32, output_buffer,
+        palettes::{
+            oceanic::BALANCE,
+            singles::{CIVIDIS, TURBO},
+            viridis::MAGMA,
+        },
+        panic,
+        png::write_png::{write_non_png_chunk, write_png_header, write_png_palette},
+        write_png::{write_png_chunk, write_png_footer},
+        BitDepth, ColorType, Offset, OutputBuffer, PNG_CHUNK_PREFIX_SIZE, PNG_CHUNK_SUFFIX_SIZE,
     },
-    panic,
-    png::write_png::{write_non_png_chunk, write_png_header, write_png_palette},
-    write_png::{write_png_chunk, write_png_footer},
-    BitDepth, ColorType, Offset, OutputBuffer, PNG_CHUNK_PREFIX_SIZE, PNG_CHUNK_SUFFIX_SIZE,
+    std::ops::AddAssign,
 };
 
 pub fn poc_zipng(palette: &[u8]) -> Result<OutputBuffer, panic> {
@@ -83,9 +84,10 @@ pub fn poc_zipng(palette: &[u8]) -> Result<OutputBuffer, panic> {
                         .expect("file size larger than 4GiB")
                         .to_le_bytes();
                 // 0x0016..0x001A: uncompressed size
-                *local_file_header.tagged("zip", "size-original") += &u32::try_from(file.body.len())
-                    .expect("file size larger than 4GiB")
-                    .to_le_bytes();
+                *local_file_header.tagged("zip", "size-original") +=
+                    &u32::try_from(file.body.len())
+                        .expect("file size larger than 4GiB")
+                        .to_le_bytes();
                 // 0x001A..0x001E: file name length
                 *local_file_header.tagged("zip", "name-length") += &u16::try_from(file.name.len())
                     .expect("file name larger than 64KiB")
@@ -157,10 +159,11 @@ pub fn poc_zipng(palette: &[u8]) -> Result<OutputBuffer, panic> {
 
             let mut entry = idat.tagged("zip", "entry");
             entry.tagged("zip", "head").add_assign(local_file_header);
-            entry.tagged("zip", "body").add_assign(data_with_chunk_headers);
+            entry
+                .tagged("zip", "body")
+                .add_assign(data_with_chunk_headers);
         }
 
-        
         *idat.tagged("zip", "deflate-terminator") += &[0x01, 0x00, 0x00, 0xFF, 0xFF];
 
         let offset_before_idat = output.offset();

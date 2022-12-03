@@ -21,15 +21,13 @@ pub fn write_deflate(output: &mut OutputBuffer, data: &[u8]) -> Result<usize, pa
 
 #[allow(non_camel_case_types)]
 #[derive(Debug)]
-pub struct write_deflate<'all>
-{
+pub struct write_deflate<'all> {
     pub output: &'all mut OutputBuffer,
     pub data: &'all [u8],
     pub mode: DeflateMode,
 }
 
-impl<'all> write_deflate<'all>
-{
+impl<'all> write_deflate<'all> {
     pub fn call(&mut self) -> Result<usize, panic> {
         let Self {
             output,
@@ -45,13 +43,13 @@ impl<'all> write_deflate<'all>
         for (index, chunk) in chunks.enumerate() {
             // deflate flag bits
             let is_last_chunk = index + 1 >= count;
-            *output += (&[is_last_chunk.into()]);
+            *output += &[is_last_chunk.into()];
             // deflate block length
-            *output += (&u16::try_from(chunk.len()).unwrap().to_le_bytes());
+            *output += &u16::try_from(chunk.len()).unwrap().to_le_bytes();
             // deflate block length check complement
-            *output += (&u16::try_from(chunk.len()).unwrap().not().to_le_bytes());
+            *output += &u16::try_from(chunk.len()).unwrap().not().to_le_bytes();
 
-            *output += (chunk);
+            *output += chunk;
         }
 
         Ok(output.offset() - before)

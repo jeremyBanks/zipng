@@ -10,15 +10,11 @@ fn main() -> Result<(), panic> {
 
     for y in 0..png.height {
         for x in 0..png.width {
-            png.set_pixel(
-                x,
-                y,
-                &[
-                    (x / 4) as u8,
-                    y as u8,
-                    (x * 4 / 9 + x.abs_diff(y) / 15).min(255) as u8,
-                ],
-            )?;
+            png.set_pixel(x, y, &[
+                (x / 4) as u8,
+                y as u8,
+                (x * 4 / 9 + x.abs_diff(y) / 15).min(255) as u8,
+            ])?;
         }
     }
 
@@ -33,7 +29,10 @@ fn main() -> Result<(), panic> {
         png.set_pixel(png.height * 2 - x + 7, x, &[0xFF, 0xFF, 0xFF])?;
     }
 
-    save!({ png.write_vec()? }.png)
+    let output = png.serialize();
+    save!({ output.as_ref() }.png)?;
+    save!({ output.to_string().as_bytes() }.xml)?;
+    Ok(())
 }
 
 #[test]

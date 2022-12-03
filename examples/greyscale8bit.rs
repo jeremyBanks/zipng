@@ -19,7 +19,10 @@ fn main() -> Result<(), panic> {
         }
     }
 
-    save!({ png.write_vec()? }.png)
+    let output = png.serialize();
+    save!({ output.as_ref() }.png)?;
+    save!({ output.to_string().as_bytes() }.xml)?;
+    Ok(())
 }
 
 #[test]

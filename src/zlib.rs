@@ -23,8 +23,7 @@ pub fn write_zlib(output: &mut OutputBuffer, data: &[u8]) -> Result<usize, panic
 
 #[allow(non_camel_case_types)]
 #[derive(Debug)]
-pub struct write_zlib<'all>
-{
+pub struct write_zlib<'all> {
     pub output: &'all mut OutputBuffer,
     pub data: &'all [u8],
     pub mode: ZlibMode,
@@ -43,8 +42,7 @@ impl Default for ZlibMode {
         }
     }
 }
-impl write_zlib<'_>
-{
+impl write_zlib<'_> {
     pub fn call(&mut self) -> Result<usize, panic> {
         let Self {
             output,
@@ -56,12 +54,12 @@ impl write_zlib<'_>
 
         // zlib compression mode: deflate with 32KiB windows
         let cmf = 0b_0111_1000;
-        *output += (&[cmf]);
+        *output += &[cmf];
         // zlib flag bits: no preset dictionary, compression level 0
         let mut flg: u8 = 0b0000_0000;
         // zlib flag and check bits
         flg |= 0b1_1111 - ((((cmf as u16) << 8) | (flg as u16)) % 0b1_1111) as u8;
-        *output += (&[flg]);
+        *output += &[flg];
 
         let mut buffer = output_buffer();
         write_deflate(&mut buffer, data)?;
@@ -69,7 +67,7 @@ impl write_zlib<'_>
         *output += &buffer;
 
         // adler-32 checksum of the deflated data
-        *output += (&adler32(buffer.as_ref()).to_le_bytes());
+        *output += &adler32(buffer.as_ref()).to_le_bytes();
 
         Ok(output.offset() - before)
     }

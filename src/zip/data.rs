@@ -67,10 +67,13 @@ impl Zip {
         })
     }
 
-    /// Serializes this [`Zip`] as a ZIP archive file.
-    pub fn write(&self, output: &mut OutputBuffer) -> Result<usize, panic> {
+    #[instrument(skip_all)]
+    /// Serializes this [`Png`] as a PNG image file.
+    pub fn serialize(&self) -> OutputBuffer {
+        let mut buffer = output_buffer();
+
         write_zip(
-            output,
+            &mut buffer,
             self.files
                 .iter()
                 .map(|(a, b)| (a.as_slice(), b.as_slice()))
@@ -78,18 +81,13 @@ impl Zip {
                 .as_slice(),
             &[],
         )
+        .unwrap();
+        buffer
     }
 
     /// Deserializes a ZIP archive file into a [`Zip`].
     pub fn read(_input: &impl Read) -> Result<Self, panic> {
         unimplemented!()
-    }
-
-    /// Serializes this [`Zip`] into a byte vector as a ZIP archive file.
-    pub fn write_vec(&self) -> Result<Vec<u8>, never> {
-        let mut output = output_buffer();
-        self.write(&mut output)?;
-        Ok(output.into_bytes())
     }
 
     /// Deserialize a ZIP archive file into a [`Zip`] from a byte vector.
@@ -100,22 +98,14 @@ impl Zip {
 
 impl Serialize for Zip {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        serializer.serialize_bytes(
-            &self
-                .write_vec()
-                .expect("serializing Zip to bytes should not fail"),
-        )
+    where S: serde::Serializer {
+        serializer.serialize_bytes(self.serialize().as_ref())
     }
 }
 
 impl<'de> Deserialize<'de> for Zip {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: serde::Deserializer<'de>,
-    {
+    where D: serde::Deserializer<'de> {
         let bytes: &[u8] = serde_bytes::deserialize(deserializer)?;
         Self::read_slice(bytes).map_err(serde::de::Error::custom)
     }

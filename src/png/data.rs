@@ -4,11 +4,11 @@ use {
     crate::{
         never, output_buffer,
         palettes::{crameri::OLERON, oceanic::TOPO, singles::FOUR_BIT_RAINBOW},
-        panic, ToPng,
+        panic, OutputBuffer, ToPng,
     },
     bitvec::slice::BitSlice,
     serde::{Deserialize, Serialize},
-    std::io::{Read, Write},
+    std::io::Read,
     tracing::{instrument, trace},
 };
 
@@ -193,18 +193,19 @@ impl Png {
 
     #[instrument(skip_all)]
     /// Serializes this [`Png`] as a PNG image file.
-    pub fn write(&self, output: &mut impl Write) -> Result<(), panic> {
+    pub fn serialize(&self) -> OutputBuffer {
         let mut buffer = output_buffer();
         crate::png::write_png::write_png(
             &mut buffer,
             self.pixel_data.as_slice(),
-            self.width.try_into()?,
-            self.height.try_into()?,
+            self.width.try_into().unwrap(),
+            self.height.try_into().unwrap(),
             self.bit_depth,
             self.color_type,
             self.palette_data.as_deref(),
-        )?;
-        Ok(output.write_all(&buffer.into_bytes())?)
+        )
+        .unwrap();
+        buffer
     }
 
     #[cfg(feature = "flate2")]
@@ -212,13 +213,6 @@ impl Png {
     /// Deserializes a PNG image file into a [`Png`].
     pub fn read(_input: &impl Read) -> Result<Self, panic> {
         unimplemented!()
-    }
-
-    /// Serializes this [`Png`] into a byte vector as a PNG image file.
-    pub fn write_vec(&self) -> Result<Vec<u8>, never> {
-        let mut output = output_buffer();
-        self.write(&mut output)?;
-        Ok(output.into_bytes())
     }
 
     #[cfg(feature = "flate2")]
@@ -272,22 +266,14 @@ impl Png {
 
 impl Serialize for Png {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        serializer.serialize_bytes(
-            &self
-                .write_vec()
-                .expect("serializing Png to bytes should not fail"),
-        )
+    where S: serde::Serializer {
+        serializer.serialize_bytes(self.serialize().as_ref())
     }
 }
 
 impl<'de> Deserialize<'de> for Png {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: serde::Deserializer<'de>,
-    {
+    where D: serde::Deserializer<'de> {
         let bytes: &[u8] = serde_bytes::deserialize(deserializer)?;
         Self::read_slice(bytes).map_err(serde::de::Error::custom)
     }

@@ -138,7 +138,7 @@ pub fn write_png(
     }
     // We need to insert a 0x00 byte at the start of every line (every `width`
     // bytes) to indicate that the line is not filtered.
-    let mut filtered_data = Vec::new();
+    let mut filtered_data = output_buffer();
 
     let bits_per_pixel = bit_depth.bits_per_sample() * color_mode.samples_per_pixel();
     let bits_per_line = width * bits_per_pixel as u32;
@@ -146,11 +146,11 @@ pub fn write_png(
 
     for (i, byte) in pixel_data.iter().enumerate() {
         if i % (bytes_per_line as usize) == 0 {
-            filtered_data.push(0x00);
+            filtered_data.tagged("png", "filter").push(0x00);
         }
-        filtered_data.push(*byte);
+        filtered_data.tagged("png", "row").push(*byte);
     }
-    write_png_body(buffer, &filtered_data)?;
+    write_png_body(buffer, filtered_data.as_ref())?;
     write_png_footer(buffer)?;
     Ok(())
 }

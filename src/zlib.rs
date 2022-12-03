@@ -50,16 +50,18 @@ impl write_zlib<'_> {
             mode: _,
         } = self;
 
+        let output = &mut *output.tagged("png", "zlib");
+
         let before = output.offset();
 
         // zlib compression mode: deflate with 32KiB windows
         let cmf = 0b_0111_1000;
-        *output += &[cmf];
+        *output.tagged("png", "compression-mode") += &[cmf];
         // zlib flag bits: no preset dictionary, compression level 0
         let mut flg: u8 = 0b0000_0000;
         // zlib flag and check bits
         flg |= 0b1_1111 - ((((cmf as u16) << 8) | (flg as u16)) % 0b1_1111) as u8;
-        *output += &[flg];
+        *output.tagged("png", "bitflags") += &[flg];
 
         let mut buffer = output_buffer();
         write_deflate(&mut buffer, data)?;
@@ -67,7 +69,7 @@ impl write_zlib<'_> {
         *output += &buffer;
 
         // adler-32 checksum of the deflated data
-        *output += &adler32(buffer.as_ref()).to_le_bytes();
+        *output.tagged("png", "checksum") += &adler32(buffer.as_ref()).to_le_bytes();
 
         Ok(output.offset() - before)
     }

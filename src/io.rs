@@ -320,7 +320,7 @@ impl Display for OutputBuffer {
                 if tag.track != tag.tag {
                     write!(
                         f,
-                        "<{}:{} offset=\"{}\" length=\"{}\">",
+                        "<{}-{} offset=\"{}\" length=\"{}\">",
                         tag.track, tag.tag, tag.index, tag.length
                     )?;
                 } else {
@@ -333,7 +333,7 @@ impl Display for OutputBuffer {
                 next_depth = tag.depth + 1;
             } else {
                 if tag.track != tag.tag {
-                    write!(f, "</{}:{}>", tag.track, tag.tag)?;
+                    write!(f, "</{}-{}>", tag.track, tag.tag)?;
                 } else {
                     write!(f, "</{}>", tag.track)?;
                 }
@@ -532,6 +532,8 @@ pub struct TaggedRange {
     depth: usize,
     /// The name/tag of the region.
     name: KString,
+    /// Ad-hoc attributes
+    attributes: Vec<(KString, KString)>,
     /// The child sub-regions of this region.
     children: Vec<TaggedRange>,
 }
@@ -544,6 +546,7 @@ impl TaggedRange {
             end: usize::MAX,
             name: name.into(),
             children: Vec::new(),
+            attributes: Vec::new(),
         }
     }
 
@@ -580,6 +583,10 @@ impl TaggedRange {
         &self.children
     }
 
+    pub fn attributes(&self) -> &[(KString, KString)] {
+        &self.attributes
+    }
+
     pub fn range(&self) -> Range<usize> {
         self.start..self.end
     }
@@ -597,6 +604,7 @@ impl TaggedRange {
         Self {
             start: self.start + offset,
             end: self.end + offset,
+            attributes: self.attributes.clone(),
             name: self.name.clone(),
             depth: self.depth + depth,
             children: self.children.iter().map(|c| c.add(offset, depth)).collect(),

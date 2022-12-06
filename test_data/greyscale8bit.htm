@@ -1,60 +1,125 @@
+<script type="module">
+    for (const el of document.querySelectorAll("*")) {
+        el.setAttribute("tag-name", el.tagName.toLowerCase());
+        el.setAttribute("tag-localname", el.tagName.toLowerCase().split("-").slice(1).join("-") || el.tagName.toLowerCase());
+        el.setAttribute("tag-namespace", el.tagName.toLowerCase().split("-")[0]);
+    }
+</script>
+<style>
+    html {
+        background: #000;
+        font-size: 10px;
+    }
+
+    html body * {
+        display: inline-block;
+        padding: 2px;
+        margin: 1px 2px;
+        border: 1px solid var(--tag-color);
+        font-family: "JetBrains Mono", monospace;
+        user-select: none;
+        cursor: pointer;
+    }
+
+    [offset][length]::before {
+        display: inline-block;
+        color: var(--tag-color);
+        margin: 1px;
+        content: attr(tag-localname) " (" attr(length) "B at " attr(offset) "B)";
+    }
+
+    body:not(:hover) [tag-namespace]:not(:hover) {
+        color: #BBB;
+    }
+
+    body:not(:hover) [tag-namespace="png"]:not(:hover) {
+        --tag-color: #DD2;
+    }
+
+    body:not(:hover) [tag-namespace="zip"]:not(:hover) {
+        --tag-color: #28D;
+    }
+
+    body:is(:hover) [tag-namespace]:not(:hover) {
+        color: #444;
+        border-style: dotted;
+        opacity: 0.5;
+    }
+
+    body:is(:hover) [tag-namespace="png"]:not(:hover) {
+        --tag-color: #211;
+    }
+
+    body:is(:hover) [tag-namespace="zip"]:not(:hover) {
+        --tag-color: #123;
+    }
+
+    body:is(:hover) [tag-namespace="png"]:is(:hover) {
+        --tag-color: #FF4;
+    }
+
+    body:is(:hover) [tag-namespace="zip"]:is(:hover) {
+        --tag-color: #5CF;
+    }
+</style>
+
 <png offset="0" length="65737">
-  <png:signature offset="0" length="8">
+  <png-signature offset="0" length="8">
     &#x89;PNG&#x0D;&#x0A;&#x1A;&#x0A;
-  </png:signature>
-  <png:header offset="8" length="25">
-    <png:chunk offset="8" length="25">
-      <png:size offset="8" length="4">
+  </png-signature>
+  <png-header offset="8" length="25">
+    <png-chunk offset="8" length="25">
+      <png-size offset="8" length="4">
         &#x00;&#x00;&#x00;&#x0D;
-      </png:size>
-      <png:type offset="12" length="4">
+      </png-size>
+      <png-type offset="12" length="4">
         IHDR
-      </png:type>
-      <png:body offset="16" length="13">
-        <png:width offset="16" length="4">
+      </png-type>
+      <png-body offset="16" length="13">
+        <png-width offset="16" length="4">
           &#x00;&#x00;&#x02;&#x00;
-        </png:width>
-        <png:height offset="20" length="4">
+        </png-width>
+        <png-height offset="20" length="4">
           &#x00;&#x00;&#x00;&#x80;
-        </png:height>
-        <png:bit-depth offset="24" length="1">
+        </png-height>
+        <png-bit-depth offset="24" length="1">
           &#x08;
-        </png:bit-depth>
-        <png:color-mode offset="25" length="1">
+        </png-bit-depth>
+        <png-color-mode offset="25" length="1">
           &#x00;
-        </png:color-mode>
-        <png:compression-mode offset="26" length="1">
+        </png-color-mode>
+        <png-compression-mode offset="26" length="1">
           &#x00;
-        </png:compression-mode>
-        <png:filter-mode offset="27" length="1">
+        </png-compression-mode>
+        <png-filter-mode offset="27" length="1">
           &#x00;
-        </png:filter-mode>
-        <png:interlace-mode offset="28" length="1">
+        </png-filter-mode>
+        <png-interlace-mode offset="28" length="1">
           &#x00;
-        </png:interlace-mode>
-      </png:body>
-      <png:checksum offset="29" length="4">
+        </png-interlace-mode>
+      </png-body>
+      <png-checksum offset="29" length="4">
         X&#x3C;&#x8E;&#xD7;
-      </png:checksum>
-    </png:chunk>
-  </png:header>
-  <png:pixels offset="33" length="65692">
-    <png:chunk offset="33" length="65692">
-      <png:size offset="33" length="4">
+      </png-checksum>
+    </png-chunk>
+  </png-header>
+  <png-pixels offset="33" length="65692">
+    <png-chunk offset="33" length="65692">
+      <png-size offset="33" length="4">
         &#x00;&#x01;&#x00;&#x90;
-      </png:size>
-      <png:type offset="37" length="4">
+      </png-size>
+      <png-type offset="37" length="4">
         IDAT
-      </png:type>
-      <png:body offset="41" length="65680">
-        <png:zlib offset="41" length="65680">
-          <png:zlib offset="41" length="65680">
-            <png:compression-mode offset="41" length="1">
+      </png-type>
+      <png-body offset="41" length="65680">
+        <png-zlib offset="41" length="65680">
+          <png-zlib offset="41" length="65680">
+            <png-compression-mode offset="41" length="1">
               x
-            </png:compression-mode>
-            <png:bitflags offset="42" length="1">
+            </png-compression-mode>
+            <png-bitflags offset="42" length="1">
               &#x01;
-            </png:bitflags>
+            </png-bitflags>
             &#x00;&#xFF;&#xFF;&#x00;&#x00;&#x00;&#x00;&#x00;&#x00;&#x07;&#x07;&#x01;&#x01;&#x15;&#x15;&#x04;
             &#x04;&#x04;&#x19;&#x19;&#x11;B&#x08;&#x08;&#x0C;&#x0C;&#x0C;!!22&#x1E;&#x1E;
             MMM||&#x06;&#x06;&#x13;&#x13;&#x1A;&#x1A;&#x1A;77&#x16;&#x16;??vvv&#x10;&#x10;
@@ -3255,30 +3320,30 @@
             u&#xBE;&#xBE;&#xCA;&#xCA;&#xE9;&#xE9;&#xE9;&#xCF;&#xCF;&#xDB;&#xDB;&#xEE;&#xEE;&#xFA;
             {{&#xAA;&#xAA;&#xCD;&#xCD;&#xE1;&#xE1;&#xD8;&#xD8;&#xD8;&#xEB;&#xEB;&#xDE;&#xDE;&#xD5;&#xD5;&#xEF;
             &#xEF;&#xEF;&#xE6;&#xE6;&#xFB;&#xFB;&#xF6;
-            <png:checksum offset="65717" length="4">
+            <png-checksum offset="65717" length="4">
               x&#x0C;&#x99;&#xC4;
-            </png:checksum>
-          </png:zlib>
-        </png:zlib>
-      </png:body>
-      <png:checksum offset="65721" length="4">
+            </png-checksum>
+          </png-zlib>
+        </png-zlib>
+      </png-body>
+      <png-checksum offset="65721" length="4">
         t&#xED;m&#x1A;
-      </png:checksum>
-    </png:chunk>
-  </png:pixels>
-  <png:footer offset="65725" length="12">
-    <png:chunk offset="65725" length="12">
-      <png:size offset="65725" length="4">
+      </png-checksum>
+    </png-chunk>
+  </png-pixels>
+  <png-footer offset="65725" length="12">
+    <png-chunk offset="65725" length="12">
+      <png-size offset="65725" length="4">
         &#x00;&#x00;&#x00;&#x00;
-      </png:size>
-      <png:type offset="65729" length="4">
+      </png-size>
+      <png-type offset="65729" length="4">
         IEND
-      </png:body>
-      </png:type>
-      <png:body offset="65733" length="0">
-      <png:checksum offset="65733" length="4">
+      </png-body>
+      </png-type>
+      <png-body offset="65733" length="0">
+      <png-checksum offset="65733" length="4">
         &#xAE;B`&#x82;
-      </png:checksum>
-    </png:chunk>
-  </png:footer>
+      </png-checksum>
+    </png-chunk>
+  </png-footer>
 </png>

@@ -10,5 +10,23 @@
   "rust-analyzer.semanticHighlighting.operator.specialization.enable": true,
   "lldb.consoleMode": "evaluate",
   "lldb.launch.terminal": "integrated",
-  "github.copilot.inlineSuggest.enable": true
+
+
+
+  "github.copilot.inlineSuggest.enable": true,
+  "github.copilot.enable": { "*": true },
+  "github.copilot.advanced": {
+    "debug.showScores": true,
+    "length": 1024,
+    "temperature": "0.99",
+    "stops": {
+      "*": [
+        "github.copilot.dont.stop"
+      ]
+    },
+    // "debug.filterLogCategories": [],
+    // "debug.overrideEngine": "copilot-codex",
+    "inlineSuggestCount": 8,
+    "listCount": 32,
+  },
 }

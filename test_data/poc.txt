@@ -5572,12 +5572,14 @@ OutputBuffer {
                 end: 5564,
                 depth: 0,
                 name: "png",
+                attributes: [],
                 children: [
                     TaggedRange {
                         start: 0,
                         end: 8,
                         depth: 1,
                         name: "signature",
+                        attributes: [],
                         children: [],
                     },
                     TaggedRange {
@@ -5585,18 +5587,21 @@ OutputBuffer {
                         end: 33,
                         depth: 1,
                         name: "header",
+                        attributes: [],
                         children: [
                             TaggedRange {
                                 start: 8,
                                 end: 33,
                                 depth: 2,
                                 name: "chunk",
+                                attributes: [],
                                 children: [
                                     TaggedRange {
                                         start: 8,
                                         end: 12,
                                         depth: 3,
                                         name: "size",
+                                        attributes: [],
                                         children: [],
                                     },
                                     TaggedRange {
@@ -5604,6 +5609,7 @@ OutputBuffer {
                                         end: 16,
                                         depth: 3,
                                         name: "type",
+                                        attributes: [],
                                         children: [],
                                     },
                                     TaggedRange {
@@ -5611,12 +5617,14 @@ OutputBuffer {
                                         end: 29,
                                         depth: 3,
                                         name: "body",
+                                        attributes: [],
                                         children: [
                                             TaggedRange {
                                                 start: 16,
                                                 end: 20,
                                                 depth: 4,
                                                 name: "width",
+                                                attributes: [],
                                                 children: [],
                                             },
                                             TaggedRange {
@@ -5624,6 +5632,7 @@ OutputBuffer {
                                                 end: 24,
                                                 depth: 4,
                                                 name: "height",
+                                                attributes: [],
                                                 children: [],
                                             },
                                             TaggedRange {
@@ -5631,6 +5640,7 @@ OutputBuffer {
                                                 end: 25,
                                                 depth: 4,
                                                 name: "bit-depth",
+                                                attributes: [],
                                                 children: [],
                                             },
                                             TaggedRange {
@@ -5638,6 +5648,7 @@ OutputBuffer {
                                                 end: 26,
                                                 depth: 4,
                                                 name: "color-mode",
+                                                attributes: [],
                                                 children: [],
                                             },
                                             TaggedRange {
@@ -5645,6 +5656,7 @@ OutputBuffer {
                                                 end: 27,
                                                 depth: 4,
                                                 name: "compression-mode",
+                                                attributes: [],
                                                 children: [],
                                             },
                                             TaggedRange {
@@ -5652,6 +5664,7 @@ OutputBuffer {
                                                 end: 28,
                                                 depth: 4,
                                                 name: "filter-mode",
+                                                attributes: [],
                                                 children: [],
                                             },
                                             TaggedRange {
@@ -5659,6 +5672,7 @@ OutputBuffer {
                                                 end: 29,
                                                 depth: 4,
                                                 name: "interlace-mode",
+                                                attributes: [],
                                                 children: [],
                                             },
                                         ],
@@ -5668,6 +5682,7 @@ OutputBuffer {
                                         end: 33,
                                         depth: 3,
                                         name: "checksum",
+                                        attributes: [],
                                         children: [],
                                     },
                                 ],
@@ -5679,18 +5694,21 @@ OutputBuffer {
                         end: 813,
                         depth: 1,
                         name: "palette",
+                        attributes: [],
                         children: [
                             TaggedRange {
                                 start: 33,
                                 end: 813,
                                 depth: 2,
                                 name: "chunk",
+                                attributes: [],
                                 children: [
                                     TaggedRange {
                                         start: 33,
                                         end: 37,
                                         depth: 3,
                                         name: "size",
+                                        attributes: [],
                                         children: [],
                                     },
                                     TaggedRange {
@@ -5698,6 +5716,7 @@ OutputBuffer {
                                         end: 41,
                                         depth: 3,
                                         name: "type",
+                                        attributes: [],
                                         children: [],
                                     },
                                     TaggedRange {
@@ -5705,12 +5724,14 @@ OutputBuffer {
                                         end: 809,
                                         depth: 3,
                                         name: "body",
+                                        attributes: [],
                                         children: [
                                             TaggedRange {
                                                 start: 41,
                                                 end: 809,
                                                 depth: 4,
                                                 name: "colors",
+                                                attributes: [],
                                                 children: [],
                                             },
                                         ],
@@ -5720,6 +5741,7 @@ OutputBuffer {
                                         end: 813,
                                         depth: 3,
                                         name: "checksum",
+                                        attributes: [],
                                         children: [],
                                     },
                                 ],
@@ -5731,18 +5753,21 @@ OutputBuffer {
                         end: 5290,
                         depth: 1,
                         name: "body",
+                        attributes: [],
                         children: [
                             TaggedRange {
                                 start: 813,
                                 end: 5290,
                                 depth: 2,
                                 name: "chunk",
+                                attributes: [],
                                 children: [
                                     TaggedRange {
                                         start: 813,
                                         end: 817,
                                         depth: 3,
                                         name: "size",
+                                        attributes: [],
                                         children: [],
                                     },
                                     TaggedRange {
@@ -5750,6 +5775,7 @@ OutputBuffer {
                                         end: 821,
                                         depth: 3,
                                         name: "type",
+                                        attributes: [],
                                         children: [],
                                     },
                                     TaggedRange {
@@ -5757,12 +5783,14 @@ OutputBuffer {
                                         end: 5286,
                                         depth: 3,
                                         name: "body",
+                                        attributes: [],
                                         children: [
                                             TaggedRange {
                                                 start: 833,
                                                 end: 834,
                                                 depth: 4,
                                                 name: "zlib-head",
+                                                attributes: [],
                                                 children: [],
                                             },
                                             TaggedRange {
@@ -5770,6 +5798,7 @@ OutputBuffer {
                                                 end: 876,
                                                 depth: 4,
                                                 name: "line-filter",
+                                                attributes: [],
                                                 children: [],
                                             },
                                             TaggedRange {
@@ -5777,6 +5806,7 @@ OutputBuffer {
                                                 end: 929,
                                                 depth: 4,
                                                 name: "line-filter",
+                                                attributes: [],
                                                 children: [],
                                             },
                                             TaggedRange {
@@ -5784,6 +5814,7 @@ OutputBuffer {
                                                 end: 982,
                                                 depth: 4,
                                                 name: "line-filter",
+                                                attributes: [],
                                                 children: [],
                                             },
                                             TaggedRange {
@@ -5791,6 +5822,7 @@ OutputBuffer {
                                                 end: 1035,
                                                 depth: 4,
                                                 name: "line-filter",
+                                                attributes: [],
                                                 children: [],
                                             },
                                             TaggedRange {
@@ -5798,6 +5830,7 @@ OutputBuffer {
                                                 end: 1088,
                                                 depth: 4,
                                                 name: "line-filter",
+                                                attributes: [],
                                                 children: [],
                                             },
                                             TaggedRange {
@@ -5805,6 +5838,7 @@ OutputBuffer {
                                                 end: 1141,
                                                 depth: 4,
                                                 name: "line-filter",
+                                                attributes: [],
                                                 children: [],
                                             },
                                             TaggedRange {
@@ -5812,6 +5846,7 @@ OutputBuffer {
                                                 end: 1194,
                                                 depth: 4,
                                                 name: "line-filter",
+                                                attributes: [],
                                                 children: [],
                                             },
                                             TaggedRange {
@@ -5819,6 +5854,7 @@ OutputBuffer {
                                                 end: 1247,
                                                 depth: 4,
                                                 name: "line-filter",
+                                                attributes: [],
                                                 children: [],
                                             },
                                             TaggedRange {
@@ -5826,6 +5862,7 @@ OutputBuffer {
                                                 end: 1300,
                                                 depth: 4,
                                                 name: "line-filter",
+                                                attributes: [],
                                                 children: [],
                                             },
                                             TaggedRange {
@@ -5833,6 +5870,7 @@ OutputBuffer {
                                                 end: 1353,
                                                 depth: 4,
                                                 name: "line-filter",
+                                                attributes: [],
                                                 children: [],
                                             },
                                             TaggedRange {
@@ -5840,6 +5878,7 @@ OutputBuffer {
                                                 end: 1406,
                                                 depth: 4,
                                                 name: "line-filter",
+                                                attributes: [],
                                                 children: [],
                                             },
                                             TaggedRange {
@@ -5847,6 +5886,7 @@ OutputBuffer {
                                                 end: 1459,
                                                 depth: 4,
                                                 name: "line-filter",
+                                                attributes: [],
                                                 children: [],
                                             },
                                             TaggedRange {
@@ -5854,6 +5894,7 @@ OutputBuffer {
                                                 end: 1512,
                                                 depth: 4,
                                                 name: "line-filter",
+                                                attributes: [],
                                                 children: [],
                                             },
                                             TaggedRange {
@@ -5861,6 +5902,7 @@ OutputBuffer {
                                                 end: 1565,
                                                 depth: 4,
                                                 name: "line-filter",
+                                                attributes: [],
                                                 children: [],
                                             },
                                             TaggedRange {
@@ -5868,6 +5910,7 @@ OutputBuffer {
                                                 end: 1618,
                                                 depth: 4,
                                                 name: "line-filter",
+                                                attributes: [],
                                                 children: [],
                                             },
                                             TaggedRange {
@@ -5875,6 +5918,7 @@ OutputBuffer {
                                                 end: 1671,
                                                 depth: 4,
                                                 name: "line-filter",
+                                                attributes: [],
                                                 children: [],
                                             },
                                             TaggedRange {
@@ -5882,6 +5926,7 @@ OutputBuffer {
                                                 end: 1935,
                                                 depth: 4,
                                                 name: "padding",
+                                                attributes: [],
                                                 children: [],
                                             },
                                             TaggedRange {
@@ -5889,6 +5934,7 @@ OutputBuffer {
                                                 end: 1950,
                                                 depth: 4,
                                                 name: "zlib-head",
+                                                attributes: [],
                                                 children: [],
                                             },
                                             TaggedRange {
@@ -5896,6 +5942,7 @@ OutputBuffer {
                                                 end: 1990,
                                                 depth: 4,
                                                 name: "line-filter",
+                                                attributes: [],
                                                 children: [],
                                             },
                                             TaggedRange {
@@ -5903,6 +5950,7 @@ OutputBuffer {
                                                 end: 2043,
                                                 depth: 4,
                                                 name: "line-filter",
+                                                attributes: [],
                                                 children: [],
                                             },
                                             TaggedRange {
@@ -5910,6 +5958,7 @@ OutputBuffer {
                                                 end: 2096,
                                                 depth: 4,
                                                 name: "line-filter",
+                                                attributes: [],
                                                 children: [],
                                             },
                                             TaggedRange {
@@ -5917,6 +5966,7 @@ OutputBuffer {
                                                 end: 2149,
                                                 depth: 4,
                                                 name: "line-filter",
+                                                attributes: [],
                                                 children: [],
                                             },
                                             TaggedRange {
@@ -5924,6 +5974,7 @@ OutputBuffer {
                                                 end: 2202,
                                                 depth: 4,
                                                 name: "line-filter",
+                                                attributes: [],
                                                 children: [],
                                             },
                                             TaggedRange {
@@ -5931,6 +5982,7 @@ OutputBuffer {
                                                 end: 2255,
                                                 depth: 4,
                                                 name: "line-filter",
+                                                attributes: [],
                                                 children: [],
                                             },
                                             TaggedRange {
@@ -5938,6 +5990,7 @@ OutputBuffer {
                                                 end: 2308,
                                                 depth: 4,
                                                 name: "line-filter",
+                                                attributes: [],
                                                 children: [],
                                             },
                                             TaggedRange {
@@ -5945,6 +5998,7 @@ OutputBuffer {
                                                 end: 2361,
                                                 depth: 4,
                                                 name: "line-filter",
+                                                attributes: [],
                                                 children: [],
                                             },
                                             TaggedRange {
@@ -5952,6 +6006,7 @@ OutputBuffer {
                                                 end: 2414,
                                                 depth: 4,
                                                 name: "line-filter",
+                                                attributes: [],
                                                 children: [],
                                             },
                                             TaggedRange {
@@ -5959,6 +6014,7 @@ OutputBuffer {
                                                 end: 2467,
                                                 depth: 4,
                                                 name: "line-filter",
+                                                attributes: [],
                                                 children: [],
                                             },
                                             TaggedRange {
@@ -5966,6 +6022,7 @@ OutputBuffer {
                                                 end: 2520,
                                                 depth: 4,
                                                 name: "line-filter",
+                                                attributes: [],
                                                 children: [],
                                             },
                                             TaggedRange {
@@ -5973,6 +6030,7 @@ OutputBuffer {
                                                 end: 2573,
                                                 depth: 4,
                                                 name: "line-filter",
+                                                attributes: [],
                                                 children: [],
                                             },
                                             TaggedRange {
@@ -5980,6 +6038,7 @@ OutputBuffer {
                                                 end: 2626,
                                                 depth: 4,
                                                 name: "line-filter",
+                                                attributes: [],
                                                 children: [],
                                             },
                                             TaggedRange {
@@ -5987,6 +6046,7 @@ OutputBuffer {
                                                 end: 2679,
                                                 depth: 4,
                                                 name: "line-filter",
+                                                attributes: [],
                                                 children: [],
                                             },
                                             TaggedRange {
@@ -5994,6 +6054,7 @@ OutputBuffer {
                                                 end: 2732,
                                                 depth: 4,
                                                 name: "line-filter",
+                                                attributes: [],
                                                 children: [],
                                             },
                                             TaggedRange {
@@ -6001,6 +6062,7 @@ OutputBuffer {
                                                 end: 2785,
                                                 depth: 4,
                                                 name: "line-filter",
+                                                attributes: [],
                                                 children: [],
                                             },
                                             TaggedRange {
@@ -6008,6 +6070,7 @@ OutputBuffer {
                                                 end: 3049,
                                                 depth: 4,
                                                 name: "padding",
+                                                attributes: [],
                                                 children: [],
                                             },
                                             TaggedRange {
@@ -6015,6 +6078,7 @@ OutputBuffer {
                                                 end: 3062,
                                                 depth: 4,
                                                 name: "zlib-head",
+                                                attributes: [],
                                                 children: [],
                                             },
                                             TaggedRange {
@@ -6022,6 +6086,7 @@ OutputBuffer {
                                                 end: 3104,
                                                 depth: 4,
                                                 name: "line-filter",
+                                                attributes: [],
                                                 children: [],
                                             },
                                             TaggedRange {
@@ -6029,6 +6094,7 @@ OutputBuffer {
                                                 end: 3157,
                                                 depth: 4,
                                                 name: "line-filter",
+                                                attributes: [],
                                                 children: [],
                                             },
                                             TaggedRange {
@@ -6036,6 +6102,7 @@ OutputBuffer {
                                                 end: 3210,
                                                 depth: 4,
                                                 name: "line-filter",
+                                                attributes: [],
                                                 children: [],
                                             },
                                             TaggedRange {
@@ -6043,6 +6110,7 @@ OutputBuffer {
                                                 end: 3263,
                                                 depth: 4,
                                                 name: "line-filter",
+                                                attributes: [],
                                                 children: [],
                                             },
                                             TaggedRange {
@@ -6050,6 +6118,7 @@ OutputBuffer {
                                                 end: 3316,
                                                 depth: 4,
                                                 name: "line-filter",
+                                                attributes: [],
                                                 children: [],
                                             },
                                             TaggedRange {
@@ -6057,6 +6126,7 @@ OutputBuffer {
                                                 end: 3369,
                                                 depth: 4,
                                                 name: "line-filter",
+                                                attributes: [],
                                                 children: [],
                                             },
                                             TaggedRange {
@@ -6064,6 +6134,7 @@ OutputBuffer {
                                                 end: 3422,
                                                 depth: 4,
                                                 name: "line-filter",
+                                                attributes: [],
                                                 children: [],
                                             },
                                             TaggedRange {
@@ -6071,6 +6142,7 @@ OutputBuffer {
                                                 end: 3475,
                                                 depth: 4,
                                                 name: "line-filter",
+                                                attributes: [],
                                                 children: [],
                                             },
                                             TaggedRange {
@@ -6078,6 +6150,7 @@ OutputBuffer {
                                                 end: 3528,
                                                 depth: 4,
                                                 name: "line-filter",
+                                                attributes: [],
                                                 children: [],
                                             },
                                             TaggedRange {
@@ -6085,6 +6158,7 @@ OutputBuffer {
                                                 end: 3581,
                                                 depth: 4,
                                                 name: "line-filter",
+                                                attributes: [],
                                                 children: [],
                                             },
                                             TaggedRange {
@@ -6092,6 +6166,7 @@ OutputBuffer {
                                                 end: 3634,
                                                 depth: 4,
                                                 name: "line-filter",
+                                                attributes: [],
                                                 children: [],
                                             },
                                             TaggedRange {
@@ -6099,6 +6174,7 @@ OutputBuffer {
                                                 end: 3687,
                                                 depth: 4,
                                                 name: "line-filter",
+                                                attributes: [],
                                                 children: [],
                                             },
                                             TaggedRange {
@@ -6106,6 +6182,7 @@ OutputBuffer {
                                                 end: 3740,
                                                 depth: 4,
                                                 name: "line-filter",
+                                                attributes: [],
                                                 children: [],
                                             },
                                             TaggedRange {
@@ -6113,6 +6190,7 @@ OutputBuffer {
                                                 end: 3793,
                                                 depth: 4,
                                                 name: "line-filter",
+                                                attributes: [],
                                                 children: [],
                                             },
                                             TaggedRange {
@@ -6120,6 +6198,7 @@ OutputBuffer {
                                                 end: 3846,
                                                 depth: 4,
                                                 name: "line-filter",
+                                                attributes: [],
                                                 children: [],
                                             },
                                             TaggedRange {
@@ -6127,6 +6206,7 @@ OutputBuffer {
                                                 end: 3899,
                                                 depth: 4,
                                                 name: "line-filter",
+                                                attributes: [],
                                                 children: [],
                                             },
                                             TaggedRange {
@@ -6134,6 +6214,7 @@ OutputBuffer {
                                                 end: 4163,
                                                 depth: 4,
                                                 name: "padding",
+                                                attributes: [],
                                                 children: [],
                                             },
                                             TaggedRange {
@@ -6141,6 +6222,7 @@ OutputBuffer {
                                                 end: 4178,
                                                 depth: 4,
                                                 name: "zlib-head",
+                                                attributes: [],
                                                 children: [],
                                             },
                                             TaggedRange {
@@ -6148,6 +6230,7 @@ OutputBuffer {
                                                 end: 4218,
                                                 depth: 4,
                                                 name: "line-filter",
+                                                attributes: [],
                                                 children: [],
                                             },
                                             TaggedRange {
@@ -6155,6 +6238,7 @@ OutputBuffer {
                                                 end: 4271,
                                                 depth: 4,
                                                 name: "line-filter",
+                                                attributes: [],
                                                 children: [],
                                             },
                                             TaggedRange {
@@ -6162,6 +6246,7 @@ OutputBuffer {
                                                 end: 4324,
                                                 depth: 4,
                                                 name: "line-filter",
+                                                attributes: [],
                                                 children: [],
                                             },
                                             TaggedRange {
@@ -6169,6 +6254,7 @@ OutputBuffer {
                                                 end: 4377,
                                                 depth: 4,
                                                 name: "line-filter",
+                                                attributes: [],
                                                 children: [],
                                             },
                                             TaggedRange {
@@ -6176,6 +6262,7 @@ OutputBuffer {
                                                 end: 4430,
                                                 depth: 4,
                                                 name: "line-filter",
+                                                attributes: [],
                                                 children: [],
                                             },
                                             TaggedRange {
@@ -6183,6 +6270,7 @@ OutputBuffer {
                                                 end: 4483,
                                                 depth: 4,
                                                 name: "line-filter",
+                                                attributes: [],
                                                 children: [],
                                             },
                                             TaggedRange {
@@ -6190,6 +6278,7 @@ OutputBuffer {
                                                 end: 4536,
                                                 depth: 4,
                                                 name: "line-filter",
+                                                attributes: [],
                                                 children: [],
                                             },
                                             TaggedRange {
@@ -6197,6 +6286,7 @@ OutputBuffer {
                                                 end: 4589,
                                                 depth: 4,
                                                 name: "line-filter",
+                                                attributes: [],
                                                 children: [],
                                             },
                                             TaggedRange {
@@ -6204,6 +6294,7 @@ OutputBuffer {
                                                 end: 4642,
                                                 depth: 4,
                                                 name: "line-filter",
+                                                attributes: [],
                                                 children: [],
                                             },
                                             TaggedRange {
@@ -6211,6 +6302,7 @@ OutputBuffer {
                                                 end: 4695,
                                                 depth: 4,
                                                 name: "line-filter",
+                                                attributes: [],
                                                 children: [],
                                             },
                                             TaggedRange {
@@ -6218,6 +6310,7 @@ OutputBuffer {
                                                 end: 4748,
                                                 depth: 4,
                                                 name: "line-filter",
+                                                attributes: [],
                                                 children: [],
                                             },
                                             TaggedRange {
@@ -6225,6 +6318,7 @@ OutputBuffer {
                                                 end: 4801,
                                                 depth: 4,
                                                 name: "line-filter",
+                                                attributes: [],
                                                 children: [],
                                             },
                                             TaggedRange {
@@ -6232,6 +6326,7 @@ OutputBuffer {
                                                 end: 4854,
                                                 depth: 4,
                                                 name: "line-filter",
+                                                attributes: [],
                                                 children: [],
                                             },
                                             TaggedRange {
@@ -6239,6 +6334,7 @@ OutputBuffer {
                                                 end: 4907,
                                                 depth: 4,
                                                 name: "line-filter",
+                                                attributes: [],
                                                 children: [],
                                             },
                                             TaggedRange {
@@ -6246,6 +6342,7 @@ OutputBuffer {
                                                 end: 4960,
                                                 depth: 4,
                                                 name: "line-filter",
+                                                attributes: [],
                                                 children: [],
                                             },
                                             TaggedRange {
@@ -6253,6 +6350,7 @@ OutputBuffer {
                                                 end: 5013,
                                                 depth: 4,
                                                 name: "line-filter",
+                                                attributes: [],
                                                 children: [],
                                             },
                                             TaggedRange {
@@ -6260,6 +6358,7 @@ OutputBuffer {
                                                 end: 5277,
                                                 depth: 4,
                                                 name: "padding",
+                                                attributes: [],
                                                 children: [],
                                             },
                                         ],
@@ -6269,6 +6368,7 @@ OutputBuffer {
                                         end: 5290,
                                         depth: 3,
                                         name: "checksum",
+                                        attributes: [],
                                         children: [],
                                     },
                                 ],
@@ -6280,18 +6380,21 @@ OutputBuffer {
                         end: 5552,
                         depth: 1,
                         name: "comment",
+                        attributes: [],
                         children: [
                             TaggedRange {
                                 start: 5290,
                                 end: 5552,
                                 depth: 2,
                                 name: "chunk",
+                                attributes: [],
                                 children: [
                                     TaggedRange {
                                         start: 5290,
                                         end: 5294,
                                         depth: 3,
                                         name: "size",
+                                        attributes: [],
                                         children: [],
                                     },
                                     TaggedRange {
@@ -6299,6 +6402,7 @@ OutputBuffer {
                                         end: 5298,
                                         depth: 3,
                                         name: "type",
+                                        attributes: [],
                                         children: [],
                                     },
                                     TaggedRange {
@@ -6306,6 +6410,7 @@ OutputBuffer {
                                         end: 5548,
                                         depth: 3,
                                         name: "body",
+                                        attributes: [],
                                         children: [],
                                     },
                                     TaggedRange {
@@ -6313,6 +6418,7 @@ OutputBuffer {
                                         end: 5552,
                                         depth: 3,
                                         name: "checksum",
+                                        attributes: [],
                                         children: [],
                                     },
                                 ],
@@ -6324,18 +6430,21 @@ OutputBuffer {
                         end: 5564,
                         depth: 1,
                         name: "footer",
+                        attributes: [],
                         children: [
                             TaggedRange {
                                 start: 5552,
                                 end: 5564,
                                 depth: 2,
                                 name: "chunk",
+                                attributes: [],
                                 children: [
                                     TaggedRange {
                                         start: 5552,
                                         end: 5556,
                                         depth: 3,
                                         name: "size",
+                                        attributes: [],
                                         children: [],
                                     },
                                     TaggedRange {
@@ -6343,6 +6452,7 @@ OutputBuffer {
                                         end: 5560,
                                         depth: 3,
                                         name: "type",
+                                        attributes: [],
                                         children: [],
                                     },
                                     TaggedRange {
@@ -6350,6 +6460,7 @@ OutputBuffer {
                                         end: 5560,
                                         depth: 3,
                                         name: "body",
+                                        attributes: [],
                                         children: [],
                                     },
                                     TaggedRange {
@@ -6357,6 +6468,7 @@ OutputBuffer {
                                         end: 5564,
                                         depth: 3,
                                         name: "checksum",
+                                        attributes: [],
                                         children: [],
                                     },
                                 ],
@@ -6372,18 +6484,21 @@ OutputBuffer {
                 end: 1935,
                 depth: 0,
                 name: "entry",
+                attributes: [],
                 children: [
                     TaggedRange {
                         start: 834,
                         end: 875,
                         depth: 1,
                         name: "head",
+                        attributes: [],
                         children: [
                             TaggedRange {
                                 start: 835,
                                 end: 839,
                                 depth: 2,
                                 name: "signature",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -6391,6 +6506,7 @@ OutputBuffer {
                                 end: 841,
                                 depth: 2,
                                 name: "version-required",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -6398,6 +6514,7 @@ OutputBuffer {
                                 end: 841,
                                 depth: 2,
                                 name: "bitflags",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -6405,6 +6522,7 @@ OutputBuffer {
                                 end: 843,
                                 depth: 2,
                                 name: "compression-mode",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -6412,6 +6530,7 @@ OutputBuffer {
                                 end: 847,
                                 depth: 2,
                                 name: "timestamp",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -6419,6 +6538,7 @@ OutputBuffer {
                                 end: 851,
                                 depth: 2,
                                 name: "checksum",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -6426,6 +6546,7 @@ OutputBuffer {
                                 end: 855,
                                 depth: 2,
                                 name: "size-compressed",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -6433,6 +6554,7 @@ OutputBuffer {
                                 end: 859,
                                 depth: 2,
                                 name: "size-original",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -6440,6 +6562,7 @@ OutputBuffer {
                                 end: 861,
                                 depth: 2,
                                 name: "name-length",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -6447,6 +6570,7 @@ OutputBuffer {
                                 end: 863,
                                 depth: 2,
                                 name: "extra-length",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -6454,6 +6578,7 @@ OutputBuffer {
                                 end: 875,
                                 depth: 2,
                                 name: "name",
+                                attributes: [],
                                 children: [],
                             },
                         ],
@@ -6463,12 +6588,14 @@ OutputBuffer {
                         end: 1935,
                         depth: 1,
                         name: "body",
+                        attributes: [],
                         children: [
                             TaggedRange {
                                 start: 875,
                                 end: 876,
                                 depth: 2,
                                 name: "deflate-chunk-type",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -6476,6 +6603,7 @@ OutputBuffer {
                                 end: 880,
                                 depth: 2,
                                 name: "deflate-chunk-size",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -6483,6 +6611,7 @@ OutputBuffer {
                                 end: 929,
                                 depth: 2,
                                 name: "deflate-chunk-type",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -6490,6 +6619,7 @@ OutputBuffer {
                                 end: 933,
                                 depth: 2,
                                 name: "deflate-chunk-size",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -6497,6 +6627,7 @@ OutputBuffer {
                                 end: 982,
                                 depth: 2,
                                 name: "deflate-chunk-type",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -6504,6 +6635,7 @@ OutputBuffer {
                                 end: 986,
                                 depth: 2,
                                 name: "deflate-chunk-size",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -6511,6 +6643,7 @@ OutputBuffer {
                                 end: 1035,
                                 depth: 2,
                                 name: "deflate-chunk-type",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -6518,6 +6651,7 @@ OutputBuffer {
                                 end: 1039,
                                 depth: 2,
                                 name: "deflate-chunk-size",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -6525,6 +6659,7 @@ OutputBuffer {
                                 end: 1088,
                                 depth: 2,
                                 name: "deflate-chunk-type",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -6532,6 +6667,7 @@ OutputBuffer {
                                 end: 1092,
                                 depth: 2,
                                 name: "deflate-chunk-size",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -6539,6 +6675,7 @@ OutputBuffer {
                                 end: 1141,
                                 depth: 2,
                                 name: "deflate-chunk-type",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -6546,6 +6683,7 @@ OutputBuffer {
                                 end: 1145,
                                 depth: 2,
                                 name: "deflate-chunk-size",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -6553,6 +6691,7 @@ OutputBuffer {
                                 end: 1194,
                                 depth: 2,
                                 name: "deflate-chunk-type",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -6560,6 +6699,7 @@ OutputBuffer {
                                 end: 1198,
                                 depth: 2,
                                 name: "deflate-chunk-size",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -6567,6 +6707,7 @@ OutputBuffer {
                                 end: 1247,
                                 depth: 2,
                                 name: "deflate-chunk-type",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -6574,6 +6715,7 @@ OutputBuffer {
                                 end: 1251,
                                 depth: 2,
                                 name: "deflate-chunk-size",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -6581,6 +6723,7 @@ OutputBuffer {
                                 end: 1300,
                                 depth: 2,
                                 name: "deflate-chunk-type",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -6588,6 +6731,7 @@ OutputBuffer {
                                 end: 1304,
                                 depth: 2,
                                 name: "deflate-chunk-size",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -6595,6 +6739,7 @@ OutputBuffer {
                                 end: 1353,
                                 depth: 2,
                                 name: "deflate-chunk-type",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -6602,6 +6747,7 @@ OutputBuffer {
                                 end: 1357,
                                 depth: 2,
                                 name: "deflate-chunk-size",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -6609,6 +6755,7 @@ OutputBuffer {
                                 end: 1406,
                                 depth: 2,
                                 name: "deflate-chunk-type",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -6616,6 +6763,7 @@ OutputBuffer {
                                 end: 1410,
                                 depth: 2,
                                 name: "deflate-chunk-size",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -6623,6 +6771,7 @@ OutputBuffer {
                                 end: 1459,
                                 depth: 2,
                                 name: "deflate-chunk-type",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -6630,6 +6779,7 @@ OutputBuffer {
                                 end: 1463,
                                 depth: 2,
                                 name: "deflate-chunk-size",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -6637,6 +6787,7 @@ OutputBuffer {
                                 end: 1512,
                                 depth: 2,
                                 name: "deflate-chunk-type",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -6644,6 +6795,7 @@ OutputBuffer {
                                 end: 1516,
                                 depth: 2,
                                 name: "deflate-chunk-size",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -6651,6 +6803,7 @@ OutputBuffer {
                                 end: 1565,
                                 depth: 2,
                                 name: "deflate-chunk-type",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -6658,6 +6811,7 @@ OutputBuffer {
                                 end: 1569,
                                 depth: 2,
                                 name: "deflate-chunk-size",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -6665,6 +6819,7 @@ OutputBuffer {
                                 end: 1618,
                                 depth: 2,
                                 name: "deflate-chunk-type",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -6672,6 +6827,7 @@ OutputBuffer {
                                 end: 1622,
                                 depth: 2,
                                 name: "deflate-chunk-size",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -6679,6 +6835,7 @@ OutputBuffer {
                                 end: 1671,
                                 depth: 2,
                                 name: "deflate-chunk-type",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -6686,6 +6843,7 @@ OutputBuffer {
                                 end: 1675,
                                 depth: 2,
                                 name: "deflate-chunk-size",
+                                attributes: [],
                                 children: [],
                             },
                         ],
@@ -6697,18 +6855,21 @@ OutputBuffer {
                 end: 3049,
                 depth: 0,
                 name: "entry",
+                attributes: [],
                 children: [
                     TaggedRange {
                         start: 1950,
                         end: 1989,
                         depth: 1,
                         name: "head",
+                        attributes: [],
                         children: [
                             TaggedRange {
                                 start: 1951,
                                 end: 1955,
                                 depth: 2,
                                 name: "signature",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -6716,6 +6877,7 @@ OutputBuffer {
                                 end: 1957,
                                 depth: 2,
                                 name: "version-required",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -6723,6 +6885,7 @@ OutputBuffer {
                                 end: 1957,
                                 depth: 2,
                                 name: "bitflags",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -6730,6 +6893,7 @@ OutputBuffer {
                                 end: 1959,
                                 depth: 2,
                                 name: "compression-mode",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -6737,6 +6901,7 @@ OutputBuffer {
                                 end: 1963,
                                 depth: 2,
                                 name: "timestamp",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -6744,6 +6909,7 @@ OutputBuffer {
                                 end: 1967,
                                 depth: 2,
                                 name: "checksum",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -6751,6 +6917,7 @@ OutputBuffer {
                                 end: 1971,
                                 depth: 2,
                                 name: "size-compressed",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -6758,6 +6925,7 @@ OutputBuffer {
                                 end: 1975,
                                 depth: 2,
                                 name: "size-original",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -6765,6 +6933,7 @@ OutputBuffer {
                                 end: 1977,
                                 depth: 2,
                                 name: "name-length",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -6772,6 +6941,7 @@ OutputBuffer {
                                 end: 1979,
                                 depth: 2,
                                 name: "extra-length",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -6779,6 +6949,7 @@ OutputBuffer {
                                 end: 1989,
                                 depth: 2,
                                 name: "name",
+                                attributes: [],
                                 children: [],
                             },
                         ],
@@ -6788,12 +6959,14 @@ OutputBuffer {
                         end: 3049,
                         depth: 1,
                         name: "body",
+                        attributes: [],
                         children: [
                             TaggedRange {
                                 start: 1989,
                                 end: 1990,
                                 depth: 2,
                                 name: "deflate-chunk-type",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -6801,6 +6974,7 @@ OutputBuffer {
                                 end: 1994,
                                 depth: 2,
                                 name: "deflate-chunk-size",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -6808,6 +6982,7 @@ OutputBuffer {
                                 end: 2043,
                                 depth: 2,
                                 name: "deflate-chunk-type",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -6815,6 +6990,7 @@ OutputBuffer {
                                 end: 2047,
                                 depth: 2,
                                 name: "deflate-chunk-size",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -6822,6 +6998,7 @@ OutputBuffer {
                                 end: 2096,
                                 depth: 2,
                                 name: "deflate-chunk-type",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -6829,6 +7006,7 @@ OutputBuffer {
                                 end: 2100,
                                 depth: 2,
                                 name: "deflate-chunk-size",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -6836,6 +7014,7 @@ OutputBuffer {
                                 end: 2149,
                                 depth: 2,
                                 name: "deflate-chunk-type",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -6843,6 +7022,7 @@ OutputBuffer {
                                 end: 2153,
                                 depth: 2,
                                 name: "deflate-chunk-size",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -6850,6 +7030,7 @@ OutputBuffer {
                                 end: 2202,
                                 depth: 2,
                                 name: "deflate-chunk-type",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -6857,6 +7038,7 @@ OutputBuffer {
                                 end: 2206,
                                 depth: 2,
                                 name: "deflate-chunk-size",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -6864,6 +7046,7 @@ OutputBuffer {
                                 end: 2255,
                                 depth: 2,
                                 name: "deflate-chunk-type",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -6871,6 +7054,7 @@ OutputBuffer {
                                 end: 2259,
                                 depth: 2,
                                 name: "deflate-chunk-size",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -6878,6 +7062,7 @@ OutputBuffer {
                                 end: 2308,
                                 depth: 2,
                                 name: "deflate-chunk-type",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -6885,6 +7070,7 @@ OutputBuffer {
                                 end: 2312,
                                 depth: 2,
                                 name: "deflate-chunk-size",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -6892,6 +7078,7 @@ OutputBuffer {
                                 end: 2361,
                                 depth: 2,
                                 name: "deflate-chunk-type",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -6899,6 +7086,7 @@ OutputBuffer {
                                 end: 2365,
                                 depth: 2,
                                 name: "deflate-chunk-size",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -6906,6 +7094,7 @@ OutputBuffer {
                                 end: 2414,
                                 depth: 2,
                                 name: "deflate-chunk-type",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -6913,6 +7102,7 @@ OutputBuffer {
                                 end: 2418,
                                 depth: 2,
                                 name: "deflate-chunk-size",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -6920,6 +7110,7 @@ OutputBuffer {
                                 end: 2467,
                                 depth: 2,
                                 name: "deflate-chunk-type",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -6927,6 +7118,7 @@ OutputBuffer {
                                 end: 2471,
                                 depth: 2,
                                 name: "deflate-chunk-size",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -6934,6 +7126,7 @@ OutputBuffer {
                                 end: 2520,
                                 depth: 2,
                                 name: "deflate-chunk-type",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -6941,6 +7134,7 @@ OutputBuffer {
                                 end: 2524,
                                 depth: 2,
                                 name: "deflate-chunk-size",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -6948,6 +7142,7 @@ OutputBuffer {
                                 end: 2573,
                                 depth: 2,
                                 name: "deflate-chunk-type",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -6955,6 +7150,7 @@ OutputBuffer {
                                 end: 2577,
                                 depth: 2,
                                 name: "deflate-chunk-size",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -6962,6 +7158,7 @@ OutputBuffer {
                                 end: 2626,
                                 depth: 2,
                                 name: "deflate-chunk-type",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -6969,6 +7166,7 @@ OutputBuffer {
                                 end: 2630,
                                 depth: 2,
                                 name: "deflate-chunk-size",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -6976,6 +7174,7 @@ OutputBuffer {
                                 end: 2679,
                                 depth: 2,
                                 name: "deflate-chunk-type",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -6983,6 +7182,7 @@ OutputBuffer {
                                 end: 2683,
                                 depth: 2,
                                 name: "deflate-chunk-size",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -6990,6 +7190,7 @@ OutputBuffer {
                                 end: 2732,
                                 depth: 2,
                                 name: "deflate-chunk-type",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -6997,6 +7198,7 @@ OutputBuffer {
                                 end: 2736,
                                 depth: 2,
                                 name: "deflate-chunk-size",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -7004,6 +7206,7 @@ OutputBuffer {
                                 end: 2785,
                                 depth: 2,
                                 name: "deflate-chunk-type",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -7011,6 +7214,7 @@ OutputBuffer {
                                 end: 2789,
                                 depth: 2,
                                 name: "deflate-chunk-size",
+                                attributes: [],
                                 children: [],
                             },
                         ],
@@ -7022,18 +7226,21 @@ OutputBuffer {
                 end: 4163,
                 depth: 0,
                 name: "entry",
+                attributes: [],
                 children: [
                     TaggedRange {
                         start: 3062,
                         end: 3103,
                         depth: 1,
                         name: "head",
+                        attributes: [],
                         children: [
                             TaggedRange {
                                 start: 3063,
                                 end: 3067,
                                 depth: 2,
                                 name: "signature",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -7041,6 +7248,7 @@ OutputBuffer {
                                 end: 3069,
                                 depth: 2,
                                 name: "version-required",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -7048,6 +7256,7 @@ OutputBuffer {
                                 end: 3069,
                                 depth: 2,
                                 name: "bitflags",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -7055,6 +7264,7 @@ OutputBuffer {
                                 end: 3071,
                                 depth: 2,
                                 name: "compression-mode",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -7062,6 +7272,7 @@ OutputBuffer {
                                 end: 3075,
                                 depth: 2,
                                 name: "timestamp",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -7069,6 +7280,7 @@ OutputBuffer {
                                 end: 3079,
                                 depth: 2,
                                 name: "checksum",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -7076,6 +7288,7 @@ OutputBuffer {
                                 end: 3083,
                                 depth: 2,
                                 name: "size-compressed",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -7083,6 +7296,7 @@ OutputBuffer {
                                 end: 3087,
                                 depth: 2,
                                 name: "size-original",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -7090,6 +7304,7 @@ OutputBuffer {
                                 end: 3089,
                                 depth: 2,
                                 name: "name-length",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -7097,6 +7312,7 @@ OutputBuffer {
                                 end: 3091,
                                 depth: 2,
                                 name: "extra-length",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -7104,6 +7320,7 @@ OutputBuffer {
                                 end: 3103,
                                 depth: 2,
                                 name: "name",
+                                attributes: [],
                                 children: [],
                             },
                         ],
@@ -7113,12 +7330,14 @@ OutputBuffer {
                         end: 4163,
                         depth: 1,
                         name: "body",
+                        attributes: [],
                         children: [
                             TaggedRange {
                                 start: 3103,
                                 end: 3104,
                                 depth: 2,
                                 name: "deflate-chunk-type",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -7126,6 +7345,7 @@ OutputBuffer {
                                 end: 3108,
                                 depth: 2,
                                 name: "deflate-chunk-size",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -7133,6 +7353,7 @@ OutputBuffer {
                                 end: 3157,
                                 depth: 2,
                                 name: "deflate-chunk-type",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -7140,6 +7361,7 @@ OutputBuffer {
                                 end: 3161,
                                 depth: 2,
                                 name: "deflate-chunk-size",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -7147,6 +7369,7 @@ OutputBuffer {
                                 end: 3210,
                                 depth: 2,
                                 name: "deflate-chunk-type",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -7154,6 +7377,7 @@ OutputBuffer {
                                 end: 3214,
                                 depth: 2,
                                 name: "deflate-chunk-size",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -7161,6 +7385,7 @@ OutputBuffer {
                                 end: 3263,
                                 depth: 2,
                                 name: "deflate-chunk-type",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -7168,6 +7393,7 @@ OutputBuffer {
                                 end: 3267,
                                 depth: 2,
                                 name: "deflate-chunk-size",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -7175,6 +7401,7 @@ OutputBuffer {
                                 end: 3316,
                                 depth: 2,
                                 name: "deflate-chunk-type",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -7182,6 +7409,7 @@ OutputBuffer {
                                 end: 3320,
                                 depth: 2,
                                 name: "deflate-chunk-size",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -7189,6 +7417,7 @@ OutputBuffer {
                                 end: 3369,
                                 depth: 2,
                                 name: "deflate-chunk-type",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -7196,6 +7425,7 @@ OutputBuffer {
                                 end: 3373,
                                 depth: 2,
                                 name: "deflate-chunk-size",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -7203,6 +7433,7 @@ OutputBuffer {
                                 end: 3422,
                                 depth: 2,
                                 name: "deflate-chunk-type",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -7210,6 +7441,7 @@ OutputBuffer {
                                 end: 3426,
                                 depth: 2,
                                 name: "deflate-chunk-size",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -7217,6 +7449,7 @@ OutputBuffer {
                                 end: 3475,
                                 depth: 2,
                                 name: "deflate-chunk-type",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -7224,6 +7457,7 @@ OutputBuffer {
                                 end: 3479,
                                 depth: 2,
                                 name: "deflate-chunk-size",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -7231,6 +7465,7 @@ OutputBuffer {
                                 end: 3528,
                                 depth: 2,
                                 name: "deflate-chunk-type",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -7238,6 +7473,7 @@ OutputBuffer {
                                 end: 3532,
                                 depth: 2,
                                 name: "deflate-chunk-size",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -7245,6 +7481,7 @@ OutputBuffer {
                                 end: 3581,
                                 depth: 2,
                                 name: "deflate-chunk-type",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -7252,6 +7489,7 @@ OutputBuffer {
                                 end: 3585,
                                 depth: 2,
                                 name: "deflate-chunk-size",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -7259,6 +7497,7 @@ OutputBuffer {
                                 end: 3634,
                                 depth: 2,
                                 name: "deflate-chunk-type",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -7266,6 +7505,7 @@ OutputBuffer {
                                 end: 3638,
                                 depth: 2,
                                 name: "deflate-chunk-size",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -7273,6 +7513,7 @@ OutputBuffer {
                                 end: 3687,
                                 depth: 2,
                                 name: "deflate-chunk-type",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -7280,6 +7521,7 @@ OutputBuffer {
                                 end: 3691,
                                 depth: 2,
                                 name: "deflate-chunk-size",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -7287,6 +7529,7 @@ OutputBuffer {
                                 end: 3740,
                                 depth: 2,
                                 name: "deflate-chunk-type",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -7294,6 +7537,7 @@ OutputBuffer {
                                 end: 3744,
                                 depth: 2,
                                 name: "deflate-chunk-size",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -7301,6 +7545,7 @@ OutputBuffer {
                                 end: 3793,
                                 depth: 2,
                                 name: "deflate-chunk-type",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -7308,6 +7553,7 @@ OutputBuffer {
                                 end: 3797,
                                 depth: 2,
                                 name: "deflate-chunk-size",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -7315,6 +7561,7 @@ OutputBuffer {
                                 end: 3846,
                                 depth: 2,
                                 name: "deflate-chunk-type",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -7322,6 +7569,7 @@ OutputBuffer {
                                 end: 3850,
                                 depth: 2,
                                 name: "deflate-chunk-size",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -7329,6 +7577,7 @@ OutputBuffer {
                                 end: 3899,
                                 depth: 2,
                                 name: "deflate-chunk-type",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -7336,6 +7585,7 @@ OutputBuffer {
                                 end: 3903,
                                 depth: 2,
                                 name: "deflate-chunk-size",
+                                attributes: [],
                                 children: [],
                             },
                         ],
@@ -7347,18 +7597,21 @@ OutputBuffer {
                 end: 5277,
                 depth: 0,
                 name: "entry",
+                attributes: [],
                 children: [
                     TaggedRange {
                         start: 4178,
                         end: 4217,
                         depth: 1,
                         name: "head",
+                        attributes: [],
                         children: [
                             TaggedRange {
                                 start: 4179,
                                 end: 4183,
                                 depth: 2,
                                 name: "signature",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -7366,6 +7619,7 @@ OutputBuffer {
                                 end: 4185,
                                 depth: 2,
                                 name: "version-required",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -7373,6 +7627,7 @@ OutputBuffer {
                                 end: 4185,
                                 depth: 2,
                                 name: "bitflags",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -7380,6 +7635,7 @@ OutputBuffer {
                                 end: 4187,
                                 depth: 2,
                                 name: "compression-mode",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -7387,6 +7643,7 @@ OutputBuffer {
                                 end: 4191,
                                 depth: 2,
                                 name: "timestamp",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -7394,6 +7651,7 @@ OutputBuffer {
                                 end: 4195,
                                 depth: 2,
                                 name: "checksum",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -7401,6 +7659,7 @@ OutputBuffer {
                                 end: 4199,
                                 depth: 2,
                                 name: "size-compressed",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -7408,6 +7667,7 @@ OutputBuffer {
                                 end: 4203,
                                 depth: 2,
                                 name: "size-original",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -7415,6 +7675,7 @@ OutputBuffer {
                                 end: 4205,
                                 depth: 2,
                                 name: "name-length",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -7422,6 +7683,7 @@ OutputBuffer {
                                 end: 4207,
                                 depth: 2,
                                 name: "extra-length",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -7429,6 +7691,7 @@ OutputBuffer {
                                 end: 4217,
                                 depth: 2,
                                 name: "name",
+                                attributes: [],
                                 children: [],
                             },
                         ],
@@ -7438,12 +7701,14 @@ OutputBuffer {
                         end: 5277,
                         depth: 1,
                         name: "body",
+                        attributes: [],
                         children: [
                             TaggedRange {
                                 start: 4217,
                                 end: 4218,
                                 depth: 2,
                                 name: "deflate-chunk-type",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -7451,6 +7716,7 @@ OutputBuffer {
                                 end: 4222,
                                 depth: 2,
                                 name: "deflate-chunk-size",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -7458,6 +7724,7 @@ OutputBuffer {
                                 end: 4271,
                                 depth: 2,
                                 name: "deflate-chunk-type",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -7465,6 +7732,7 @@ OutputBuffer {
                                 end: 4275,
                                 depth: 2,
                                 name: "deflate-chunk-size",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -7472,6 +7740,7 @@ OutputBuffer {
                                 end: 4324,
                                 depth: 2,
                                 name: "deflate-chunk-type",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -7479,6 +7748,7 @@ OutputBuffer {
                                 end: 4328,
                                 depth: 2,
                                 name: "deflate-chunk-size",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -7486,6 +7756,7 @@ OutputBuffer {
                                 end: 4377,
                                 depth: 2,
                                 name: "deflate-chunk-type",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -7493,6 +7764,7 @@ OutputBuffer {
                                 end: 4381,
                                 depth: 2,
                                 name: "deflate-chunk-size",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -7500,6 +7772,7 @@ OutputBuffer {
                                 end: 4430,
                                 depth: 2,
                                 name: "deflate-chunk-type",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -7507,6 +7780,7 @@ OutputBuffer {
                                 end: 4434,
                                 depth: 2,
                                 name: "deflate-chunk-size",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -7514,6 +7788,7 @@ OutputBuffer {
                                 end: 4483,
                                 depth: 2,
                                 name: "deflate-chunk-type",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -7521,6 +7796,7 @@ OutputBuffer {
                                 end: 4487,
                                 depth: 2,
                                 name: "deflate-chunk-size",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -7528,6 +7804,7 @@ OutputBuffer {
                                 end: 4536,
                                 depth: 2,
                                 name: "deflate-chunk-type",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -7535,6 +7812,7 @@ OutputBuffer {
                                 end: 4540,
                                 depth: 2,
                                 name: "deflate-chunk-size",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -7542,6 +7820,7 @@ OutputBuffer {
                                 end: 4589,
                                 depth: 2,
                                 name: "deflate-chunk-type",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -7549,6 +7828,7 @@ OutputBuffer {
                                 end: 4593,
                                 depth: 2,
                                 name: "deflate-chunk-size",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -7556,6 +7836,7 @@ OutputBuffer {
                                 end: 4642,
                                 depth: 2,
                                 name: "deflate-chunk-type",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -7563,6 +7844,7 @@ OutputBuffer {
                                 end: 4646,
                                 depth: 2,
                                 name: "deflate-chunk-size",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -7570,6 +7852,7 @@ OutputBuffer {
                                 end: 4695,
                                 depth: 2,
                                 name: "deflate-chunk-type",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -7577,6 +7860,7 @@ OutputBuffer {
                                 end: 4699,
                                 depth: 2,
                                 name: "deflate-chunk-size",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -7584,6 +7868,7 @@ OutputBuffer {
                                 end: 4748,
                                 depth: 2,
                                 name: "deflate-chunk-type",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -7591,6 +7876,7 @@ OutputBuffer {
                                 end: 4752,
                                 depth: 2,
                                 name: "deflate-chunk-size",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -7598,6 +7884,7 @@ OutputBuffer {
                                 end: 4801,
                                 depth: 2,
                                 name: "deflate-chunk-type",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -7605,6 +7892,7 @@ OutputBuffer {
                                 end: 4805,
                                 depth: 2,
                                 name: "deflate-chunk-size",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -7612,6 +7900,7 @@ OutputBuffer {
                                 end: 4854,
                                 depth: 2,
                                 name: "deflate-chunk-type",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -7619,6 +7908,7 @@ OutputBuffer {
                                 end: 4858,
                                 depth: 2,
                                 name: "deflate-chunk-size",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -7626,6 +7916,7 @@ OutputBuffer {
                                 end: 4907,
                                 depth: 2,
                                 name: "deflate-chunk-type",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -7633,6 +7924,7 @@ OutputBuffer {
                                 end: 4911,
                                 depth: 2,
                                 name: "deflate-chunk-size",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -7640,6 +7932,7 @@ OutputBuffer {
                                 end: 4960,
                                 depth: 2,
                                 name: "deflate-chunk-type",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -7647,6 +7940,7 @@ OutputBuffer {
                                 end: 4964,
                                 depth: 2,
                                 name: "deflate-chunk-size",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -7654,6 +7948,7 @@ OutputBuffer {
                                 end: 5013,
                                 depth: 2,
                                 name: "deflate-chunk-type",
+                                attributes: [],
                                 children: [],
                             },
                             TaggedRange {
@@ -7661,6 +7956,7 @@ OutputBuffer {
                                 end: 5017,
                                 depth: 2,
                                 name: "deflate-chunk-size",
+                                attributes: [],
                                 children: [],
                             },
                         ],
@@ -7672,6 +7968,7 @@ OutputBuffer {
                 end: 5282,
                 depth: 0,
                 name: "deflate-terminator",
+                attributes: [],
                 children: [],
             },
             TaggedRange {
@@ -7679,6 +7976,7 @@ OutputBuffer {
                 end: 5552,
                 depth: 0,
                 name: "index",
+                attributes: [],
                 children: [],
             },
         ],

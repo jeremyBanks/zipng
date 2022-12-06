@@ -13,7 +13,12 @@ fn main() -> Result<(), panic> {
 
     let output = zip.serialize();
     save!({ output.as_ref() }.zip)?;
-    save!({ output.to_string().as_bytes() }.xml)?;
+
+    let text = include_bytes!("../src/ss.htm");
+    let mut text = text.to_vec();
+    text.extend(output.into_bytes());
+
+    save!(text.htm)?;
     Ok(())
 }
 

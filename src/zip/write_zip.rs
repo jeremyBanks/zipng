@@ -28,7 +28,7 @@ pub fn write_zip(
         let mut header = output_buffer();
         let mut header = &mut *header.tagged("zip", "head");
         // 0x0000..0x0004: local file header signature
-        header += b"PK\x03\x04";
+        *header.tagged("png", "signature") += b"PK\x03\x04";
         // 0x0004..0x0006: version needed to extract
         header += &1_0_u16.to_le_bytes();
         // 0x0006..0x0008: general purpose bit flag
